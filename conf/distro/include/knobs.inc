@@ -84,8 +84,6 @@ PACKAGE_GROUP_tests              = ''
 PACKAGE_GROUP_touchscreen        = 'tslib-calibrate tslib-conf tslib-tests'
 PACKAGE_GROUP_wifi               = 'wireless-tools wpa-supplicant'
 
-PACKAGE_GROUP_x11-ivi-apps       = 'task-readyblock-ivi-x11-apps'
-PACKAGE_GROUP_x11-ivi-utils       = 'task-readyblock-ivi-x11-utils'
 PACKAGE_GROUP_x11-minimal        = '\
     ${XSERVER} \
     dbus-x11 \
@@ -97,6 +95,4 @@ PACKAGE_GROUP_x11-minimal        = '\
     font-util \
 '
 
-PACKAGE_GROUP_rt-tests           = 'task-readyblock-rt-tests'
-PACKAGE_GROUP_mcapi-tests        = 'task-readyblock-mcapi-tests'
 PACKAGE_GROUP_inflexion          = 'libpng'
