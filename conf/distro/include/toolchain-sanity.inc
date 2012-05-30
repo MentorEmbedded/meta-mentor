@@ -39,8 +39,8 @@ python toolchain_sanity_check () {
     d = e.data.createCopy()
     d.finalize()
 
-    toolchain_syspath = os.path.join(toolchain_path, d.getVar('CSL_TARGET_SYS', True))
-    if not os.path.exists(toolchain_syspath):
+    toolchain_sysroot = d.getVar('EXTERNAL_TOOLCHAIN_SYSROOT', True)
+    if not os.path.exists(toolchain_sysroot):
         bb.fatal('No Sourcery toolchain installed at %s' % toolchain_path)
 
     if '-g0' in toolchain_sanity_flags(d):
@@ -50,7 +50,7 @@ python toolchain_sanity_check () {
         # Assuming use of a CodeBench Lite toolchain
         return
 
-    lib_debugdir = bb.data.expand(toolchain_syspath + '/libc/${CSL_TARGET_CORE}/lib/.debug', d)
+    lib_debugdir = bb.data.expand(os.path.join(toolchain_sysroot, 'lib', '.debug'), d)
     try:
         if os.listdir(lib_debugdir):
             return
