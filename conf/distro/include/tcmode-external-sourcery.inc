@@ -128,3 +128,5 @@ def populate_toolchain_links(d):
             bb.fatal("Unable to populate toolchain binary symlink for %s: %s" % (newpath, exc))
 
 require conf/distro/include/csl-versions.inc
+
+BUILDCFG_VARS += "CSL_VER_MAIN"
