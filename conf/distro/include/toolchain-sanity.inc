@@ -3,7 +3,7 @@ TARGET_CC_ARCH_append_arm = " -mno-unaligned-access"
 TARGET_CC_KERNEL_ARCH_append_arm = " -mno-unaligned-access"
 
 def toolchain_sanity_flags(d):
-    flags = d.getVar('DEBUG_FLAGS_pn-external-csl-toolchain', True)
+    flags = d.getVar('DEBUG_FLAGS_pn-external-sourcery-toolchain', True)
     if flags is None:
         flags = d.getVar('DEBUG_FLAGS', True)
     return flags.split()
