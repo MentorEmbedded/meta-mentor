@@ -60,10 +60,8 @@ do_install() {
 	rm ${D}${sysconfdir}/rpc
 	rm -r ${D}${datadir}/zoneinfo
 
-	mv ${D}${libdir}/bin/* ${D}${bindir}/
-	if [ -e ${D}${libdir}/bin/.debug ]; then
-		mv ${D}${libdir}/bin/.debug/* ${D}${bindir}/.debug/
-	fi
+	cp -a ${D}${libdir}/bin/. ${D}${bindir}/
+	rm ${D}${libdir}/bin/*
 	ln -s ../../bin/gdbserver ${D}${libdir}/bin/sysroot-gdbserver
 
 	sed -i -e 's/__packed/__attribute__ ((packed))/' ${D}${includedir}/mtd/ubi-user.h
