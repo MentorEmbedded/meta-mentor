@@ -32,6 +32,7 @@ python toolchain_sanity_check () {
     if not isinstance(e, bb.event.BuildStarted):
         return
 
+    # Make sure the toolchain actually exists
     toolchain_path = e.data.getVar('EXTERNAL_TOOLCHAIN', True)
     if not toolchain_path:
         return
@@ -43,6 +44,14 @@ python toolchain_sanity_check () {
     if not os.path.exists(toolchain_sysroot):
         bb.fatal('No Sourcery toolchain installed at %s' % toolchain_path)
 
+    # Check for a specified required toolchain version for releases
+    toolchain_required_version = d.getVar('CSL_VER_REQUIRED', True)
+    if toolchain_required_version:
+        csl_ver_main = d.getVar('CSL_VER_MAIN', True)
+        if csl_ver_main and toolchain_required_version != csl_ver_main:
+            bb.fatal('Found toolchain version `%s`, expected `%s`. Please install the supported toolchain.' % (toolchain_required_version, csl_ver_main))
+
+    # Check that debug files are available, to be packaged into -dbg
     if '-g0' in toolchain_sanity_flags(d):
         return
 
