@@ -1,0 +1,21 @@
+Disable inclusion of dbconvert
+
+We remove the installed dbconvert files from ${D} anyway, so there's no need to
+build them. In addition, dbconvert.c can fail to build on older hosts.
+
+Upstream-Status: Inappropriate [configuration]
+
+Signed-off-by: Christopher Larson <chris_larson@mentor.com>
+
+--- rpm-5.4.9.orig/tools/Makefile.am
++++ rpm-5.4.9/tools/Makefile.am
+@@ -59,9 +59,6 @@ pkgbin_PROGRAMS =	\
+ 	@WITH_SEMANAGE_SEMODULE@ wget \
+ 	rpmcache rpmdigest rpmrepo rpmspecdump \
+ 	rpmcmp rpmdeps rpmdeps-oecore sqlite3 @WITH_KEYUTILS_RPMKEY@ @WITH_LIBELF_DEBUGEDIT@
+-if WITH_DB
+-pkgbin_PROGRAMS +=	dbconvert
+-endif
+ dist_man_MANS =		rpmgrep.1
+ 
+ noinst_PROGRAMS =	grep
