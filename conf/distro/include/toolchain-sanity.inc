@@ -42,7 +42,7 @@ python toolchain_sanity_check () {
 
     toolchain_sysroot = d.getVar('EXTERNAL_TOOLCHAIN_SYSROOT', True)
     if not os.path.exists(toolchain_sysroot):
-        bb.fatal('No Sourcery toolchain installed at %s' % toolchain_path)
+        bb.fatal('Toolchain sysroot `%` does not exist, please install or fix your Sourcery toolchain at %s' % (toolchain_sysroot, toolchain_path))
 
     # Check for a specified required toolchain version for releases
     toolchain_required_version = d.getVar('CSL_VER_REQUIRED', True)
