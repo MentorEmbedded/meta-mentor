@@ -3,6 +3,11 @@ inherit rootfs_${IMAGE_PKGTYPE}
 IMAGETEST ?= "dummy"
 inherit imagetest-${IMAGETEST}
 
+inherit populate_sdk_base
+
+TOOLCHAIN_TARGET_TASK += "${PACKAGE_INSTALL}"
+TOOLCHAIN_TARGET_TASK_ATTEMPTONLY += "${PACKAGE_INSTALL_ATTEMPTONLY} ${PACKAGE_GROUP_dev-pkgs} ${PACKAGE_GROUP_dbg-pkgs}"
+
 inherit gzipnative
 
 LICENSE = "MIT"
@@ -81,11 +86,30 @@ IMAGE_TYPE_vmdk = '${@base_contains("IMAGE_FSTYPES", "vmdk", "vmdk", "empty", d)
 inherit image-${IMAGE_TYPE_vmdk}
 
 python () {
-    deps = d.getVarFlag('do_rootfs', 'depends') or ""
-    deps += imagetypes_getdepends(d)
+    deps = " " + imagetypes_getdepends(d)
+    d.appendVarFlag('do_rootfs', 'depends', deps)
+
+    deps = ""
     for dep in (d.getVar('EXTRA_IMAGEDEPENDS', True) or "").split():
         deps += " %s:do_populate_sysroot" % dep
-    d.setVarFlag('do_rootfs', 'depends', deps)
+    d.appendVarFlag('do_build', 'depends', deps)
+
+    #process IMAGE_FEATURES, we must do this before runtime_mapping_rename
+    #Check for replaces image features
+    features = set(oe.data.typed_value('IMAGE_FEATURES', d))
+    remain_features = features.copy()
+    for feature in features:
+        replaces = set((d.getVar("IMAGE_FEATURES_REPLACES_%s" % feature, True) or "").split())
+        remain_features -= replaces
+
+    #Check for conflict image features
+    for feature in remain_features:
+        conflicts = set((d.getVar("IMAGE_FEATURES_CONFLICTS_%s" % feature, True) or "").split())
+        temp = conflicts & remain_features
+        if temp:
+            bb.fatal("%s contains conflicting IMAGE_FEATURES %s %s" % (d.getVar('PN', True), feature, ' '.join(list(temp))))
+
+    d.setVar('IMAGE_FEATURES', ' '.join(list(remain_features)))
 
     # If we don't do this we try and run the mapping hooks while parsing which is slow
     # bitbake should really provide something to let us know this...
@@ -131,6 +155,7 @@ PSEUDO_PASSWD = "${IMAGE_ROOTFS}"
 do_rootfs[nostamp] = "1"
 do_rootfs[dirs] = "${TOPDIR}"
 do_rootfs[lockfiles] += "${IMAGE_ROOTFS}.lock"
+do_rootfs[cleandirs] += "${S}"
 do_build[nostamp] = "1"
 
 # Must call real_do_rootfs() from inside here, rather than as a separate
@@ -142,6 +167,12 @@ fakeroot do_rootfs () {
     # When use the rpm incremental image generation, don't remove the rootfs
     if [ "${INC_RPM_IMAGE_GEN}" != "1" -o "${IMAGE_PKGTYPE}" != "rpm" ]; then
         rm -rf ${IMAGE_ROOTFS}
+    elif [ -d ${T}/saved_rpmlib/var/lib/rpm ]; then
+        # Move the rpmlib back
+        if [ ! -d ${IMAGE_ROOTFS}/var/lib/rpm ]; then
+                mkdir -p ${IMAGE_ROOTFS}/var/lib/
+                mv ${T}/saved_rpmlib/var/lib/rpm ${IMAGE_ROOTFS}/var/lib/
+        fi
     fi
 	rm -rf ${MULTILIB_TEMP_ROOTFS}
 	mkdir -p ${IMAGE_ROOTFS}
@@ -211,7 +242,7 @@ insert_feed_uris () {
 log_check() {
 	for target in $*
 	do
-		lf_path="${WORKDIR}/temp/log.do_$target.${PID}"
+		lf_path="`dirname ${BB_LOGFILE}`/log.do_$target.${PID}"
 		
 		echo "log_check: Using $lf_path as logfile"
 		
@@ -310,6 +341,13 @@ zap_root_password () {
 	sed 's%^root:[^:]*:%root:*:%' < ${IMAGE_ROOTFS}/etc/passwd >${IMAGE_ROOTFS}/etc/passwd.new
 	mv ${IMAGE_ROOTFS}/etc/passwd.new ${IMAGE_ROOTFS}/etc/passwd
 } 
+
+# allow openssh accept login with empty password string
+openssh_allow_empty_password () {
+	if [ -e ${IMAGE_ROOTFS}${sysconfdir}/ssh/sshd_config ]; then
+		sed -i 's#.*PermitEmptyPasswords.*#PermitEmptyPasswords yes#' ${IMAGE_ROOTFS}${sysconfdir}/ssh/sshd_config
+	fi
+}
 
 # Turn any symbolic /sbin/init link into a file
 remove_init_link () {
