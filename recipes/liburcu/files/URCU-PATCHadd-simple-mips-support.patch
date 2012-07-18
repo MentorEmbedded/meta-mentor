@@ -1,0 +1,160 @@
+Add a simple URCU implementation for MIPS for the explicit purpose of
+using it with UST.
+
+The simple implementation was borrowed from the ARM specific
+architecture implementation that already existed in URCU.
+
+Signed-off-by: Jason Wessel <jason.wessel <at> windriver.com>
+---
+ README                   |   13 ++++++-----
+ configure.ac             |    1 +
+ urcu/arch/mips.h         |   54 ++++++++++++++++++++++++++++++++++++++++++++++
+ urcu/uatomic/mips.h |   50 ++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 112 insertions(+), 6 deletions(-)
+ create mode 100644 urcu/arch/mips.h
+ create mode 100644 urcu/uatomic/mips.h
+
+diff --git a/README b/README
+index f7f0dec..fdfdcd5 100644
+--- a/README
++++ b/README
+@@ -24,11 +24,12 @@
+ ARCHITECTURES SUPPORTED
+ -----------------------
+ 
+-Currently, x86 (i386, i486, i586, i686), x86 64-bit, PowerPC 32/64, S390, S390x,
+-ARM, Alpha, ia64 and Sparcv9 32/64 are supported. Only tested on Linux so
+-far, but should theoretically work on other operating systems.
++Currently, x86 (i386, i486, i586, i686), x86 64-bit, MIPS, PowerPC
++32/64, S390, S390x, ARM, Alpha, ia64 and Sparcv9 32/64 are
++supported. Only tested on Linux so far, but should theoretically work
++on other operating systems.
+ 
+-ARM depends on running a Linux kernel 2.6.15 or better.
++ARM and MIPS depend on running a Linux kernel 2.6.15 or better.
+ 
+ The gcc compiler versions 3.3, 3.4, 4.0, 4.1, 4.2, 4.3, 4.4 and 4.5 are
+ supported, with the following exceptions:
+@@ -45,10 +46,10 @@
+   therefore not compatible with liburcu on x86 32-bit (i386, i486, i586, i686).
+   The problem has been reported to the gcc community:
+     http://www.mail-archive.com/gcc-bugs@gcc.gnu.org/msg281255.html
+ - gcc 3.3 cannot match the "xchg" instruction on 32-bit x86 build.
+   See: http://kerneltrap.org/node/7507
+-- Alpha, ia64 and ARM architectures depend on 4.x gcc with atomic builtins
+-  support.
++- Alpha, ia64, MIPS and ARM architectures depend on 4.x gcc with
++  atomic builtins support.
+ 
+ For developers using the git tree:
+ 
+diff --git a/configure.ac b/configure.ac
+index 3c61abc..1a51c68 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -54,6 +54,7 @@ case $host_cpu in
+ 	alpha*) ARCHTYPE="alpha" ;;
+ 	ia64) ARCHTYPE="gcc" ;;
+ 	arm*) ARCHTYPE="arm" ;;
++	mips*) ARCHTYPE="mips" ;;
+ 	*) ARCHTYPE="unknown";;
+ esac
+
+diff --git a/urcu/arch/mips.h b/urcu/arch/mips.h
+new file mode 100644
+index 0000000..25e033c
+--- /dev/null
++++ b/urcu/arch/mips.h
+@@ -0,0 +1,54 @@
++#ifndef _URCU_ARCH_MIPS_H
++#define _URCU_ARCH_MIPS_H
++
++/*
++ * arch_mips.h: trivial definitions for the MIPS architecture.
++ *
++ * Copyright (c) 2010 Paul E. McKenney, IBM Corporation.
++ * Copyright (c) 2009 Mathieu Desnoyers <mathieu.desnoyers <at> efficios.com>
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#include <urcu/compiler.h>
++#include <urcu/config.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#include <stdlib.h>
++#include <sys/time.h>
++
++typedef unsigned long long cycles_t;
++
++static inline cycles_t caa_get_cycles (void)
++{
++	cycles_t thetime;
++	struct timeval tv;
++
++	if (gettimeofday(&tv, NULL) != 0)
++		return 0;
++	thetime = ((cycles_t)tv.tv_sec) * 1000000ULL + ((cycles_t)tv.tv_usec);
++	return (cycles_t)thetime;
++}
++
++#ifdef __cplusplus
++}
++#endif
++
++#include <urcu/arch/generic.h>
++
++#endif /* _URCU_ARCH_MIPS_H */
+diff --git a/urcu/uatomic/mips.h b/urcu/uatomic/mips.h
+new file mode 100644
+index 0000000..a071fcb
+--- /dev/null
++++ b/urcu/uatomic/mips.h
+@@ -0,0 +1,31 @@
++#ifndef _URCU_ARCH_UATOMIC_MIPS_H
++#define _URCU_ARCH_UATOMIC_MIPS_H
++
++/*
++ * Atomics for MIPS.  This approach is usable on kernels back to 2.6.15.
++ *
++ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
++ * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
++ * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
++ * Copyright (c) 2009      Mathieu Desnoyers
++ * Copyright (c) 2010      Paul E. McKenney, IBM Corporation
++ *			   (Adapted from uatomic_arch_ppc.h)
++ *
++ * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
++ * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
++ *
++ * Permission is hereby granted to use or copy this program
++ * for any purpose,  provided the above notices are retained on all copies.
++ * Permission to modify the code and to distribute modified code is granted,
++ * provided the above notices are retained, and a notice that the code was
++ * modified is included with the above copyright notice.
++ *
++ * Code inspired from libuatomic_ops-1.2, inherited in part from the
++ * Boehm-Demers-Weiser conservative garbage collector.
++ */
++
++#include <urcu/compiler.h>
++#include <urcu/system.h>
++#include <urcu/uatomic/generic.h>
++
++#endif /* _URCU_ARCH_UATOMIC_MIPS_H */
+--
