@@ -1,3 +1,5 @@
-PRINC := "${@int(PRINC) + 1}"
+PRINC := "${@int(PRINC) + 2}"
 
-EXTRA_OECONF += "'V_RPATH_OPT='"
+do_configure_prepend () {
+    sed -i -e's,^V_RPATH_OPT=.*$,V_RPATH_OPT=,' ${S}/pcap-config.in
+}
