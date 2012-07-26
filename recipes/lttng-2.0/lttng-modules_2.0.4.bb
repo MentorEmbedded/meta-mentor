@@ -14,8 +14,8 @@ PR = "r0"
 
 SRC_URI = "http://lttng.org/files/${PN}/${PN}-${PV}.tar.bz2\
            file://lttng-modules-replace-KERNELDIR-with-KERNEL_SRC.patch"
-SRC_URI[md5sum] = "9d3ec7a1c9e3c5255c9c5fcd5c7f1ade"
-SRC_URI[sha256sum] = "0fb4f537c3f1abc3a420142cb1c7ad9e93a3121b6995a0cc137862798a8bbe86"
+SRC_URI[md5sum] = "e2f07c0eb40a0d8027de17f4dd7ebe12"
+SRC_URI[sha256sum] = "f00116c388289192774c774581a651832be094aeb6da2f2c0f9c9e275fed2d14"
 
 export INSTALL_MOD_DIR="kernel/lttng-modules"
 export KERNEL_SRC="${STAGING_KERNEL_DIR}"
