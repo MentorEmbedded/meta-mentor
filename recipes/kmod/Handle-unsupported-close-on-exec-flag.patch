@@ -1,0 +1,60 @@
+Index: git/libkmod/libkmod-config.c
+===================================================================
+--- git.orig/libkmod/libkmod-config.c	2012-07-23 16:13:44.000000000 +0300
++++ git/libkmod/libkmod-config.c	2012-07-23 16:15:53.000000000 +0300
+@@ -33,6 +33,10 @@
+ #include "libkmod.h"
+ #include "libkmod-private.h"
+ 
++#ifndef O_CLOEXEC
++#define O_CLOEXEC 0
++#endif
++
+ struct kmod_alias {
+ 	char *name;
+ 	char modname[];
+Index: git/libkmod/libkmod-file.c
+===================================================================
+--- git.orig/libkmod/libkmod-file.c	2012-07-23 16:13:44.000000000 +0300
++++ git/libkmod/libkmod-file.c	2012-07-23 16:15:57.000000000 +0300
+@@ -31,6 +31,10 @@
+ #include "libkmod.h"
+ #include "libkmod-private.h"
+ 
++#ifndef O_CLOEXEC
++#define O_CLOEXEC 0
++#endif
++
+ #ifdef ENABLE_XZ
+ #include <lzma.h>
+ #endif
+Index: git/libkmod/libkmod-index.c
+===================================================================
+--- git.orig/libkmod/libkmod-index.c	2012-07-23 16:13:44.000000000 +0300
++++ git/libkmod/libkmod-index.c	2012-07-23 16:16:00.000000000 +0300
+@@ -31,6 +31,10 @@
+ #include "libkmod-index.h"
+ #include "macro.h"
+ 
++#ifndef O_CLOEXEC
++#define O_CLOEXEC 0
++#endif
++
+ /* index.c: module index file shared functions for modprobe and depmod */
+ 
+ #define INDEX_CHILDMAX 128
+Index: git/libkmod/libkmod-module.c
+===================================================================
+--- git.orig/libkmod/libkmod-module.c	2012-07-23 16:13:44.000000000 +0300
++++ git/libkmod/libkmod-module.c	2012-07-23 16:16:04.000000000 +0300
+@@ -40,6 +40,10 @@
+ #include "libkmod.h"
+ #include "libkmod-private.h"
+ 
++#ifndef O_CLOEXEC
++#define O_CLOEXEC 0
++#endif
++
+ /**
+  * SECTION:libkmod-module
+  * @short_description: operate on kernel modules
