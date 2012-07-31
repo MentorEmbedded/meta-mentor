@@ -59,7 +59,7 @@ PACKAGE_GROUP_host-usb = '\
     e2fsprogs-badblocks \
 '
 PACKAGE_GROUP_lttng              = 'lttng-control lttng-ust'
-PACKAGE_GROUP_lttng2             = 'lttng-tools lttng-modules lttng-ust'
+PACKAGE_GROUP_lttng2             = 'lttng-tools lttng-modules lttng2-ust'
 PACKAGE_GROUP_nas                = 'samba swat tzdata nfs-utils rpcbind'
 
 VALGRIND ?= ""
