@@ -23,4 +23,4 @@ export KERNEL_SRC="${STAGING_KERNEL_DIR}"
 # Due to liburcu not building for MIPS currently this recipe needs to
 # be limited also.
 # So here let us first suppport x86/arm/powerpc platforms now.
-COMPATIBLE_HOST = '(x86_64.*|i.86.*|arm.*|powerpc.*)-linux'
+COMPATIBLE_HOST = '(x86_64.*|i.86.*|arm.*|powerpc.*)-linux.*'
