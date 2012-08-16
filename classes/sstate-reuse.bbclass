@@ -10,23 +10,11 @@ def iter_uniq(iterable):
             seen.add(i)
             yield i
 
-def lsb_distro_identifier(d):
-    adjust = d.getVar('LSB_DISTRO_ADJUST', True)
-    adjust_func = None
-    if adjust:
-        try:
-            adjust_func = globals()[adjust]
-        except KeyError:
-            pass
-    return oe.lsb.distro_identifier(adjust_func)
-
 # Adjust mirrors so host-bound sstate packages can be fetched from them
 python sstate_reuse_setup() {
     if not isinstance(e, bb.event.ConfigParsed):
         return
     d = e.data
-
-    d.setVar('NATIVELSBSTRING', lsb_distro_identifier(d))
 
     mirrors = d.getVar('SSTATE_MIRRORS', False).replace("\\n", "\n").split("\n")
     distros = d.getVar('SSTATE_MIRROR_DISTROS', False).split()
