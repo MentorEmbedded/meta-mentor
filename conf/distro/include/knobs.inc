@@ -1,5 +1,3 @@
-DISTRO_FEATURES += "${@base_contains('KNOBS', 'x11-minimal', 'x11', '', d)}"
-
 AVAILABLE_KNOBS += "\
     audio \
     benchmark \
