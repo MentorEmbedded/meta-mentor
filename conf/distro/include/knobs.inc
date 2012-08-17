@@ -82,15 +82,7 @@ PACKAGE_GROUP_tests              = ''
 PACKAGE_GROUP_touchscreen        = 'tslib-calibrate tslib-conf tslib-tests'
 PACKAGE_GROUP_wifi               = 'wireless-tools wpa-supplicant'
 
-PACKAGE_GROUP_x11-minimal        = '\
-    ${XSERVER} \
-    dbus-x11 \
-    xinit \
-    twm \
-    xterm \
-    xclock \
-    xauth \
-    font-util \
-'
-
 PACKAGE_GROUP_inflexion          = 'libpng'
+
+# For compatibility
+PACKAGE_GROUP_x11-minimal        = '${PACKAGE_GROUP_x11-mini}'
