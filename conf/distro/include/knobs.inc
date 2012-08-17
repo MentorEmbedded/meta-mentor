@@ -9,7 +9,6 @@ AVAILABLE_KNOBS += "\
     print-server \
     router \
     tests \
-    touchscreen \
     wifi \
     x11-minimal \
     \
@@ -79,7 +78,6 @@ PACKAGE_GROUP_router             = '\
 '
 
 PACKAGE_GROUP_tests              = ''
-PACKAGE_GROUP_touchscreen        = 'tslib-calibrate tslib-conf tslib-tests'
 PACKAGE_GROUP_wifi               = 'wireless-tools wpa-supplicant'
 
 PACKAGE_GROUP_inflexion          = 'libpng'
