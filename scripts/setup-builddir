@@ -94,7 +94,9 @@ if [ ! -e $BUILDDIR/conf/local.conf ]; then
 fi
 
 if [ ! -e $BUILDDIR/conf/bblayers.conf ]; then
-    cp $TEMPLATECONF/bblayers.conf.sample $BUILDDIR/conf/bblayers.conf
+    echo "OEDIR = \"$OEDIR\"" >$BUILDDIR/conf/bblayers.conf
+    echo >>$BUILDDIR/conf/bblayers.conf
+    cat $TEMPLATECONF/bblayers.conf.sample >>$BUILDDIR/conf/bblayers.conf
     echo "You had no bblayers.conf file. This configuration file has therefore been"
     echo "created for you with some default values."
 

@@ -88,16 +88,13 @@ mel_setup () {
     unset force_overwrite
 
     if [ -z "$OEDIR" ]; then
-        export OEDIR=$(dirname $_layerdir)
+        OEDIR=$(cd $(dirname $_layerdir) && pwd)
     fi
-    export OEDIR=`readlink -f $OEDIR`
 
     # Setup the shell environment
     OEROOT=$OEDIR/oe-core
     . $OEROOT/scripts/oe-buildenv-internal $BUILDDIR $OEDIR/bitbake
     unset OEROOT
-
-    BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE OEDIR"
 
     MACHINE=$1
     if [ -n "$MACHINE" ]; then
@@ -160,7 +157,7 @@ else
     else
         _layerdir=$PWD
     fi
-    _layerdir=$(readlink -f $_layerdir)
+    _layerdir=$(cd $_layerdir && pwd)
     mel_setup "$@"
     unset _layerdir
     unset -f mel_setup mel_usage mel_prompt_machine
