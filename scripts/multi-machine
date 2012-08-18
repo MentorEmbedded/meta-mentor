@@ -12,19 +12,24 @@ usage () {
     echo >&2 "Options:"
     echo >&2 "  -b BUILDDIR           Specify the build directory. (default: build)"
     echo >&2 "  -o BITBAKE_ARGUMENTS  Specify bitbake args (default: core-image-base)"
+    echo >&2 "  -k                    Continue when one build fails"
     echo >&2 "  -h                    Show this usage information"
     exit 1
 }
 
 builddir=build
 bitbakeopts=core-image-base
-while getopts b:o:h opt; do
+continue=0
+while getopts b:o:kh opt; do
     case "$opt" in
         b)
             builddir="$OPTARG"
             ;;
         o)
             bitbakeopts="$OPTARG"
+            ;;
+        k)
+            continue=1
             ;;
         \?|h)
             usage
@@ -42,7 +47,16 @@ bitbakeopts="-k $bitbakeopts"
 topdir=$PWD
 for machine; do
     . $(dirname $0)/../setup-environment -f -b $builddir $machine >/dev/null
-    echo Running bitbake $bitbakeopts for $machine..
+    echo "Running bitbake $bitbakeopts for $machine.."
     eval bitbake $bitbakeopts
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        if [ $continue -eq 0 ]; then
+            echo >&2 "Build for $machine failed with exit code $ret, aborting"
+            exit $ret
+        else
+            echo >&2 "Warning: build for $machine failed with exit code $ret"
+        fi
+    fi
     cd $topdir
 done
