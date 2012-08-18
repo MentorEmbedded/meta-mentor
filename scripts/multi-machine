@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# Copyright 2007-2012 Mentor Graphics Corporation
+#
+# This file is licensed under the terms of the GNU General Public License
+# version 2.  This program  is licensed "as is" without any warranty of any
+# kind, whether express or implied.
+
+usage () {
+    echo >&2 "$0 [OPTIONS...] MACHINE..."
+    echo >&2
+    echo >&2 "Options:"
+    echo >&2 "  -b BUILDDIR           Specify the build directory. (default: build)"
+    echo >&2 "  -o BITBAKE_ARGUMENTS  Specify bitbake args (default: core-image-base)"
+    echo >&2 "  -h                    Show this usage information"
+    exit 1
+}
+
+builddir=build
+bitbakeopts=core-image-base
+while getopts b:o:h opt; do
+    case "$opt" in
+        b)
+            builddir="$OPTARG"
+            ;;
+        o)
+            bitbakeopts="$OPTARG"
+            ;;
+        \?|h)
+            usage
+            ;;
+    esac
+done
+shift $(expr $OPTIND - 1)
+unset OPTIND
+
+if [ $# -eq 0 ]; then
+    usage
+fi
+
+bitbakeopts="-k $bitbakeopts"
+topdir=$PWD
+for machine; do
+    . $(dirname $0)/../setup-environment -f -b $builddir $machine >/dev/null
+    echo Running bitbake $bitbakeopts for $machine..
+    eval bitbake $bitbakeopts
+    cd $topdir
+done

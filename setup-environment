@@ -1,0 +1,167 @@
+#!/bin/sh
+#
+# Copyright 2007-2012 Mentor Graphics Corporation
+#
+# This file is licensed under the terms of the GNU General Public License
+# version 2.  This program  is licensed "as is" without any warranty of any
+# kind, whether express or implied.
+
+mel_usage () {
+    cat >&2 <<END
+Usage: $0 [OPTIONS...] [MACHINE]"
+
+When operating from a MEL install, this script will use the local.conf.sample
+and bblayers.conf.sample from the installed BSP. If multiple BSPs are
+installed, you must specify MACHINE, and the script will use the templates
+from that BSP.
+
+When no installed BSP is available, MACHINE is required, and this script will
+set up the build directory with a base set of layers + all layers which
+include the machine .conf file for this machine, sorted by layer recipe
+priority.
+
+If the build directory already exists and is configured, you can leave MACHINE
+unspecified, and the script will set you up for that build directory without
+changing its configuration.
+
+Options:
+  -b BUILDDIR  Specify the build directory to create (default: 'build')
+  -o OEDIR     Specify the root of the MEL install, where you can find bitbake and the layers
+  -f           Force overwrite of existing configuration files in the build
+               directory. This includes local.conf and bblayers.conf, but not
+               site.conf
+  -h           Show this usage information
+END
+}
+
+mel_prompt_machine () {
+    machine_count=0
+    for machine; do
+        machine_count=`expr $machine_count + 1`
+        eval machine_$machine_count=$machine
+        eval echo \$machine_$machine_count
+        printf "%s) %s\n" $machine_count $machine
+    done
+    while [ -z "$MACHINE" ]; do
+        printf ") "
+        read num
+        MACHINE=`eval echo \\$machine_$num`
+    done
+    for i in `seq 0 $machine_count`; do
+        eval unset \$machine_$i
+    done
+    unset machine_count
+}
+
+mel_setup () {
+    BUILDDIR=
+    OEDIR=
+    force_overwrite=0
+    while getopts b:o:f opt; do
+        case "$opt" in
+            b)
+                BUILDDIR="$OPTARG"
+                ;;
+            o)
+                OEDIR="$OPTARG"
+                ;;
+            f)
+                force_overwrite=1
+                ;;
+            \?|h)
+                mel_usage
+                return 1
+                ;;
+        esac
+    done
+    shift $(expr $OPTIND - 1)
+    OPTIND=1
+
+    if [ -z $BUILDDIR ]; then
+        BUILDDIR=$PWD/build
+    fi
+    export BUILDDIR
+
+    if [ $force_overwrite -eq 1 ]; then
+        rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
+    fi
+    unset force_overwrite
+
+    if [ -z "$OEDIR" ]; then
+        export OEDIR=$(dirname $_layerdir)
+    fi
+    export OEDIR=`readlink -f $OEDIR`
+
+    # Setup the shell environment
+    OEROOT=$OEDIR/oe-core
+    . $OEROOT/scripts/oe-buildenv-internal $BUILDDIR $OEDIR/bitbake
+    unset OEROOT
+
+    BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE OEDIR"
+
+    MACHINE=$1
+    if [ -n "$MACHINE" ]; then
+        if [ -e $OEDIR/$MACHINE/binary ]; then
+            # User specified machine and we have the binary content for this BSP
+            TEMPLATECONF=$OEDIR/$MACHINE/conf $_layerdir/scripts/setup-builddir $BUILDDIR
+        else
+            # User specified machine, without the binary content -- search
+            TEMPLATECONF=$_layerdir/conf $_layerdir/scripts/setup-builddir $BUILDDIR $MACHINE
+        fi
+    else
+        if ! [ -e $BUILDDIR/conf/local.conf -a -e $BUILDDIR/conf/bblayers.conf ]; then
+            binary_dirs="`echo $OEDIR/*/binary`" 2>/dev/null
+            if [ "`echo $binary_dirs | wc -w`" -gt 1 ]; then
+                mel_prompt_machine `echo $binary_dirs | sed -e's,$OEDIR/,,g; s,/binary,,g'`
+                TEMPLATECONF=$OEDIR/$MACHINE/conf $_layerdir/scripts/setup-builddir $BUILDDIR
+            else
+                if [ -e "$binary_dirs" ]; then
+                    # Found single installed BSP, using its templates
+                    TEMPLATECONF=`dirname $binary_dirs`/conf $_layerdir/scripts/setup-builddir $BUILDDIR
+                else
+                    echo >&2 "Error: no installed bsp, must specify MACHINE"
+                    echo >&2
+                    mel_usage
+                    return 1
+                fi
+            fi
+            unset binary_dirs
+        fi
+    fi
+
+    cd $BUILDDIR
+
+    cat <<END
+
+You can now run 'bitbake <target>'
+
+Common targets are:
+    core-image-minimal
+    core-image-base
+    core-image-sato
+    meta-toolchain
+    meta-toolchain-sdk
+    adt-installer
+    meta-ide-support
+
+You can also run generated qemu images with a command like 'runqemu qemux86'
+
+To customize the configuration, open conf/local.conf in your editor of choice.
+END
+}
+
+if [ -z "$ZSH_NAME" ] && [ "`basename $0`" = "setup-environment" ]; then
+    echo >&2 "Error: This script needs to be sourced."
+else
+    if [ -n "$ZSH_NAME" ]; then
+        _layerdir=$(dirname $0)
+    elif [ -n "$BASH_SOURCE" ]; then
+        _layerdir=$(dirname $BASH_SOURCE)
+    else
+        _layerdir=$PWD
+    fi
+    _layerdir=$(readlink -f $_layerdir)
+    mel_setup "$@"
+    unset _layerdir
+    unset -f mel_setup mel_usage mel_prompt_machine
+fi

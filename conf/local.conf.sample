@@ -1,0 +1,141 @@
+# What distribution to use. We default to the Mentor Embedded Linux distro.
+# To build smaller images, you can choose to use the 'mel-tiny' distro, which
+# is based on poky-tiny.
+DISTRO = 'mel'
+
+# You need to select a specific machine to target the build with. There are a selection
+# of emulated machines available which can boot and run in the QEMU emulator:
+# qemuarm, qemumips, qemuppc, qemux86, qemux86-64.
+MACHINE ??= "qemux86"
+
+# The path to the installed sourcery toolchain. This defaults to using the one
+# from the CodeBench we're installed in.
+#EXTERNAL_TOOLCHAIN ?= "/path/to/toolchain"
+
+# The CORE_IMAGE_EXTRA_INSTALL variable allows extra individual packages to be
+# added to any of the "core" images (e.g. core-image-base,
+# core-image-minimal).
+#CORE_IMAGE_EXTRA_INSTALL = "nano"
+
+# The EXTRA_IMAGE_FEATURES variable allows groups of packages to be added to
+# the generated images. Some of these options are added to certain image types
+# automatically. The variable can contain the following options:
+#
+#  "dbg-pkgs"       - add -dbg packages for all installed packages
+#                     (adds symbol information for debugging/profiling)
+#  "dev-pkgs"       - add -dev packages for all installed packages
+#                     (useful if you want to develop against libs in the image)
+#  "tools-sdk"      - add development tools (gcc, make, pkgconfig etc.)
+#  "tools-debug"    - add debugging tools (gdb, strace)
+#  "tools-profile"  - add profiling tools (oprofile, exmap, lttng valgrind (x86 only))
+#  "tools-testapps" - add useful testing tools (ts_print, aplay, arecord etc.)
+#  "debug-tweaks"   - make an image suitable for development
+#                     e.g. ssh root access has a blank password
+#  "x11-mini"       - minimal x11 setup, with window manager and terminal
+#
+# Mentor provides a number of additional groups:
+#
+#  audio benchmark bluetooth framebuffer host-diskdrive host-usb nas
+#  print-server router tests touchscreen wifi x11-minimal lttng lttng2
+#
+# There are other options that can be used here, see
+# meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
+# details.
+
+EXTRA_IMAGE_FEATURES = "debug-tweaks"
+
+# How many tasks bitbake should run in parallel
+#BB_NUMBER_THREADS = "4"
+
+# How many jobs 'make' should run in parallel when compiling
+#PARALLEL_MAKE = "-j 4"
+
+# which is the MEL install directory. If you do not have write access to the
+# MEL install, a sane option for this is ${TOPDIR}/downloads.
+DL_DIR ?= "${OEDIR}/downloads"
+
+# BitBake has the capability to accelerate builds based on previously built
+# output. This is done using "shared state" files which can be thought of as
+# cache objects and this variable determines where those files are placed.
+#
+# The default is a cached-binaries directory under OEDIR which is the MEL
+# install directory. If you do not have write access to the MEL install,
+# a sane option for this is ${TOPDIR}/cached-binaries.
+SSTATE_DIR ?= "${OEDIR}/cached-binaries"
+
+# Where to place the build output and temporary artifacts
+#
+# The default value follows:
+#TMPDIR = "${TOPDIR}/tmp"
+
+#
+# Package Management configuration
+#
+# This variable lists which packaging formats to enable. Multiple package backends
+# can be enabled at once and the first item listed in the variable will be used
+# to generate the root filesystems.
+#
+#  - 'package_deb' for debian style deb files
+#  - 'package_ipk' for ipk files are used by opkg (a debian style embedded package manager)
+#  - 'package_rpm' for rpm style packages
+#
+# We default to ipk:
+#PACKAGE_CLASSES ?= "package_ipk"
+
+# SDK/ADT target architecture
+#
+# This variable specified the architecture to build SDK/ADT items for and means
+# you can build the SDK packages for architectures other than the machine you are
+# running the build on (i.e. building i686 packages on an x86_64 host._
+# Supported values are i686 and x86_64
+#SDKMACHINE ?= "i686"
+
+# Additional image features
+#
+# The following is a list of additional classes to use when building images which
+# enable extra features. Some available options which can be included in this variable
+# are:
+#   - 'image-mklibs' to reduce shared library files size for an image
+#   - 'image-prelink' in order to prelink the filesystem image
+#   - 'image-swab' to perform host system intrusion detection
+# NOTE: if listing mklibs & prelink both, then make sure mklibs is before prelink
+# NOTE: mklibs also needs to be explicitly enabled for a given image, see local.conf.extended
+USER_CLASSES ?= "image-mklibs image-prelink"
+
+# Interactive shell configuration
+#
+# Under certain circumstances the system may need input from you and to do this it
+# can launch an interactive shell. It needs to do this since the build is
+# multithreaded and needs to be able to handle the case where more than one parallel
+# process may require the user's attention. The default is iterate over the available
+# terminal types to find one that works.
+#
+# Examples of the occasions this may happen are when resolving patches which cannot
+# be applied, to use the devshell or the kernel menuconfig
+#
+# Supported values are auto, gnome, xfce, rxvt, screen, konsole (KDE 3.x only), none
+# Note: currently, Konsole support only works for KDE 3.x due to the way
+# newer Konsole versions behave
+#OE_TERMINAL = "auto"
+
+# By default disable interactive patch resolution (tasks will just fail instead):
+PATCHRESOLVE = "noop"
+
+# Shared-state files from other locations
+#
+# This variable can be used to configure the system to search other mirror
+# locations for these objects before it builds the data itself.
+#
+# This can be a filesystem directory, or a remote url such as http or ftp. These
+# would contain the sstate-cache results from previous builds (possibly from other
+# machines). This variable works like fetcher MIRRORS/PREMIRRORS and points to the
+# cache locations to check for the shared objects.
+#SSTATE_MIRRORS ?= "\
+#  file://.* http://someserver.tld/share/sstate/PATH \n \
+#  file://.* file:///some/local/dir/sstate/PATH\n\
+#"
+
+# CONF_VERSION is increased each time build/conf/ changes incompatibly and is used to
+# track the version of this file when it was generated. This can safely be ignored if
+# this doesn't mean anything to you.
+CONF_VERSION = "1"

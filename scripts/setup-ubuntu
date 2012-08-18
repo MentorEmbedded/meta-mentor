@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Copyright 2007-2012 Mentor Graphics Corporation
+#
+# This file is licensed under the terms of the GNU General Public License
+# version 2.  This program  is licensed "as is" without any warranty of any
+# kind, whether express or implied.
+
+echo "Verifying access to sudo, please enter your password if prompted."
+sudo -v
+if [ $? -ne 0 ]; then
+        echo "Could not use sudo, exiting"
+        exit 1
+fi
+
+PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release"
+# These are needed for the qemu-native build
+PKGS="$PKGS libgl1-mesa-dev libglu1-mesa-dev libsdl1.2-dev"
+
+echo "Installing packages required to build Mentor Embedded Linux"
+
+sudo apt-get -y install $PKGS
+
+echo "Setup complete"

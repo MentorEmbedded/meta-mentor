@@ -1,0 +1,116 @@
+#!/bin/sh
+#
+# Copyright 2007-2012 Mentor Graphics Corporation
+#
+# This file is licensed under the terms of the GNU General Public License
+# version 2.  This program  is licensed "as is" without any warranty of any
+# kind, whether express or implied.
+#
+# Usage: setup-builddir [BUILDDIR [MACHINE]]
+#
+# If machine is specified, the script will search for layers and add any
+# layers with the machine configuration for this machine to the base layers
+# defined in the local.conf.sample in the template directory.
+#
+# By default, we set BB_NUMBER_THREADS to $NCPU * 1.5 and PARALLEL_MAKE to
+# $NCPU * 2
+JOBS_FACTOR="2"
+THREADS_FACTOR="3 / 2"
+
+abspath () {
+    _path="$1"
+    if [ -n "${_path##/*}" ]; then
+        _path="$PWD/$1"
+    fi
+    echo "$_path"
+}
+
+OEDIR=$(readlink -f $(dirname $0)/../..)
+BUILDDIR=$1
+if [ -z $BUILDDIR ]; then
+    BUILDDIR=$PWD/build
+fi
+BUILDDIR=$(abspath $BUILDDIR)
+MACHINE=$2
+
+find_layers () {
+    for i in $OEDIR/*/conf/layer.conf $OEDIR/*/*/conf/layer.conf \
+             $PWD/*/conf/layer.conf $PWD/*/*/conf/layer.conf; do
+        if [ -e "$i" ]; then
+            dirname `dirname $i`
+        fi
+    done | sort -u
+}
+machine_layers () {
+    find_layers | while read layer; do
+        if [ -e $layer/conf/machine/$1.conf ]; then
+            echo $layer
+        fi
+    done
+}
+base_layers () {
+    # Extract base layer list from bblayers.conf.sample
+    sed -n '/^BBLAYERS/{s/^[^"]*"//; :start; /\\$/{s/ *\\$//; p; n; b start}; s/"//; p}' $TEMPLATECONF/bblayers.conf.sample | sed -e"s,\${OEDIR},$OEDIR,; s,##COREBASE##,$OEDIR/oe-core,g" | sort -u | while read layer; do
+        if [ -n "$layer" -a -e "$layer" ]; then
+            echo $layer
+        fi
+    done
+}
+layer_priority () {
+    sed -n "s,BBFILE_PRIORITY_[^ ]* *= *[\"']\(.*\)[\"']$,\1,p" $1/conf/layer.conf
+}
+prioritized_layers () {
+    layerfile=`mktemp`
+    trap "rm -f $layerfile" EXIT
+
+    machine_layers $MACHINE >>$layerfile
+    if [ `wc -l $layerfile|awk '{print $1}'` = 0 ]; then
+        echo >&2 "Unable to find machine .conf for $MACHINE"
+        exit 2
+    fi
+    base_layers >>$layerfile
+
+    cat $layerfile | sort -u | while read layer; do
+        priority=`layer_priority $layer`
+        echo $layer $priority
+    done | sort -n -k2 -r | cut -d" " -f1 | sed "s,$OEDIR/,\${OEDIR}/,; s,$PWD,\${TOPDIR}/..,"
+}
+
+mkdir -p $BUILDDIR/conf
+if [ ! -e $BUILDDIR/conf/local.conf ]; then
+    cp $TEMPLATECONF/local.conf.sample $BUILDDIR/conf/local.conf
+    echo "You had no local.conf file. This configuration file has therefore been"
+    echo "created for you with some default values."
+
+    if [ -n "$MACHINE" ]; then
+        sed -i -e"s/MACHINE ??=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
+    fi
+
+    NCPU=`grep -c processor /proc/cpuinfo`
+    JOBS=`expr $NCPU \* $JOBS_FACTOR`
+    THREADS=`expr $NCPU \* $THREADS_FACTOR`
+    sed -i -e"s/^#PARALLEL_MAKE =.*/PARALLEL_MAKE ?= \"-j$JOBS\"/" $BUILDDIR/conf/local.conf
+    sed -i -e"s/^#BB_NUMBER_THREADS =.*/BB_NUMBER_THREADS ?= \"$THREADS\"/" $BUILDDIR/conf/local.conf
+fi
+
+if [ ! -e $BUILDDIR/conf/bblayers.conf ]; then
+    cp $TEMPLATECONF/bblayers.conf.sample $BUILDDIR/conf/bblayers.conf
+    echo "You had no bblayers.conf file. This configuration file has therefore been"
+    echo "created for you with some default values."
+
+    if [ -n "$MACHINE" ]; then
+        # Remove existing BBLAYERS
+        sed -i -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' $BUILDDIR/conf/bblayers.conf
+        echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
+        prioritized_layers | while read layer; do
+            echo "    $layer \\" >> $BUILDDIR/conf/bblayers.conf
+        done
+        echo '"' >> $BUILDDIR/conf/bblayers.conf
+    fi
+fi
+
+if [ ! -e $BUILDDIR/conf/site.conf -a -e $TEMPLATECONF/site.conf ]; then
+    echo "You had no site.conf file, but one exists in the template directory."
+    echo "This file has been copied into your build directory."
+    cp $TEMPLATECONF/site.conf $BUILDDIR/conf/site.conf
+fi
