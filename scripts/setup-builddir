@@ -83,14 +83,14 @@ if [ ! -e $BUILDDIR/conf/local.conf ]; then
     echo "created for you with some default values."
 
     if [ -n "$MACHINE" ]; then
-        sed -i -e"s/MACHINE ??=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
+        sed -i -e"s/MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
     fi
 
     NCPU=`grep -c processor /proc/cpuinfo`
     JOBS=`expr $NCPU \* $JOBS_FACTOR`
     THREADS=`expr $NCPU \* $THREADS_FACTOR`
-    sed -i -e"s/^#PARALLEL_MAKE =.*/PARALLEL_MAKE ?= \"-j$JOBS\"/" $BUILDDIR/conf/local.conf
-    sed -i -e"s/^#BB_NUMBER_THREADS =.*/BB_NUMBER_THREADS ?= \"$THREADS\"/" $BUILDDIR/conf/local.conf
+    sed -i -e"s/^#*PARALLEL_MAKE *?*=.*/PARALLEL_MAKE ?= \"-j$JOBS\"/" $BUILDDIR/conf/local.conf
+    sed -i -e"s/^#*BB_NUMBER_THREADS *?*=.*/BB_NUMBER_THREADS ?= \"$THREADS\"/" $BUILDDIR/conf/local.conf
 fi
 
 if [ ! -e $BUILDDIR/conf/bblayers.conf ]; then
