@@ -1,0 +1,33 @@
+#!/bin/sh -e
+
+find_builddir() {
+    curdir=$PWD
+    while [ -n "$PWD" -a "$PWD" != "/" ]; do
+        if [ -e $PWD/conf/local.conf ]; then
+            echo $PWD
+        fi
+        cd ..
+    done
+    cd $curdir
+}
+
+
+export BUILDDIR=$(find_builddir)
+if [ -z "$BUILDDIR" ]; then
+    echo >&2 "Error: must run bitbake from under your build directory"
+    exit 1
+fi
+
+wrapperdir=$(cd $(dirname $0) && pwd)
+PATH=$(echo $PATH|sed -e"s,$wrapperdir:,,g")
+
+# This bit assumes a particular layout, but it won't hurt anything, and you
+# can still use this script by setting your PATH up yourself:
+#
+# PATH=/path/to/meta-mentor/scripts:/path/to/oe-core/scripts:/path/to/bitbake/bin:$PATH
+layerdir=$(dirname $wrapperdir)
+oedir=$(dirname $layerdir)
+PATH=$oedir/oe-core/scripts:$oedir/bitbake/bin:$PATH
+
+cd $BUILDDIR
+exec bitbake "$@"
