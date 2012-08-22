@@ -16,7 +16,6 @@ AVAILABLE_KNOBS += "\
     ${@base_contains('MACHINE_FEATURES', 'lttng2', 'lttng2', '', d)} \
 "
 
-SWAN ?= "strongswan"
 XSERVER ?= "xserver-xorg xf86-input-evdev xf86-input-mouse xf86-input-keyboard xf86-video-fbdev"
 
 PACKAGE_GROUP_sb-base = '\
@@ -71,11 +70,6 @@ PACKAGE_GROUP_native-development = '\
 '
 
 PACKAGE_GROUP_print-server       = 'samba swat'
-PACKAGE_GROUP_router             = '\
-    ${SWAN} \
-    ipsec-tools iproute2 iptables tcp-wrappers rng-tools \
-    ppp rp-pppoe \
-'
 
 PACKAGE_GROUP_tests              = ''
 PACKAGE_GROUP_wifi               = 'wireless-tools wpa-supplicant'
