@@ -25,7 +25,7 @@ abspath () {
     echo "$_path"
 }
 
-OEDIR=$(cd $(dirname $0)/../.. && pwd)
+OEDIR=$(cd ${0%/*}/../.. && pwd)
 BUILDDIR=$1
 if [ -z $BUILDDIR ]; then
     BUILDDIR=$PWD/build
@@ -37,7 +37,7 @@ find_layers () {
     for i in $OEDIR/*/conf/layer.conf $OEDIR/*/*/conf/layer.conf \
              $PWD/*/conf/layer.conf $PWD/*/*/conf/layer.conf; do
         if [ -e "$i" ]; then
-            dirname `dirname $i`
+            echo $i | sed 's,/conf/layer.conf$,,'
         fi
     done | sort -u
 }

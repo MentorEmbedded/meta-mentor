@@ -18,15 +18,15 @@ if [ -z "$BUILDDIR" ]; then
     exit 1
 fi
 
-wrapperdir=$(cd $(dirname $0) && pwd)
-PATH=$(echo $PATH|sed -e"s,$wrapperdir:,,g")
+wrapperdir=$(cd ${0%/*} && pwd)
+PATH=$(echo $PATH | sed -e"s,$wrapperdir:,,g")
 
 # This bit assumes a particular layout, but it won't hurt anything, and you
 # can still use this script by setting your PATH up yourself:
 #
 # PATH=/path/to/meta-mentor/scripts:/path/to/oe-core/scripts:/path/to/bitbake/bin:$PATH
-layerdir=$(dirname $wrapperdir)
-oedir=$(dirname $layerdir)
+layerdir=${wrapperdir%/*}
+oedir=${layerdir%/*}
 PATH=$oedir/oe-core/scripts:$oedir/bitbake/bin:$PATH
 
 BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE MACHINE http_proxy ftp_proxy https_proxy \
