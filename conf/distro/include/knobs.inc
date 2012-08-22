@@ -30,7 +30,6 @@ PACKAGE_GROUP_benchmark = '\
 PACKAGE_GROUP_framebuffer        = 'psplash'
 PACKAGE_GROUP_lttng              = 'lttng-control lttng-ust'
 PACKAGE_GROUP_lttng2             = 'lttng-tools lttng-modules lttng2-ust'
-PACKAGE_GROUP_nas                = 'samba swat tzdata task-core-nfs-server'
 
 VALGRIND ?= ""
 VALGRIND_powerpc ?= "valgrind"
@@ -43,8 +42,6 @@ PACKAGE_GROUP_native-development = '\
     m4 u-boot-mkimage dtc ${VALGRIND} \
 '
 
-PACKAGE_GROUP_print-server       = 'samba swat'
-PACKAGE_GROUP_tests              = ''
 PACKAGE_GROUP_inflexion          = 'libpng'
 
 # For compatibility
@@ -55,3 +52,4 @@ PACKAGE_GROUP_host-diskdrive  = 'task-base-ext2 e2fsprogs-tune2fs e2fsprogs-badb
 PACKAGE_GROUP_host-usb        = 'task-base-ext2 e2fsprogs-tune2fs e2fsprogs-badblocks'
 PACKAGE_GROUP_wifi            = 'task-base-wifi'
 PACKAGE_GROUP_x11-minimal     = '${PACKAGE_GROUP_x11-mini}'
+PACKAGE_GROUP_tests              = ''
