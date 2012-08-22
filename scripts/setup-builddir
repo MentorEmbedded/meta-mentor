@@ -82,15 +82,18 @@ if [ ! -e $BUILDDIR/conf/local.conf ]; then
     echo "You had no local.conf file. This configuration file has therefore been"
     echo "created for you with some default values."
 
-    if [ -n "$MACHINE" ]; then
-        sed -i -e"s/MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
-    fi
-
     NCPU=`grep -c processor /proc/cpuinfo`
     JOBS=`expr $NCPU \* $JOBS_FACTOR`
     THREADS=`expr $NCPU \* $THREADS_FACTOR`
     sed -i -e"s/^#*PARALLEL_MAKE *?*=.*/PARALLEL_MAKE ?= \"-j$JOBS\"/" $BUILDDIR/conf/local.conf
     sed -i -e"s/^#*BB_NUMBER_THREADS *?*=.*/BB_NUMBER_THREADS ?= \"$THREADS\"/" $BUILDDIR/conf/local.conf
+else
+    if [ -n "$MACHINE" ]; then
+        echo "Reconfiguring existing local.conf for $MACHINE"
+    fi
+fi
+if [ -n "$MACHINE" ]; then
+    sed -i -e"s/MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
 fi
 
 if [ ! -e $BUILDDIR/conf/bblayers.conf ]; then
@@ -99,16 +102,20 @@ if [ ! -e $BUILDDIR/conf/bblayers.conf ]; then
     cat $TEMPLATECONF/bblayers.conf.sample >>$BUILDDIR/conf/bblayers.conf
     echo "You had no bblayers.conf file. This configuration file has therefore been"
     echo "created for you with some default values."
-
+else
     if [ -n "$MACHINE" ]; then
-        # Remove existing BBLAYERS
-        sed -i -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' $BUILDDIR/conf/bblayers.conf
-        echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
-        prioritized_layers | while read layer; do
-            echo "    $layer \\" >> $BUILDDIR/conf/bblayers.conf
-        done
-        echo '"' >> $BUILDDIR/conf/bblayers.conf
+        echo "Reconfiguring existing bblayers.conf for $MACHINE"
     fi
+fi
+
+if [ -n "$MACHINE" ]; then
+    # Remove existing BBLAYERS
+    sed -i -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' $BUILDDIR/conf/bblayers.conf
+    echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
+    prioritized_layers | while read layer; do
+        echo "    $layer \\" >> $BUILDDIR/conf/bblayers.conf
+    done
+    echo '"' >> $BUILDDIR/conf/bblayers.conf
 fi
 
 if [ ! -e $BUILDDIR/conf/site.conf -a -e $TEMPLATECONF/site.conf ]; then
