@@ -15,28 +15,31 @@ MACHINE ??= "qemux86"
 # The CORE_IMAGE_EXTRA_INSTALL variable allows extra individual packages to be
 # added to any of the "core" images (e.g. core-image-base,
 # core-image-minimal).
-#CORE_IMAGE_EXTRA_INSTALL = "nano"
+#CORE_IMAGE_EXTRA_INSTALL = "nano psplash"
 
 # The EXTRA_IMAGE_FEATURES variable allows groups of packages to be added to
 # the generated images. Some of these options are added to certain image types
 # automatically. The variable can contain the following options:
 #
-#  "dbg-pkgs"       - add -dbg packages for all installed packages
-#                     (adds symbol information for debugging/profiling)
-#  "dev-pkgs"       - add -dev packages for all installed packages
-#                     (useful if you want to develop against libs in the image)
-#  "tools-sdk"      - add development tools (gcc, make, pkgconfig etc.)
-#  "tools-debug"    - add debugging tools (gdb, strace)
-#  "tools-profile"  - add profiling tools (oprofile, exmap, lttng valgrind (x86 only))
-#  "tools-testapps" - add useful testing tools (ts_print, aplay, arecord etc.)
-#  "debug-tweaks"   - make an image suitable for development
-#                     e.g. ssh root access has a blank password
-#  "x11-mini"       - minimal x11 setup, with window manager and terminal
+#  "dbg-pkgs"        - add -dbg packages for all installed packages
+#                      (adds symbol information for debugging/profiling)
+#  "dev-pkgs"        - add -dev packages for all installed packages
+#                      (useful if you want to develop against libs in the image)
+#  "tools-sdk"       - add development tools (gcc, make, pkgconfig etc.)
+#  "tools-debug"     - add debugging tools (gdb, strace)
+#  "tools-profile"   - add profiling tools (oprofile, exmap, lttng valgrind (x86 only))
+#  "tools-benchmark" - add benchmarking tools (bonnie++, netperfc, lmbench, #  etc)
+#  "tools-lttng"     - add tools for the Linux Trace Toolkit
+#  "tools-testapps"  - add useful testing tools (ts_print, aplay, arecord etc.)
+#  "debug-tweaks"    - make an image suitable for development
+#                      e.g. ssh root access has a blank password
+#  "x11-mini"        - minimal x11 setup, with window manager and terminal
 #
-# Mentor provides a number of additional groups:
+#  These are for particular roles/purposes:
 #
-#  audio benchmark bluetooth framebuffer host-diskdrive host-usb nas
-#  print-server router tests touchscreen wifi x11-minimal lttng lttng2
+#  "nas"             - add tools for a network access storage server (samba, nfs, swat)
+#  "print-server"    - add tools for a print server (samba, swat)
+#  "router"          - add tools for a router/accesspoint (ipsec-tools, iproute2, iptables, etc)
 #
 # There are other options that can be used here, see
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
