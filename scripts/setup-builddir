@@ -10,7 +10,7 @@
 #
 # If machine is specified, the script will search for layers and add any
 # layers with the machine configuration for this machine to the base layers
-# defined in the local.conf.sample in the template directory.
+# defined in the bblayers.conf.sample in the template directory.
 #
 # By default, we set BB_NUMBER_THREADS to $NCPU * 1.5 and PARALLEL_MAKE to
 # $NCPU * 2
