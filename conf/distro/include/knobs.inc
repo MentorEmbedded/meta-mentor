@@ -22,12 +22,7 @@ PACKAGE_GROUP_sb-base = '\
     kernel-vmlinux kernel-modules procps psmisc crashme ethtool \
     oprofile strace tcpdump sysstat net-tools util-linux \
 '
-PACKAGE_GROUP_benchmark = '\
-    bonnie++ netperf netperf-doc lmbench iozone3 iperf \
-    dbench tbench tiobench tiobench-doc \
-'
 
-PACKAGE_GROUP_framebuffer        = 'psplash'
 PACKAGE_GROUP_lttng              = 'lttng-control lttng-ust'
 PACKAGE_GROUP_lttng2             = 'lttng-tools lttng-modules lttng2-ust'
 
@@ -42,14 +37,15 @@ PACKAGE_GROUP_native-development = '\
     m4 u-boot-mkimage dtc ${VALGRIND} \
 '
 
-PACKAGE_GROUP_inflexion          = 'libpng'
-
 # For compatibility
 PACKAGE_GROUP_audio           = 'alsa-utils'
 PACKAGE_GROUP_audio+bluetooth = 'libasound-module-bluez'
+PACKAGE_GROUP_benchmark       = 'task-tools-benchmark'
 PACKAGE_GROUP_bluetooth       = 'task-base-bluetooth'
 PACKAGE_GROUP_host-diskdrive  = 'task-base-ext2 e2fsprogs-tune2fs e2fsprogs-badblocks mdadm'
 PACKAGE_GROUP_host-usb        = 'task-base-ext2 e2fsprogs-tune2fs e2fsprogs-badblocks'
+PACKAGE_GROUP_inflexion       = 'libpng'
+PACKAGE_GROUP_framebuffer     = 'psplash'
 PACKAGE_GROUP_wifi            = 'task-base-wifi'
 PACKAGE_GROUP_x11-minimal     = '${PACKAGE_GROUP_x11-mini}'
 PACKAGE_GROUP_tests              = ''
