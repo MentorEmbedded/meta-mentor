@@ -1,4 +1,4 @@
-PRINC := "${@int(PRINC) + 2}"
+PRINC := "${@int(PRINC) + 3}"
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 SRC_URI += "file://fbset.patch"
@@ -16,6 +16,6 @@ python () {
         return
 
     if 'CONFIG_FBSET=y\n' in configfile.readlines():
-        depends = d.getVar('RDEPENDS_busybox', False)
-        d.setVar('RDEPENDS_busybox', depends + ' fbset-modes')
+        depends = d.getVar('RRECOMMENDS_busybox', False)
+        d.setVar('RRECOMMENDS_busybox', depends + ' fbset-modes')
 }
