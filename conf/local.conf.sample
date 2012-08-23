@@ -37,6 +37,8 @@ MACHINE ??= "qemux86"
 #  "tools-benchmark" - add benchmarking tools (bonnie++, netperfc, lmbench, etc)
 #  "tools-lttng"     - add tools for the Linux Trace Toolkit
 #  "tools-testapps"  - add useful testing tools (ts_print, aplay, arecord etc.)
+#  "codebench-debug" - core debug tools for use with codebench. this is
+#                      a subset of tools-debug (gdbserver, strace, sftp server)
 #  "debug-tweaks"    - make an image suitable for development
 #                      e.g. ssh root access has a blank password
 #  "x11-mini"        - minimal x11 setup, with window manager and terminal
@@ -51,7 +53,7 @@ MACHINE ??= "qemux86"
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
 # details.
 
-EXTRA_IMAGE_FEATURES = "debug-tweaks"
+EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug"
 
 # How many tasks bitbake should run in parallel
 #BB_NUMBER_THREADS = "4"
