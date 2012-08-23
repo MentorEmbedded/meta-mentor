@@ -93,7 +93,7 @@ else
     fi
 fi
 if [ -n "$MACHINE" ]; then
-    sed -i -e"s/MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
+    sed -i -e"s/^#*MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
 fi
 
 if [ ! -e $BUILDDIR/conf/bblayers.conf ]; then
