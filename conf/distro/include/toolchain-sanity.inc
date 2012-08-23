@@ -12,6 +12,8 @@ python toolchain_kernel_fixup () {
     d = e.data
     if isinstance(e, bb.event.RecipeParsed) and oe.utils.inherits(d, 'kernel'):
         import re
+        if d.getVar('TCMODE', True) == 'default':
+            return
 
         toolchain_path = d.getVar('EXTERNAL_TOOLCHAIN', True)
         if not toolchain_path:
@@ -30,6 +32,9 @@ addhandler toolchain_kernel_fixup
 
 python toolchain_sanity_check () {
     if not isinstance(e, bb.event.BuildStarted):
+        return
+
+    if e.data.getVar('TCMODE', True) == 'default':
         return
 
     # Make sure the toolchain actually exists
