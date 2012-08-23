@@ -53,6 +53,9 @@ EXTRA_IMAGE_FEATURES = "debug-tweaks"
 # How many jobs 'make' should run in parallel when compiling
 #PARALLEL_MAKE = "-j 4"
 
+# Uncomment to exclude GPLv3 software from the build
+#INCOMPATIBLE_LICENSE = "GPLv3"
+
 # which is the MEL install directory. If you do not have write access to the
 # MEL install, a sane option for this is ${TOPDIR}/downloads.
 DL_DIR ?= "${OEDIR}/downloads"
