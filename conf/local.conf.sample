@@ -12,6 +12,12 @@ MACHINE ??= "qemux86"
 # from the CodeBench we're installed in.
 #EXTERNAL_TOOLCHAIN ?= "/path/to/toolchain"
 
+# Uncomment to build a toolchain rather than using an external one
+#TCMODE = "default"
+
+# Uncomment to switch the built toolchain from eglibc to uclibc
+#TCLIBC = "uclibc"
+
 # The CORE_IMAGE_EXTRA_INSTALL variable allows extra individual packages to be
 # added to any of the "core" images (e.g. core-image-base,
 # core-image-minimal).
