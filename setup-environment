@@ -89,7 +89,7 @@ mel_setup () {
     if [ -z "$OEDIR" ]; then
         OEDIR=$(cd $(dirname $layerdir) && pwd)
     fi
-    PATH=$layerdir/scripts:$PATH
+    PATH=$layerdir/scripts:$OEDIR/oe-core/scripts:$OEDIR/bitbake/bin:$PATH
 
     MACHINE=$1
     if [ -n "$MACHINE" ]; then
