@@ -132,8 +132,8 @@ USER_CLASSES ?= "image-mklibs image-prelink"
 # newer Konsole versions behave
 #OE_TERMINAL = "auto"
 
-# By default disable interactive patch resolution (tasks will just fail instead):
-PATCHRESOLVE = "noop"
+# Uncomment to automatically spawn a terminal if a patch fails to apply
+#PATCHRESOLVE = "user"
 
 # Shared-state files from other locations
 #
