@@ -142,13 +142,13 @@ To customize the configuration, open conf/local.conf in your editor of choice.
 END
 }
 
-if [ -z "$ZSH_NAME" ] && [ "`basename $0`" = "setup-environment" ]; then
+if [ -z "$ZSH_NAME" ] && [ "${0##*/}" = "setup-environment" ]; then
     echo >&2 "Error: This script needs to be sourced."
 else
     if [ -n "$ZSH_NAME" ]; then
-        layerdir=$(dirname $0)
+        layerdir=${0%/*}
     elif [ -n "$BASH_SOURCE" ]; then
-        layerdir=$(dirname $BASH_SOURCE)
+        layerdir=${BASH_SOURCE%/*}
     else
         layerdir=$PWD
     fi
