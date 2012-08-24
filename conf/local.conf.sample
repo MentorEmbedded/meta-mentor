@@ -53,7 +53,7 @@ MACHINE ??= "qemux86"
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
 # details.
 
-EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug"
+EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-lttng"
 
 # How many tasks bitbake should run in parallel
 #BB_NUMBER_THREADS = "4"
