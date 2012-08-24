@@ -152,6 +152,9 @@ else
     else
         layerdir=$PWD
     fi
+    if [ -e $layerdir/meta-mentor ]; then
+        layerdir=$layerdir/meta-mentor
+    fi
     layerdir=$(cd $layerdir && pwd)
     mel_setup "$@"
     unset layerdir
