@@ -64,6 +64,13 @@ EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-lt
 # Uncomment to exclude GPLv3 software from the build
 #INCOMPATIBLE_LICENSE = "GPLv3"
 
+# Download files from a mirror
+# Uncomment this INHERIT, and define SOURCE_MIRROR_URL
+#
+#INHERIT += "own-mirrors"
+#SOURCE_MIRROR_URL = "file:///cache/downloads"
+#SOURCE_MIRROR_URL = "http://myserver/sources"
+
 # which is the MEL install directory. If you do not have write access to the
 # MEL install, a sane option for this is ${TOPDIR}/downloads.
 DL_DIR ?= "${OEDIR}/downloads"
