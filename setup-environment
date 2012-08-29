@@ -95,21 +95,21 @@ mel_setup () {
     if [ -n "$MACHINE" ]; then
         if [ -e $OEDIR/$MACHINE/binary ]; then
             # User specified machine and we have the binary content for this BSP
-            TEMPLATECONF=$OEDIR/$MACHINE/conf $layerdir/scripts/setup-builddir $BUILDDIR
+            TEMPLATECONF=$OEDIR/$MACHINE/conf $layerdir/scripts/setup-builddir $BUILDDIR || return 1
         else
             # User specified machine, without the binary content -- search
-            TEMPLATECONF=$layerdir/conf $layerdir/scripts/setup-builddir $BUILDDIR $MACHINE
+            TEMPLATECONF=$layerdir/conf $layerdir/scripts/setup-builddir $BUILDDIR $MACHINE || return 1
         fi
     else
         if ! [ -e $BUILDDIR/conf/local.conf -a -e $BUILDDIR/conf/bblayers.conf ]; then
             binary_dirs="`echo $OEDIR/*/binary`" 2>/dev/null
             if [ "`echo $binary_dirs | wc -w`" -gt 1 ]; then
                 mel_prompt_machine `echo $binary_dirs | sed -e's,$OEDIR/,,g; s,/binary,,g'`
-                TEMPLATECONF=$OEDIR/$MACHINE/conf $layerdir/scripts/setup-builddir $BUILDDIR
+                TEMPLATECONF=$OEDIR/$MACHINE/conf $layerdir/scripts/setup-builddir $BUILDDIR || return 1
             else
                 if [ -e "$binary_dirs" ]; then
                     # Found single installed BSP, using its templates
-                    TEMPLATECONF=`dirname $binary_dirs`/conf $layerdir/scripts/setup-builddir $BUILDDIR
+                    TEMPLATECONF=`dirname $binary_dirs`/conf $layerdir/scripts/setup-builddir $BUILDDIR || return 1
                 else
                     echo >&2 "Error: no installed bsp, must specify MACHINE"
                     echo >&2
