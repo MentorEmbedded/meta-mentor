@@ -76,6 +76,21 @@ prioritized_layers () {
     done | sort -n -k2 -r | cut -d" " -f1 | sed "s,$OEDIR/,\${OEDIR}/,; s,$PWD,\${TOPDIR}/..,"
 }
 
+# We'll be reconfiguring the build directory, so let the user back out
+if [ -n "$MACHINE" ] &&
+   [ -e $BUILDDIR/conf/bblayers.conf -o -e $BUILDDIR/conf/layer.conf ]; then
+    echo >&2 "Build directory is configured, but machine was specified."
+    read -p "Reconfigure for $MACHINE (y|n)? " -n 1 reconfigure
+    echo
+
+    case $reconfigure in
+        [nN])
+            echo >&2 "Aborting at user request"
+            exit 2
+            ;;
+    esac
+fi
+
 mkdir -p $BUILDDIR/conf
 if [ ! -e $BUILDDIR/conf/local.conf ]; then
     cp $TEMPLATECONF/local.conf.sample $BUILDDIR/conf/local.conf
