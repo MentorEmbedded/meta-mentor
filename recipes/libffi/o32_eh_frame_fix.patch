@@ -1,0 +1,150 @@
+--- libffi-3.0.10/src/mips/o32.S	2011-07-29 00:45:45.000000000 +0500
++++ libffi-3.0.10/src/mips/o32_updated.S	2012-08-24 17:36:33.980592720 +0500
+@@ -41,21 +41,29 @@
+ #define FP_OFF		(SIZEOF_FRAME - 2 * FFI_SIZEOF_ARG)
+ #define RA_OFF		(SIZEOF_FRAME - 1 * FFI_SIZEOF_ARG)
+ 
++#if defined(__GNU_COMPACT_EH__)
++	.cfi_sections .eh_frame_entry
++#endif
+ 	.abicalls
+ 	.text
+ 	.align	2
+ 	.globl	ffi_call_O32
+ 	.ent	ffi_call_O32
+-ffi_call_O32:	
++ffi_call_O32:
++	.cfi_startproc	
+ $LFB0:
+ 	# Prologue
+ 	SUBU	$sp, SIZEOF_FRAME	# Frame size
++	.cfi_def_cfa_offset        SIZEOF_FRAME
+ $LCFI0:
+ 	REG_S	$fp, FP_OFF($sp)	# Save frame pointer
++	.cfi_offset		$fp,FP_OFF - SIZEOF_FRAME
+ $LCFI1:
+ 	REG_S	ra, RA_OFF($sp)		# Save return address
++	.cfi_offset		ra,RA_OFF - SIZEOF_FRAME
+ $LCFI2:
+ 	move	$fp, $sp
++	.cfi_def_cfa_register        $fp
+ 
+ $LCFI3:
+ 	move	t9, callback		# callback function pointer
+@@ -181,6 +189,7 @@ epilogue:
+ 
+ $LFE0:
+ 	.end	ffi_call_O32
++	.cfi_endproc
+ 
+ 
+ /* ffi_closure_O32. Expects address of the passed-in ffi_closure
+@@ -231,6 +240,7 @@ $LFE0:
+ 	.globl	ffi_closure_O32
+ 	.ent	ffi_closure_O32
+ ffi_closure_O32:
++	.cfi_startproc
+ $LFB1:
+ 	# Prologue
+ 	.frame	$fp, SIZEOF_FRAME2, ra
+@@ -238,13 +248,18 @@ $LFB1:
+ 	.cpload	t9
+ 	.set	reorder
+ 	SUBU	$sp, SIZEOF_FRAME2
++	.cfi_def_cfa_offset        SIZEOF_FRAME2
+ 	.cprestore GP_OFF2
+ $LCFI4:
+ 	REG_S	$16, S0_OFF2($sp)	 # Save s0
++	.cfi_offset		16,S0_OFF2 - SIZEOF_FRAME2
+ 	REG_S	$fp, FP_OFF2($sp)	 # Save frame pointer
++	.cfi_offset		$fp,FP_OFF2 - SIZEOF_FRAME2
+ 	REG_S	ra, RA_OFF2($sp)	 # Save return address
++	.cfi_offset		ra,RA_OFF2 - SIZEOF_FRAME2
+ $LCFI6:
+ 	move	$fp, $sp
++	.cfi_def_cfa_register        $fp
+ 
+ $LCFI7:
+ 	# Store all possible argument registers. If there are more than
+@@ -302,80 +317,6 @@ closure_done:
+ 	j	ra
+ $LFE1:
+ 	.end	ffi_closure_O32
+-
+-/* DWARF-2 unwind info. */
+-
+-	.section	.eh_frame,"a",@progbits
+-$Lframe0:
+-	.4byte	$LECIE0-$LSCIE0	 # Length of Common Information Entry
+-$LSCIE0:
+-	.4byte	0x0	 # CIE Identifier Tag
+-	.byte	0x1	 # CIE Version
+-	.ascii "zR\0"	 # CIE Augmentation
+-	.uleb128 0x1	 # CIE Code Alignment Factor
+-	.sleb128 4	 # CIE Data Alignment Factor
+-	.byte	0x1f	 # CIE RA Column
+-	.uleb128 0x1	 # Augmentation size
+-	.byte	0x00	 # FDE Encoding (absptr)
+-	.byte	0xc	 # DW_CFA_def_cfa
+-	.uleb128 0x1d
+-	.uleb128 0x0
+-	.align	2
+-$LECIE0:
+-$LSFDE0:
+-	.4byte	$LEFDE0-$LASFDE0	 # FDE Length
+-$LASFDE0:
+-	.4byte	$LASFDE0-$Lframe0	 # FDE CIE offset
+-	.4byte	$LFB0	 # FDE initial location
+-	.4byte	$LFE0-$LFB0	 # FDE address range
+-	.uleb128 0x0	 # Augmentation size
+-	.byte	0x4	 # DW_CFA_advance_loc4
+-	.4byte	$LCFI0-$LFB0
+-	.byte	0xe	 # DW_CFA_def_cfa_offset
+-	.uleb128 0x18
+-	.byte	0x4	 # DW_CFA_advance_loc4
+-	.4byte	$LCFI2-$LCFI0
+-	.byte	0x11	 # DW_CFA_offset_extended_sf
+-	.uleb128 0x1e	 # $fp
+-	.sleb128 -2	 # SIZEOF_FRAME2 - 2*FFI_SIZEOF_ARG($sp)
+-	.byte	0x11	 # DW_CFA_offset_extended_sf
+-	.uleb128 0x1f	 # $ra
+-	.sleb128 -1	 # SIZEOF_FRAME2 - 1*FFI_SIZEOF_ARG($sp)
+-	.byte	0x4	 # DW_CFA_advance_loc4
+-	.4byte	$LCFI3-$LCFI2
+-	.byte	0xc	 # DW_CFA_def_cfa
+-	.uleb128 0x1e
+-	.uleb128 0x18
+-	.align	2
+-$LEFDE0:
+-$LSFDE1:
+-	.4byte	$LEFDE1-$LASFDE1	 # FDE Length
+-$LASFDE1:
+-	.4byte	$LASFDE1-$Lframe0	 # FDE CIE offset
+-	.4byte	$LFB1	 # FDE initial location
+-	.4byte	$LFE1-$LFB1	 # FDE address range
+-	.uleb128 0x0	 # Augmentation size
+-	.byte	0x4	 # DW_CFA_advance_loc4
+-	.4byte	$LCFI4-$LFB1
+-	.byte	0xe	 # DW_CFA_def_cfa_offset
+-	.uleb128 0x38
+-	.byte	0x4	 # DW_CFA_advance_loc4
+-	.4byte	$LCFI6-$LCFI4
+-	.byte	0x11	 # DW_CFA_offset_extended_sf
+-	.uleb128 0x10	 # $16
+-	.sleb128 -3	 # SIZEOF_FRAME2 - 3*FFI_SIZEOF_ARG($sp)
+-	.byte	0x11	 # DW_CFA_offset_extended_sf
+-	.uleb128 0x1e	 # $fp
+-	.sleb128 -2	 # SIZEOF_FRAME2 - 2*FFI_SIZEOF_ARG($sp)
+-	.byte	0x11	 # DW_CFA_offset_extended_sf
+-	.uleb128 0x1f	 # $ra
+-	.sleb128 -1	 # SIZEOF_FRAME2 - 1*FFI_SIZEOF_ARG($sp)
+-	.byte	0x4	 # DW_CFA_advance_loc4
+-	.4byte	$LCFI7-$LCFI6
+-	.byte	0xc	 # DW_CFA_def_cfa
+-	.uleb128 0x1e
+-	.uleb128 0x38
+-	.align	2
+-$LEFDE1:
++	.cfi_endproc
+ 
+ #endif

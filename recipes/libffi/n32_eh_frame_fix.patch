@@ -1,0 +1,138 @@
+--- libffi-3.0.10/src/mips/n32.S	2011-07-29 00:45:45.000000000 +0500
++++ libffi-3.0.10/src/mips/n32_update.S	2012-08-24 17:38:12.148588677 +0500
+@@ -31,6 +31,9 @@
+ /* Only build this code if we are compiling for n32 */	
+ 
+ #if defined(FFI_MIPS_N32)
++#if defined(__GNU_COMPACT_EH__)
++	.cfi_sections .eh_frame_entry
++#endif
+ 
+ #define callback a0
+ #define bytes	 a2
+@@ -48,6 +51,7 @@
+ 	.globl	ffi_call_N32
+ 	.ent	ffi_call_N32
+ ffi_call_N32:	
++	.cfi_startproc	
+ .LFB3:
+ 	.frame	$fp, SIZEOF_FRAME, ra
+ 	.mask	0xc0000000,-FFI_SIZEOF_ARG
+@@ -55,11 +59,15 @@ ffi_call_N32:
+ 
+ 	# Prologue
+ 	SUBU	$sp, SIZEOF_FRAME			# Frame size
++	.cfi_def_cfa_offset        SIZEOF_FRAME
+ .LCFI0:
+ 	REG_S	$fp, SIZEOF_FRAME - 2*FFI_SIZEOF_ARG($sp)	# Save frame pointer
++	.cfi_offset		$fp,- 2*FFI_SIZEOF_ARG
+ 	REG_S	ra, SIZEOF_FRAME - 1*FFI_SIZEOF_ARG($sp)	# Save return address
++	.cfi_offset		ra,- 1*FFI_SIZEOF_ARG
+ .LCFI1:
+ 	move	$fp, $sp
++	.cfi_def_cfa_register        $fp
+ .LCFI3:
+ 	move	t9, callback	# callback function pointer
+ 	REG_S	bytes, 2*FFI_SIZEOF_ARG($fp) # bytes
+@@ -355,7 +363,7 @@ noretval:
+ 	
+ 	# Epilogue
+ epilogue:	
+-	move	$sp, $fp	
++	move	$sp, $fp
+ 	REG_L	$fp, SIZEOF_FRAME - 2*FFI_SIZEOF_ARG($sp) # Restore frame pointer
+ 	REG_L	ra, SIZEOF_FRAME - 1*FFI_SIZEOF_ARG($sp)  # Restore return address
+ 	ADDU	$sp, SIZEOF_FRAME		      # Fix stack pointer
+@@ -363,6 +371,7 @@ epilogue:
+ 
+ .LFE3:
+ 	.end	ffi_call_N32
++	.cfi_endproc
+ 
+ /* ffi_closure_N32. Expects address of the passed-in ffi_closure in t0
+    ($12). Stores any arguments passed in registers onto the stack,
+@@ -424,14 +433,18 @@ epilogue:
+ 	.globl	ffi_closure_N32
+ 	.ent	ffi_closure_N32
+ ffi_closure_N32:
++	.cfi_startproc
+ .LFB2:
+ 	.frame	$sp, SIZEOF_FRAME2, ra
+ 	.mask	0x90000000,-(SIZEOF_FRAME2 - RA_OFF2)
+ 	.fmask	0x00000000,0
+ 	SUBU	$sp, SIZEOF_FRAME2
++	.cfi_def_cfa_offset        SIZEOF_FRAME2
+ .LCFI5:
+ 	.cpsetup t9, GP_OFF2, ffi_closure_N32
++	.cfi_offset		$gp,GP_OFF2 - SIZEOF_FRAME2		
+ 	REG_S	ra, RA_OFF2($sp)	# Save return address
++	.cfi_offset		ra,RA_OFF2 - SIZEOF_FRAME2	
+ .LCFI6:
+ 	# Store all possible argument registers. If there are more than
+ 	# fit in registers, then they were stored on the stack.
+@@ -528,64 +541,5 @@ cls_epilogue:
+ 	j	ra
+ .LFE2:	
+ 	.end	ffi_closure_N32
+-
+-#ifdef __GNUC__
+-        .section        .eh_frame,"aw",@progbits
+-.Lframe1:
+-        .4byte  .LECIE1-.LSCIE1		# length
+-.LSCIE1:
+-        .4byte  0x0			# CIE
+-        .byte   0x1			# Version 1
+-        .ascii  "\000"			# Augmentation
+-        .uleb128 0x1			# Code alignment 1
+-        .sleb128 -4			# Data alignment -4
+-        .byte   0x1f			# Return Address $31
+-        .byte   0xc			# DW_CFA_def_cfa
+-        .uleb128 0x1d			# in $sp
+-        .uleb128 0x0			# offset 0
+-        .align  EH_FRAME_ALIGN
+-.LECIE1:
+-
+-.LSFDE1:
+-        .4byte  .LEFDE1-.LASFDE1	# length.
+-.LASFDE1:
+-        .4byte  .LASFDE1-.Lframe1	# CIE_pointer.
+-        FDE_ADDR_BYTES  .LFB3		# initial_location.
+-        FDE_ADDR_BYTES  .LFE3-.LFB3	# address_range.
+-        .byte   0x4			# DW_CFA_advance_loc4
+-        .4byte  .LCFI0-.LFB3		# to .LCFI0
+-        .byte   0xe			# DW_CFA_def_cfa_offset
+-        .uleb128 SIZEOF_FRAME		# adjust stack.by SIZEOF_FRAME
+-        .byte   0x4			# DW_CFA_advance_loc4
+-        .4byte  .LCFI1-.LCFI0		# to .LCFI1
+-        .byte   0x9e			# DW_CFA_offset of $fp
+-        .uleb128 2*FFI_SIZEOF_ARG/4	# 
+-        .byte   0x9f			# DW_CFA_offset of ra
+-        .uleb128 1*FFI_SIZEOF_ARG/4	# 
+-        .byte   0x4			# DW_CFA_advance_loc4
+-        .4byte  .LCFI3-.LCFI1		# to .LCFI3
+-        .byte   0xd			# DW_CFA_def_cfa_register
+-        .uleb128 0x1e			# in $fp
+-        .align  EH_FRAME_ALIGN
+-.LEFDE1:
+-.LSFDE3:
+-	.4byte	.LEFDE3-.LASFDE3	# length
+-.LASFDE3:
+-	.4byte	.LASFDE3-.Lframe1	# CIE_pointer.
+-	FDE_ADDR_BYTES	.LFB2		# initial_location.
+-	FDE_ADDR_BYTES	.LFE2-.LFB2	# address_range.
+-	.byte	0x4			# DW_CFA_advance_loc4
+-	.4byte	.LCFI5-.LFB2		# to .LCFI5
+-	.byte	0xe			# DW_CFA_def_cfa_offset
+-	.uleb128 SIZEOF_FRAME2		# adjust stack.by SIZEOF_FRAME
+-	.byte	0x4			# DW_CFA_advance_loc4
+-	.4byte	.LCFI6-.LCFI5		# to .LCFI6
+-	.byte	0x9c			# DW_CFA_offset of $gp ($28)
+-	.uleb128 (SIZEOF_FRAME2 - GP_OFF2)/4
+-	.byte	0x9f			# DW_CFA_offset of ra ($31)
+-	.uleb128 (SIZEOF_FRAME2 - RA_OFF2)/4
+-	.align	EH_FRAME_ALIGN
+-.LEFDE3:
+-#endif /* __GNUC__ */	
+-	
++	.cfi_endproc
+ #endif
