@@ -161,6 +161,10 @@ USER_CLASSES ?= "image-mklibs image-prelink"
 #  file://.* file:///some/local/dir/sstate/PATH\n\
 #"
 
+# This may be used to abort the build when using an untested/unverified
+# version of the external toolchain.
+#CSL_VER_REQUIRED = "2012.03"
+
 # CONF_VERSION is increased each time build/conf/ changes incompatibly and is used to
 # track the version of this file when it was generated. This can safely be ignored if
 # this doesn't mean anything to you.
