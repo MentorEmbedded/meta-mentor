@@ -127,8 +127,8 @@ kernel_do_install() {
 	install -m 0644 .config ${D}/boot/config-${KERNEL_VERSION}
 	install -m 0644 vmlinux ${D}/boot/vmlinux-${KERNEL_VERSION}
 	[ -e Module.symvers ] && install -m 0644 Module.symvers ${D}/boot/Module.symvers-${KERNEL_VERSION}
-	install -d ${D}/etc/modules-load.d
-	install -d ${D}/etc/modprobe.d
+	install -d ${D}${sysconfdir}/modules-load.d
+	install -d ${D}${sysconfdir}/modprobe.d
 
 	#
 	# Support for external module building - create a minimal copy of the
@@ -191,6 +191,10 @@ kernel_do_install() {
 	if [ -f include/generated/bounds.h ]; then
 		cp include/generated/bounds.h $kerneldir/include/generated/bounds.h
 	fi
+	if [ -d arch/${ARCH}/include/generated ]; then
+		mkdir -p $kerneldir/arch/${ARCH}/include/generated/
+		cp -fR arch/${ARCH}/include/generated/* $kerneldir/arch/${ARCH}/include/generated/
+	fi
 
 	# Remove the following binaries which cause strip or arch QA errors
 	# during do_package for cross-compiled platforms
@@ -200,6 +204,9 @@ kernel_do_install() {
 	for entry in $bin_files; do
 		rm -f $kerneldir/$entry
 	done
+
+	# Fix SLANG_INC for slang.h
+	sed -i 's#-I/usr/include/slang#-I=/usr/include/slang#g' $kerneldir/tools/perf/Makefile
 }
 
 sysroot_stage_all_append() {
@@ -294,25 +301,6 @@ if [ x"$D" = "x" ]; then
 	modprobe %s || true
 fi
 }
-
-# autoload defaults (alphabetically sorted)
-module_autoload_hidp = "hidp"
-module_autoload_ipv6 = "ipv6"
-module_autoload_ipsec = "ipsec"
-module_autoload_ircomm-tty = "ircomm-tty"
-module_autoload_rfcomm = "rfcomm"
-module_autoload_sa1100-rtc = "sa1100-rtc"
-# sa1100-rtc was renamed in 2.6.23 onwards
-module_autoload_rtc-sa1100 = "rtc-sa1100"
-
-# alias defaults (alphabetically sorted)
-module_conf_af_packet = "alias net-pf-17 af_packet"
-module_conf_bluez = "alias net-pf-31 bluez"
-module_conf_bnep = "alias bt-proto-4 bnep"
-module_conf_hci_uart = "alias tty-ldisc-15 hci_uart"
-module_conf_l2cap = "alias bt-proto-0 l2cap"
-module_conf_sco = "alias bt-proto-2 sco"
-module_conf_rfcomm = "alias bt-proto-3 rfcomm"
 
 python populate_packages_prepend () {
     def extract_modinfo(file):
