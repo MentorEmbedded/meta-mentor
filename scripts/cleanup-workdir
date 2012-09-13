@@ -1,0 +1,4 @@
+#!/bin/sh -e
+
+. $(dirname $0)/wrap
+wrap $0 "$@"

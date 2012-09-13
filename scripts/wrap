@@ -1,0 +1,26 @@
+find_builddir() {
+    curdir=$PWD
+    while [ -n "$PWD" -a "$PWD" != "/" ]; do
+        if [ -e $PWD/conf/local.conf ]; then
+            echo $PWD
+        fi
+        cd ..
+    done
+    cd $curdir
+}
+
+wrap() {
+    cmd=$(basename $1)
+    wrapperdir=$(cd ${1%/*} && pwd)
+    shift
+
+    export BUILDDIR=$(find_builddir)
+    if [ -z "$BUILDDIR" ]; then
+        echo >&2 "Error: must run $cmd from under your build directory"
+        exit 1
+    fi
+    cd $BUILDDIR
+
+    PATH=$(echo $PATH | sed -e"s,$wrapperdir:,,g")
+    exec $cmd "$@"
+}

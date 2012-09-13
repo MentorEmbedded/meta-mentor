@@ -1,30 +1,9 @@
 #!/bin/sh -e
 
-find_builddir() {
-    curdir=$PWD
-    while [ -n "$PWD" -a "$PWD" != "/" ]; do
-        if [ -e $PWD/conf/local.conf ]; then
-            echo $PWD
-        fi
-        cd ..
-    done
-    cd $curdir
-}
-
-
-export BUILDDIR=$(find_builddir)
-if [ -z "$BUILDDIR" ]; then
-    echo >&2 "Error: must run bitbake from under your build directory"
-    exit 1
-fi
-
-wrapperdir=$(cd ${0%/*} && pwd)
-PATH=$(echo $PATH | sed -e"s,$wrapperdir:,,g")
-
 BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE MACHINE http_proxy ftp_proxy https_proxy \
                    all_proxy ALL_PROXY no_proxy GIT_PROXY_COMMAND \
                    GIT_PROXY_IGNORE SOCKS5_PASSWD SOCKS5_USER SCREENDIR"
 export BB_ENV_EXTRAWHITE
 
-cd $BUILDDIR
-exec bitbake "$@"
+. $(dirname $0)/wrap
+wrap $0 "$@"
