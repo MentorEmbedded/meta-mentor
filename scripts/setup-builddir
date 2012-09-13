@@ -137,5 +137,3 @@ if [ ! -e $BUILDDIR/conf/site.conf -a -e $TEMPLATECONF/site.conf ]; then
     echo "This file has been copied into your build directory."
     cp $TEMPLATECONF/site.conf $BUILDDIR/conf/site.conf
 fi
-
-echo "PATH='$MELDIR/meta-mentor/scripts:$MELDIR/oe-core/scripts:$MELDIR/bitbake/bin:$PATH'; cd $BUILDDIR" > $BUILDDIR/setup-environment

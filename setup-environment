@@ -89,7 +89,6 @@ mel_setup () {
     if [ -z "$MELDIR" ]; then
         MELDIR=$(cd $(dirname $layerdir) && pwd)
     fi
-    PATH=$layerdir/scripts:$MELDIR/oe-core/scripts:$MELDIR/bitbake/bin:$PATH
 
     MACHINE=$1
     if [ -n "$MACHINE" ]; then
@@ -120,6 +119,10 @@ mel_setup () {
             unset binary_dirs
         fi
     fi
+
+
+    PATH="$layerdir/scripts:$MELDIR/oe-core/scripts:$MELDIR/bitbake/bin:$PATH"
+    echo "PATH=\"$MELDIR/meta-mentor/scripts:$MELDIR/oe-core/scripts:$MELDIR/bitbake/bin:$PATH\"; cd $BUILDDIR" > $BUILDDIR/setup-environment
 
     cd $BUILDDIR
 
