@@ -26,7 +26,7 @@ changing its configuration.
 
 Options:
   -b BUILDDIR  Specify the build directory to create (default: 'build')
-  -o OEDIR     Specify the root of the MEL install, where you can find bitbake and the layers
+  -o MELDIR     Specify the root of the MEL install, where you can find bitbake and the layers
   -f           Force overwrite of existing configuration files in the build
                directory. This includes local.conf and bblayers.conf, but not
                site.conf
@@ -55,7 +55,7 @@ mel_prompt_machine () {
 
 mel_setup () {
     BUILDDIR=
-    OEDIR=
+    MELDIR=
     force_overwrite=0
     while getopts b:o:f opt; do
         case "$opt" in
@@ -63,7 +63,7 @@ mel_setup () {
                 BUILDDIR="$OPTARG"
                 ;;
             o)
-                OEDIR="$OPTARG"
+                MELDIR="$OPTARG"
                 ;;
             f)
                 force_overwrite=1
@@ -86,26 +86,26 @@ mel_setup () {
     fi
     unset force_overwrite
 
-    if [ -z "$OEDIR" ]; then
-        OEDIR=$(cd $(dirname $layerdir) && pwd)
+    if [ -z "$MELDIR" ]; then
+        MELDIR=$(cd $(dirname $layerdir) && pwd)
     fi
-    PATH=$layerdir/scripts:$OEDIR/oe-core/scripts:$OEDIR/bitbake/bin:$PATH
+    PATH=$layerdir/scripts:$MELDIR/oe-core/scripts:$MELDIR/bitbake/bin:$PATH
 
     MACHINE=$1
     if [ -n "$MACHINE" ]; then
-        if [ -e $OEDIR/$MACHINE/binary ]; then
+        if [ -e $MELDIR/$MACHINE/binary ]; then
             # User specified machine and we have the binary content for this BSP
-            TEMPLATECONF=$OEDIR/$MACHINE/conf $layerdir/scripts/setup-builddir $BUILDDIR || return 1
+            TEMPLATECONF=$MELDIR/$MACHINE/conf $layerdir/scripts/setup-builddir $BUILDDIR || return 1
         else
             # User specified machine, without the binary content -- search
             TEMPLATECONF=$layerdir/conf $layerdir/scripts/setup-builddir $BUILDDIR $MACHINE || return 1
         fi
     else
         if ! [ -e $BUILDDIR/conf/local.conf -a -e $BUILDDIR/conf/bblayers.conf ]; then
-            binary_dirs="`echo $OEDIR/*/binary`" 2>/dev/null
+            binary_dirs="`echo $MELDIR/*/binary`" 2>/dev/null
             if [ "`echo $binary_dirs | wc -w`" -gt 1 ]; then
-                mel_prompt_machine `echo $binary_dirs | sed -e's,$OEDIR/,,g; s,/binary,,g'`
-                TEMPLATECONF=$OEDIR/$MACHINE/conf $layerdir/scripts/setup-builddir $BUILDDIR || return 1
+                mel_prompt_machine `echo $binary_dirs | sed -e's,$MELDIR/,,g; s,/binary,,g'`
+                TEMPLATECONF=$MELDIR/$MACHINE/conf $layerdir/scripts/setup-builddir $BUILDDIR || return 1
             else
                 if [ -e "$binary_dirs" ]; then
                     # Found single installed BSP, using its templates

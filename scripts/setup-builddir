@@ -25,7 +25,7 @@ abspath () {
     echo "$_path"
 }
 
-OEDIR=$(cd ${0%/*}/../.. && pwd)
+MELDIR=$(cd ${0%/*}/../.. && pwd)
 BUILDDIR=$1
 if [ -z $BUILDDIR ]; then
     BUILDDIR=$PWD/build
@@ -34,7 +34,7 @@ BUILDDIR=$(abspath $BUILDDIR)
 MACHINE=$2
 
 find_layers () {
-    for i in $OEDIR/*/conf/layer.conf $OEDIR/*/*/conf/layer.conf; do
+    for i in $MELDIR/*/conf/layer.conf $MELDIR/*/*/conf/layer.conf; do
         if [ -e "$i" ]; then
             echo $i | sed 's,/conf/layer.conf$,,'
         fi
@@ -49,7 +49,7 @@ machine_layers () {
 }
 base_layers () {
     # Extract base layer list from bblayers.conf.sample
-    sed -n '/^BBLAYERS/{s/^[^"]*"//; :start; /\\$/{s/ *\\$//; p; n; b start}; s/"//; p}' $TEMPLATECONF/bblayers.conf.sample | sed -e"s,\${OEDIR},$OEDIR,; s,##COREBASE##,$OEDIR/oe-core,g" | sort -u | while read layer; do
+    sed -n '/^BBLAYERS/{s/^[^"]*"//; :start; /\\$/{s/ *\\$//; p; n; b start}; s/"//; p}' $TEMPLATECONF/bblayers.conf.sample | sed -e"s,\${MELDIR},$MELDIR,; s,##COREBASE##,$MELDIR/oe-core,g" | sort -u | while read layer; do
         if [ -n "$layer" -a -e "$layer" ]; then
             echo $layer
         fi
@@ -72,7 +72,7 @@ prioritized_layers () {
     cat $layerfile | sort -u | while read layer; do
         priority=`layer_priority $layer`
         echo $layer $priority
-    done | sort -n -k2 -r | cut -d" " -f1 | sed "s,$OEDIR/,\${OEDIR}/,; s,$PWD,\${TOPDIR}/..,"
+    done | sort -n -k2 -r | cut -d" " -f1 | sed "s,$MELDIR/,\${MELDIR}/,; s,$PWD,\${TOPDIR}/..,"
 }
 
 # We'll be reconfiguring the build directory, so let the user back out
@@ -111,7 +111,7 @@ if [ -n "$MACHINE" ]; then
 fi
 
 if [ ! -e $BUILDDIR/conf/bblayers.conf ]; then
-    echo "OEDIR = \"$OEDIR\"" >$BUILDDIR/conf/bblayers.conf
+    echo "MELDIR = \"$MELDIR\"" >$BUILDDIR/conf/bblayers.conf
     echo >>$BUILDDIR/conf/bblayers.conf
     cat $TEMPLATECONF/bblayers.conf.sample >>$BUILDDIR/conf/bblayers.conf
     echo "You had no bblayers.conf file. This configuration file has therefore been"
@@ -138,4 +138,4 @@ if [ ! -e $BUILDDIR/conf/site.conf -a -e $TEMPLATECONF/site.conf ]; then
     cp $TEMPLATECONF/site.conf $BUILDDIR/conf/site.conf
 fi
 
-echo "PATH='$OEDIR/meta-mentor/scripts:$OEDIR/oe-core/scripts:$OEDIR/bitbake/bin:$PATH'; cd $BUILDDIR" > $BUILDDIR/setup-environment
+echo "PATH='$MELDIR/meta-mentor/scripts:$MELDIR/oe-core/scripts:$MELDIR/bitbake/bin:$PATH'; cd $BUILDDIR" > $BUILDDIR/setup-environment
