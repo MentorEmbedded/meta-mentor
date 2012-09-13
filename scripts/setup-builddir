@@ -49,7 +49,7 @@ machine_layers () {
 }
 base_layers () {
     # Extract base layer list from bblayers.conf.sample
-    sed -n '/^BBLAYERS/{s/^[^"]*"//; :start; /\\$/{s/ *\\$//; p; n; b start}; s/"//; p}' $TEMPLATECONF/bblayers.conf.sample | sed -e"s,\${MELDIR},$MELDIR,; s,##COREBASE##,$MELDIR/oe-core,g" | sort -u | while read layer; do
+    sed -n '/^BBLAYERS/{s/^[^"]*"//; :start; /\\$/{s/ *\\$//; p; n; b start}; s/"//; p}' $TEMPLATECONF/bblayers.conf.sample | sed -e"s,\${MELDIR},$MELDIR,; s,##COREBASE##,$MELDIR/poky,g" | sort -u | while read layer; do
         if [ -n "$layer" -a -e "$layer" ]; then
             echo $layer
         fi

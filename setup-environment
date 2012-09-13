@@ -121,8 +121,8 @@ mel_setup () {
     fi
 
 
-    PATH="$layerdir/scripts:$MELDIR/oe-core/scripts:$MELDIR/bitbake/bin:$PATH"
-    echo "PATH=\"$MELDIR/meta-mentor/scripts:$MELDIR/oe-core/scripts:$MELDIR/bitbake/bin:$PATH\"; cd $BUILDDIR" > $BUILDDIR/setup-environment
+    PATH="$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH"
+    echo "PATH=\"$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH\"; cd $BUILDDIR" > $BUILDDIR/setup-environment
 
     cd $BUILDDIR
 

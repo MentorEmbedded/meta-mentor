@@ -11,6 +11,6 @@ BBLAYERS ?= "\
     ${MELDIR}/meta-mentor \
     ${MELDIR}/meta-intel \
     ${MELDIR}/meta-oe/meta-oe \
-    ${MELDIR}/meta-yocto \
-    ${MELDIR}/oe-core/meta \
+    ${MELDIR}/poky/meta-yocto \
+    ${MELDIR}/poky/meta \
 "
