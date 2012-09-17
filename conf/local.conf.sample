@@ -78,16 +78,16 @@ EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-lt
 
 # which is the MEL install directory. If you do not have write access to the
 # MEL install, a sane option for this is ${TOPDIR}/downloads.
-DL_DIR ?= "${OEDIR}/downloads"
+DL_DIR ?= "${MELDIR}/downloads"
 
 # BitBake has the capability to accelerate builds based on previously built
 # output. This is done using "shared state" files which can be thought of as
 # cache objects and this variable determines where those files are placed.
 #
-# The default is a cached-binaries directory under OEDIR which is the MEL
+# The default is a cached-binaries directory under MELDIR which is the MEL
 # install directory. If you do not have write access to the MEL install,
 # a sane option for this is ${TOPDIR}/cached-binaries.
-SSTATE_DIR ?= "${OEDIR}/cached-binaries"
+SSTATE_DIR ?= "${MELDIR}/cached-binaries"
 
 # Where to place the build output and temporary artifacts
 #
