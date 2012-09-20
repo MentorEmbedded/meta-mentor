@@ -72,7 +72,7 @@ prioritized_layers () {
     cat $layerfile | sort -u | while read layer; do
         priority=`layer_priority $layer`
         echo $layer $priority
-    done | sort -n -k2 -r | cut -d" " -f1 | sed "s,$MELDIR/,\${MELDIR}/,; s,$PWD,\${TOPDIR}/..,"
+    done | sort -n -k2 -r | cut -d" " -f1
 }
 
 # We'll be reconfiguring the build directory, so let the user back out
@@ -111,9 +111,7 @@ if [ -n "$MACHINE" ]; then
 fi
 
 if [ ! -e $BUILDDIR/conf/bblayers.conf ]; then
-    echo "MELDIR = \"$MELDIR\"" >$BUILDDIR/conf/bblayers.conf
-    echo >>$BUILDDIR/conf/bblayers.conf
-    cat $TEMPLATECONF/bblayers.conf.sample >>$BUILDDIR/conf/bblayers.conf
+    cat $TEMPLATECONF/bblayers.conf.sample >$BUILDDIR/conf/bblayers.conf
     echo "You had no bblayers.conf file. This configuration file has therefore been"
     echo "created for you with some default values."
 else
