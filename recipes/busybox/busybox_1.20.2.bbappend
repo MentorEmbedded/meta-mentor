@@ -16,6 +16,8 @@ python () {
         return
 
     if 'CONFIG_FBSET=y\n' in configfile.readlines():
-        depends = d.getVar('RRECOMMENDS_busybox', False)
-        d.setVar('RRECOMMENDS_busybox', depends + ' fbset-modes')
+        d.setVar('FBSET_DEP', 'fbset-modes')
 }
+
+FBSET_DEP = ""
+RRECOMMENDS_${PN} += "${FBSET_DEP}"
