@@ -119,7 +119,7 @@ mel_setup () {
             unset binary_dirs
         fi
     fi
-
+    unset MACHINE BUILDDIR MELDIR force_overwrite
 
     PATH="$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH"
     echo "PATH=\"$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH\"; cd $BUILDDIR" > $BUILDDIR/setup-environment
