@@ -111,7 +111,9 @@ if [ -n "$MACHINE" ]; then
 fi
 
 if [ ! -e $BUILDDIR/conf/bblayers.conf ]; then
-    cat $TEMPLATECONF/bblayers.conf.sample >$BUILDDIR/conf/bblayers.conf
+    echo "MELDIR = \"$MELDIR\"" >$BUILDDIR/conf/bblayers.conf
+    echo >>$BUILDDIR/conf/bblayers.conf
+    cat $TEMPLATECONF/bblayers.conf.sample >>$BUILDDIR/conf/bblayers.conf
     echo "You had no bblayers.conf file. This configuration file has therefore been"
     echo "created for you with some default values."
 else
