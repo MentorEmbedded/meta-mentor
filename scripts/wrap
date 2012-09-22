@@ -15,10 +15,12 @@ wrap() {
     wrapperdir=$(cd ${1%/*} && pwd)
     shift
 
-    export BUILDDIR=$(find_builddir)
     if [ -z "$BUILDDIR" ]; then
-        echo >&2 "Error: must run $cmd from under your build directory"
-        exit 1
+        export BUILDDIR=$(find_builddir)
+        if [ -z "$BUILDDIR" ]; then
+            echo >&2 "Error: must run $cmd from under your build directory"
+            exit 1
+        fi
     fi
     cd $BUILDDIR
 
