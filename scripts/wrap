@@ -3,6 +3,7 @@ find_builddir() {
     while [ -n "$PWD" -a "$PWD" != "/" ]; do
         if [ -e $PWD/conf/local.conf ]; then
             echo $PWD
+            break
         fi
         cd ..
     done
