@@ -80,6 +80,7 @@ mel_setup () {
     if [ -z $BUILDDIR ]; then
         BUILDDIR=$PWD/build
     fi
+    echo "Creating/configuring build directory $BUILDDIR"
 
     if [ $force_overwrite -eq 1 ]; then
         rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
