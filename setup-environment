@@ -78,7 +78,12 @@ mel_setup () {
     OPTIND=1
 
     if [ -z $BUILDDIR ]; then
-        BUILDDIR=$PWD/build
+        if [ -f conf/local.conf ]; then
+            # Assuming we're already in the build dir
+            BUILDDIR=$PWD
+        else
+            BUILDDIR=$PWD/build
+        fi
     fi
     echo "Creating/configuring build directory $BUILDDIR"
 
