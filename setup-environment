@@ -126,7 +126,7 @@ mel_setup () {
         fi
     fi
     PATH="$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH"
-    echo "PATH=\"$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH\"; cd $BUILDDIR" > $BUILDDIR/setup-environment
+    echo "PATH=\"$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH\"; cd $(cd $BUILDDIR && pwd)" > $BUILDDIR/setup-environment
 
     cd $BUILDDIR
 
