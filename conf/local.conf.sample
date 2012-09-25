@@ -149,16 +149,19 @@ USER_CLASSES ?= "image-mklibs image-prelink"
 
 # Shared-state files from other locations
 #
-# This variable can be used to configure the system to search other mirror
-# locations for these objects before it builds the data itself.
+# The SSTATE_MIRROR_SITES variable can be used to configure the system to
+# search other mirror locations for these objects before it builds the data
+# itself.
 #
-# This can be a filesystem directory, or a remote url such as http or ftp. These
-# would contain the sstate-cache results from previous builds (possibly from other
-# machines). This variable works like fetcher MIRRORS/PREMIRRORS and points to the
-# cache locations to check for the shared objects.
-#SSTATE_MIRRORS ?= "\
-#  file://.* http://someserver.tld/share/sstate/PATH \n \
-#  file://.* file:///some/local/dir/sstate/PATH\n\
+# This can be a filesystem directory, or a remote url such as http or ftp.
+# These would contain the sstate-cache results from previous builds (possibly
+# from other machines). This variable works like fetcher MIRRORS/PREMIRRORS
+# and points to the cache locations to check for the shared objects.
+#
+#SSTATE_MIRROR_SITES += "http://mymirror/sstate"
+#SSTATE_MIRROR_SITES += "\
+#    http://someserver.tld/share/sstate \
+#    file:///some/local/dir \
 #"
 
 # This may be used to abort the build when using an untested/unverified
