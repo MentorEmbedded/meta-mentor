@@ -1,0 +1,52 @@
+From 4dc16214d8033d7be2945dbbaed3d67d489d079a Mon Sep 17 00:00:00 2001
+From: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+Date: Thu, 20 Sep 2012 10:20:38 -0400
+Subject: [PATCH 19/19] Fix cleanup: move lttng-tracer-core.h include to lib ringbuffer config.h
+
+This is where it is used. Add a #ifdef check for the LTTNG_TRACER_CORE_H
+define to ensure that the header it depends on is always included.
+
+Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+---
+ lib/ringbuffer/config.h               |    5 +++++
+ lib/ringbuffer/ring_buffer_frontend.c |    1 -
+ 2 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/lib/ringbuffer/config.h b/lib/ringbuffer/config.h
+index bd5ba77..657c04d 100644
+--- a/lib/ringbuffer/config.h
++++ b/lib/ringbuffer/config.h
+@@ -27,6 +27,7 @@
+ #include <linux/types.h>
+ #include <linux/percpu.h>
+ #include "../align.h"
++#include "../../lttng-tracer-core.h"
+ 
+ struct lib_ring_buffer;
+ struct channel;
+@@ -241,6 +242,10 @@ void lib_ring_buffer_ctx_init(struct lib_ring_buffer_ctx *ctx,
+ #define	RING_BUFFER_RFLAG_FULL_TSC		(1U << 0)
+ #define RING_BUFFER_RFLAG_END			(1U << 1)
+ 
++#ifndef LTTNG_TRACER_CORE_H
++#error "lttng-tracer-core.h is needed for RING_BUFFER_ALIGN define"
++#endif
++
+ /*
+  * We need to define RING_BUFFER_ALIGN_ATTR so it is known early at
+  * compile-time. We have to duplicate the "config->align" information and the
+diff --git a/lib/ringbuffer/ring_buffer_frontend.c b/lib/ringbuffer/ring_buffer_frontend.c
+index a04333a..dc0357f 100644
+--- a/lib/ringbuffer/ring_buffer_frontend.c
++++ b/lib/ringbuffer/ring_buffer_frontend.c
+@@ -55,7 +55,6 @@
+ #include <linux/module.h>
+ #include <linux/percpu.h>
+ 
+-#include "../../lttng-tracer-core.h"
+ #include "../../wrapper/ringbuffer/config.h"
+ #include "../../wrapper/ringbuffer/backend.h"
+ #include "../../wrapper/ringbuffer/frontend.h"
+-- 
+1.7.0.4
+

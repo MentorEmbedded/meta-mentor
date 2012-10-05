@@ -11,9 +11,11 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=61273c2e3f60dd38a74b01beb5f51fbd \
 
 DEPENDS = "liburcu popt lttng2-ust"
 
-PR = "r0"
+PR = "r1"
 
-SRC_URI = "http://lttng.org/files/${PN}/${PN}-${PV}.tar.bz2"
+SRC_URI = "http://lttng.org/files/${PN}/${PN}-${PV}.tar.bz2 \
+           file://0001-Add-additional-probe-modules-to-kern_modules_list.patch \
+           "
 SRC_URI[md5sum] = "360d0e0e70ed11eda5aa1570ebc9c155"
 SRC_URI[sha256sum] = "cc538f420bfe716220169e41b572d0cb8a345afb552faef924bfb2c625d92b0d"
 

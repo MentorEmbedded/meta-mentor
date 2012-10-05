@@ -10,10 +10,30 @@ DEPENDS = "virtual/kernel"
 
 inherit module
 
-PR = "r0"
+PR = "r1"
 
 SRC_URI = "http://lttng.org/files/${PN}/${PN}-${PV}.tar.bz2\
-           file://lttng-modules-replace-KERNELDIR-with-KERNEL_SRC.patch"
+           file://lttng-modules-replace-KERNELDIR-with-KERNEL_SRC.patch\
+	   file://0001-Add-net-probes.patch\
+	   file://0002-Add-asoc-probes.patch\
+	   file://0003-Add-ext3-probes.patch\
+	   file://0004-Add-gpio-probes.patch\
+	   file://0005-Add-jbd2-probes.patch\
+	   file://0006-Add-jbd-probes.patch\
+	   file://0007-Add-kmem-probes.patch\
+	   file://0008-Add-module-probes.patch\
+	   file://0009-Add-napi-probes.patch\
+	   file://0010-Add-power-probes.patch\
+	   file://0011-Add-regulator-probes.patch\
+	   file://0012-Add-scsi-probes.patch\
+	   file://0013-Add-skb-probes.patch\
+	   file://0014-Add-sock-probes.patch\
+	   file://0015-Add-udp-probes.patch\
+	   file://0016-Add-vmscan-probes.patch\
+	   file://0017-Add-lock-probes.patch\
+	   file://0018-Fix-ring_buffer_frontend.c-missing-include-lttng-tra.patch\
+	   file://0019-Fix-cleanup-move-lttng-tracer-core.h-include-to-lib-.patch\
+           "
 SRC_URI[md5sum] = "e2f07c0eb40a0d8027de17f4dd7ebe12"
 SRC_URI[sha256sum] = "f00116c388289192774c774581a651832be094aeb6da2f2c0f9c9e275fed2d14"
 

@@ -1,0 +1,382 @@
+From 2c3a46e313ed84a0605781c9e17e70cfbe407aa0 Mon Sep 17 00:00:00 2001
+From: Wade Farnsworth <wade_farnsworth@mentor.com>
+Date: Thu, 4 Oct 2012 08:30:30 -0500
+Subject: [PATCH 11/19] Add regulator probes
+
+Add regulator probes based on trace/events/regulator.c
+
+Signed-off-by: Wade Farnsworth <wade_farnsworth@mentor.com>
+---
+ instrumentation/events/lttng-module/regulator.h |  141 +++++++++++++++++++++++
+ instrumentation/events/mainline/regulator.h     |  141 +++++++++++++++++++++++
+ probes/Makefile                                 |    7 +
+ probes/lttng-probe-regulator.c                  |   43 +++++++
+ 4 files changed, 332 insertions(+), 0 deletions(-)
+ create mode 100644 instrumentation/events/lttng-module/regulator.h
+ create mode 100644 instrumentation/events/mainline/regulator.h
+ create mode 100644 probes/lttng-probe-regulator.c
+
+diff --git a/instrumentation/events/lttng-module/regulator.h b/instrumentation/events/lttng-module/regulator.h
+new file mode 100644
+index 0000000..e94da7c
+--- /dev/null
++++ b/instrumentation/events/lttng-module/regulator.h
+@@ -0,0 +1,141 @@
++#undef TRACE_SYSTEM
++#define TRACE_SYSTEM regulator
++
++#if !defined(_TRACE_REGULATOR_H) || defined(TRACE_HEADER_MULTI_READ)
++#define _TRACE_REGULATOR_H
++
++#include <linux/ktime.h>
++#include <linux/tracepoint.h>
++
++/*
++ * Events which just log themselves and the regulator name for enable/disable
++ * type tracking.
++ */
++DECLARE_EVENT_CLASS(regulator_basic,
++
++	TP_PROTO(const char *name),
++
++	TP_ARGS(name),
++
++	TP_STRUCT__entry(
++		__string(	name,	name	)
++	),
++
++	TP_fast_assign(
++		tp_strcpy(name, name);
++	),
++
++	TP_printk("name=%s", __get_str(name))
++
++)
++
++DEFINE_EVENT(regulator_basic, regulator_enable,
++
++	TP_PROTO(const char *name),
++
++	TP_ARGS(name)
++
++)
++
++DEFINE_EVENT(regulator_basic, regulator_enable_delay,
++
++	TP_PROTO(const char *name),
++
++	TP_ARGS(name)
++
++)
++
++DEFINE_EVENT(regulator_basic, regulator_enable_complete,
++
++	TP_PROTO(const char *name),
++
++	TP_ARGS(name)
++
++)
++
++DEFINE_EVENT(regulator_basic, regulator_disable,
++
++	TP_PROTO(const char *name),
++
++	TP_ARGS(name)
++
++)
++
++DEFINE_EVENT(regulator_basic, regulator_disable_complete,
++
++	TP_PROTO(const char *name),
++
++	TP_ARGS(name)
++
++)
++
++/*
++ * Events that take a range of numerical values, mostly for voltages
++ * and so on.
++ */
++DECLARE_EVENT_CLASS(regulator_range,
++
++	TP_PROTO(const char *name, int min, int max),
++
++	TP_ARGS(name, min, max),
++
++	TP_STRUCT__entry(
++		__string(	name,		name		)
++		__field(        int,            min             )
++		__field(        int,            max             )
++	),
++
++	TP_fast_assign(
++		tp_strcpy(name, name);
++		tp_assign(min, min);
++		tp_assign(max, max);
++	),
++
++	TP_printk("name=%s (%d-%d)", __get_str(name),
++		  (int)__entry->min, (int)__entry->max)
++)
++
++DEFINE_EVENT(regulator_range, regulator_set_voltage,
++
++	TP_PROTO(const char *name, int min, int max),
++
++	TP_ARGS(name, min, max)
++
++)
++
++
++/*
++ * Events that take a single value, mostly for readback and refcounts.
++ */
++DECLARE_EVENT_CLASS(regulator_value,
++
++	TP_PROTO(const char *name, unsigned int val),
++
++	TP_ARGS(name, val),
++
++	TP_STRUCT__entry(
++		__string(	name,		name		)
++		__field(        unsigned int,   val             )
++	),
++
++	TP_fast_assign(
++		tp_strcpy(name, name);
++		tp_assign(val, val);
++	),
++
++	TP_printk("name=%s, val=%u", __get_str(name),
++		  (int)__entry->val)
++)
++
++DEFINE_EVENT(regulator_value, regulator_set_voltage_complete,
++
++	TP_PROTO(const char *name, unsigned int value),
++
++	TP_ARGS(name, value)
++
++)
++
++#endif /* _TRACE_POWER_H */
++
++/* This part must be outside protection */
++#include "../../../probes/define_trace.h"
+diff --git a/instrumentation/events/mainline/regulator.h b/instrumentation/events/mainline/regulator.h
+new file mode 100644
+index 0000000..37502a7
+--- /dev/null
++++ b/instrumentation/events/mainline/regulator.h
+@@ -0,0 +1,141 @@
++#undef TRACE_SYSTEM
++#define TRACE_SYSTEM regulator
++
++#if !defined(_TRACE_REGULATOR_H) || defined(TRACE_HEADER_MULTI_READ)
++#define _TRACE_REGULATOR_H
++
++#include <linux/ktime.h>
++#include <linux/tracepoint.h>
++
++/*
++ * Events which just log themselves and the regulator name for enable/disable
++ * type tracking.
++ */
++DECLARE_EVENT_CLASS(regulator_basic,
++
++	TP_PROTO(const char *name),
++
++	TP_ARGS(name),
++
++	TP_STRUCT__entry(
++		__string(	name,	name	)
++	),
++
++	TP_fast_assign(
++		__assign_str(name, name);
++	),
++
++	TP_printk("name=%s", __get_str(name))
++
++);
++
++DEFINE_EVENT(regulator_basic, regulator_enable,
++
++	TP_PROTO(const char *name),
++
++	TP_ARGS(name)
++
++);
++
++DEFINE_EVENT(regulator_basic, regulator_enable_delay,
++
++	TP_PROTO(const char *name),
++
++	TP_ARGS(name)
++
++);
++
++DEFINE_EVENT(regulator_basic, regulator_enable_complete,
++
++	TP_PROTO(const char *name),
++
++	TP_ARGS(name)
++
++);
++
++DEFINE_EVENT(regulator_basic, regulator_disable,
++
++	TP_PROTO(const char *name),
++
++	TP_ARGS(name)
++
++);
++
++DEFINE_EVENT(regulator_basic, regulator_disable_complete,
++
++	TP_PROTO(const char *name),
++
++	TP_ARGS(name)
++
++);
++
++/*
++ * Events that take a range of numerical values, mostly for voltages
++ * and so on.
++ */
++DECLARE_EVENT_CLASS(regulator_range,
++
++	TP_PROTO(const char *name, int min, int max),
++
++	TP_ARGS(name, min, max),
++
++	TP_STRUCT__entry(
++		__string(	name,		name		)
++		__field(        int,            min             )
++		__field(        int,            max             )
++	),
++
++	TP_fast_assign(
++		__assign_str(name, name);
++		__entry->min  = min;
++		__entry->max  = max;
++	),
++
++	TP_printk("name=%s (%d-%d)", __get_str(name),
++		  (int)__entry->min, (int)__entry->max)
++);
++
++DEFINE_EVENT(regulator_range, regulator_set_voltage,
++
++	TP_PROTO(const char *name, int min, int max),
++
++	TP_ARGS(name, min, max)
++
++);
++
++
++/*
++ * Events that take a single value, mostly for readback and refcounts.
++ */
++DECLARE_EVENT_CLASS(regulator_value,
++
++	TP_PROTO(const char *name, unsigned int val),
++
++	TP_ARGS(name, val),
++
++	TP_STRUCT__entry(
++		__string(	name,		name		)
++		__field(        unsigned int,   val             )
++	),
++
++	TP_fast_assign(
++		__assign_str(name, name);
++		__entry->val  = val;
++	),
++
++	TP_printk("name=%s, val=%u", __get_str(name),
++		  (int)__entry->val)
++);
++
++DEFINE_EVENT(regulator_value, regulator_set_voltage_complete,
++
++	TP_PROTO(const char *name, unsigned int value),
++
++	TP_ARGS(name, value)
++
++);
++
++#endif /* _TRACE_POWER_H */
++
++/* This part must be outside protection */
++#include <trace/define_trace.h>
+diff --git a/probes/Makefile b/probes/Makefile
+index c05080f..9cd3fcb 100644
+--- a/probes/Makefile
++++ b/probes/Makefile
+@@ -67,6 +67,13 @@ obj-m +=  $(shell \
+ 		echo "lttng-probe-jbd.o" ; fi;)
+ endif
+ 
++ifneq ($(CONFIG_REGULATOR),)
++obj-m +=  $(shell \
++	if [ $(VERSION) -ge 3 \
++		-o \( $(VERSION) -eq 2 -a $(PATCHLEVEL) -ge 6 -a $(SUBLEVEL) -ge 38 \) ] ; then \
++		echo "lttng-probe-regulator.o" ; fi;)
++endif
++
+ ifneq ($(CONFIG_KPROBES),)
+ obj-m += lttng-kprobes.o
+ endif
+diff --git a/probes/lttng-probe-regulator.c b/probes/lttng-probe-regulator.c
+new file mode 100644
+index 0000000..7c8b7f9
+--- /dev/null
++++ b/probes/lttng-probe-regulator.c
+@@ -0,0 +1,43 @@
++/*
++ * probes/lttng-probe-regulator.c
++ *
++ * LTTng regulator probes.
++ *
++ * Copyright (C) 2010-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
++ * Copyright (C) 2012 Mentor Graphics Corp.
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; only
++ * version 2.1 of the License.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
++ */
++
++#include <linux/module.h>
++
++/*
++ * Create the tracepoint static inlines from the kernel to validate that our
++ * trace event macros match the kernel we run on.
++ */
++#include <trace/events/regulator.h>
++
++/*
++ * Create LTTng tracepoint probes.
++ */
++#define LTTNG_PACKAGE_BUILD
++#define CREATE_TRACE_POINTS
++#define TRACE_INCLUDE_PATH ../instrumentation/events/lttng-module
++
++#include "../instrumentation/events/lttng-module/regulator.h"
++
++MODULE_LICENSE("GPL and additional rights");
++MODULE_AUTHOR("Wade Farnsworth <wade_farnsworth@mentor.com>");
++MODULE_DESCRIPTION("LTTng regulator probes");
+-- 
+1.7.0.4
+
