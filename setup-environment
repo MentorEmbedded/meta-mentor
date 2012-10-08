@@ -53,6 +53,14 @@ mel_prompt_machine () {
     unset machine_count
 }
 
+mel_abspath () {
+    _path="$1"
+    if [ -n "${_path##/*}" ]; then
+        _path="$PWD/$1"
+    fi
+    echo "$_path"
+}
+
 mel_setup () {
     BUILDDIR=
     MELDIR=
@@ -60,10 +68,10 @@ mel_setup () {
     while getopts b:o:f opt; do
         case "$opt" in
             b)
-                BUILDDIR="$OPTARG"
+                BUILDDIR="$(mel_abspath $OPTARG)"
                 ;;
             o)
-                MELDIR="$OPTARG"
+                MELDIR="$(mel_abspath $OPTARG)"
                 ;;
             f)
                 force_overwrite=1
@@ -93,7 +101,7 @@ mel_setup () {
     unset force_overwrite
 
     if [ -z "$MELDIR" ]; then
-        MELDIR=$(cd $(dirname $layerdir) && pwd)
+        MELDIR=$(dirname $layerdir)
     fi
 
     MACHINE=$1
@@ -126,7 +134,7 @@ mel_setup () {
         fi
     fi
     PATH="$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH"
-    echo "PATH=\"$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH\"; cd $(cd $BUILDDIR && pwd)" > $BUILDDIR/setup-environment
+    echo "PATH=\"$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH\"; cd $BUILDDIR" > $BUILDDIR/setup-environment
 
     cd $BUILDDIR
 
@@ -164,8 +172,8 @@ else
     if [ -e $layerdir/meta-mentor ]; then
         layerdir=$layerdir/meta-mentor
     fi
-    layerdir=$(cd $layerdir && pwd)
+    layerdir=$(mel_abspath $layerdir)
     mel_setup "$@"
     unset layerdir
-    unset -f mel_setup mel_usage mel_prompt_machine
+    unset -f mel_setup mel_usage mel_prompt_machine mel_abspath
 fi
