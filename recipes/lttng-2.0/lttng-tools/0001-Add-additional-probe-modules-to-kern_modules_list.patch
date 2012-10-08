@@ -1,0 +1,50 @@
+From 98bbba90dad2cfb78f3e622185c5c9029e13ab03 Mon Sep 17 00:00:00 2001
+From: Wade Farnsworth <wade_farnsworth@mentor.com>
+Date: Thu, 4 Oct 2012 14:39:13 -0500
+Subject: [PATCH] Add additional probe modules to kern_modules_list[]
+
+Add probe modules for new probes available in lttng-modules.
+
+Signed-off-by: Wade Farnsworth <wade_farnsworth@mentor.com>
+---
+ src/bin/lttng-sessiond/modprobe.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
+
+diff --git a/src/bin/lttng-sessiond/modprobe.c b/src/bin/lttng-sessiond/modprobe.c
+index b3f2e57..0cf3f3a 100644
+--- a/src/bin/lttng-sessiond/modprobe.c
++++ b/src/bin/lttng-sessiond/modprobe.c
+@@ -44,13 +44,30 @@ const struct kern_modules_param kern_modules_list[] = {
+ 	{ "lttng-ring-buffer-metadata-mmap-client", 1 },
+ 	{ "lttng-probe-lttng", 1 },
+ 	{ "lttng-types", 0 },
++	{ "lttng-probe-asoc", 0 },
+ 	{ "lttng-probe-block", 0 },
++	{ "lttng-probe-ext3", 0 },
+ 	{ "lttng-probe-irq", 0 },
++	{ "lttng-probe-gpio", 0 },
++	{ "lttng-probe-jbd", 0 },
++	{ "lttng-probe-jbd2", 0 },
++	{ "lttng-probe-kmem", 0 },
+ 	{ "lttng-probe-kvm", 0 },
++	{ "lttng-probe-lock", 0 },
++	{ "lttng-probe-modules", 0 },
++	{ "lttng-probe-napi", 0 },
++	{ "lttng-probe-net", 0 },
++	{ "lttng-probe-power", 0 },
++	{ "lttng-probe-regulator", 0 },
+ 	{ "lttng-probe-sched", 0 },
++	{ "lttng-probe-scsi", 0 },
++	{ "lttng-probe-sock", 0 },
++	{ "lttng-probe-skb", 0 },
+ 	{ "lttng-probe-signal", 0 },
+ 	{ "lttng-probe-statedump", 0 },
+ 	{ "lttng-probe-timer", 0 },
++	{ "lttng-probe-udp", 0 },
++	{ "lttng-probe-vmscan", 0 },
+ };
+ 
+ /*
+-- 
+1.7.0.4
+
