@@ -5,5 +5,5 @@ BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE MACHINE http_proxy ftp_proxy https_proxy \
                    GIT_PROXY_IGNORE SOCKS5_PASSWD SOCKS5_USER SCREENDIR"
 export BB_ENV_EXTRAWHITE
 
-. $(dirname $0)/wrap
+. "$(dirname "$0")/wrap"
 wrap $0 "$@"

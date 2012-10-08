@@ -10,6 +10,14 @@ find_builddir() {
     cd $curdir
 }
 
+abspath () {
+    _path="$1"
+    if [ -n "${_path##/*}" ]; then
+        _path="$PWD/$1"
+    fi
+    echo "$_path"
+}
+
 wrap() {
     cmd=$(basename $1)
     wrapperdir=$(cd ${1%/*} && pwd)

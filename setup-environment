@@ -54,11 +54,7 @@ mel_prompt_machine () {
 }
 
 mel_abspath () {
-    _path="$1"
-    if [ -n "${_path##/*}" ]; then
-        _path="$PWD/$1"
-    fi
-    echo "$_path"
+    readlink -f "$1"
 }
 
 mel_setup () {
