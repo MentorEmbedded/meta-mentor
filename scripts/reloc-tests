@@ -61,7 +61,7 @@ log_run () {
     shift
     local ret=0
 
-    trap "intr=1" INT
+    trap "intr=1" INT PIPE
 
     eval "$@ </dev/null 2>&1 >$logdir/$logfile.log &"
     local bg_pid=$!
@@ -78,7 +78,7 @@ log_run () {
     fi
 
     if [[ $intr -eq 1 ]]; then
-        echo "Interrupted."
+        echo >&2 "Interrupted."
 
         # Brute force approach, since shutting down bitbake with a signal is
         # a dicey proposition.
@@ -90,7 +90,7 @@ log_run () {
         echo >&2 "after kill?"
         exit $ret
     fi
-    trap - INT
+    trap - INT PIPE
 
     if [[ $verbose -eq 0 && $ret -ne 0 ]]; then
         echo >&2 "Error running $@:"
