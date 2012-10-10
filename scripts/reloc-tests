@@ -112,7 +112,7 @@ get_children () {
 prepare_auto () {
     local suffix=$1
     touch $topdir/conf/auto.conf
-    sed -i '/TMPDIR/d; /SSTATE_DIR/d' $topdir/conf/auto.conf
+    sed -i '/TMPDIR/d; /SSTATE_DIR/d; /SSTATE_MIRRORS/d;' $topdir/conf/auto.conf
     echo "TMPDIR = \"$tmpdir$suffix\"" >>$topdir/conf/auto.conf
     echo "SSTATE_DIR = \"$sstatedir$suffix\"" >>$topdir/conf/auto.conf
     echo "SSTATE_MIRRORS = \"\"" >>$topdir/conf/auto.conf
