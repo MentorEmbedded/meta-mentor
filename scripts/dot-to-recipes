@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+
+import re
+import sys
+import dot
+
+skip_patterns = ["^task-", "^meta-", "-image$", "-image-"]
+default_task = "do_build"
+built_task = "do_populate_sysroot"
+
+try:
+    dotfile = sys.argv[1]
+    requested = sys.argv[2:]
+except IndexError:
+    sys.exit("Usage: dot-to-recipes.py DOTFILE TARGET [TARGET...]")
+
+depends = dot.parse_depends(dotfile)
+seen_recipes = set()
+skip_patterns = [re.compile(pattern) for pattern in skip_patterns]
+for request in requested:
+    for node in dot.get_all_depends(depends, '%s.%s' % (request, default_task)):
+        recipe, task = node.rsplit(".", 1)
+        if recipe in seen_recipes or task != built_task:
+            continue
+
+        if any(re.search(pattern, recipe) for pattern in skip_patterns):
+            continue
+
+        seen_recipes.add(recipe)
+        print(recipe)
