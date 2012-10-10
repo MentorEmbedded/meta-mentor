@@ -179,24 +179,27 @@ mkdir -p $logdir
 # Prepare the recipe lists
 prepare_auto .recipelist
 
+# Prepare list of exclusions
 msg_run "Preparing excluded recipe list" recipelist.$target bitbake -g $excludetarget
-$bindir/dot-to-recipes task-depends.dot $excludetarget >$excludefile
-echo $excludetarget >>$excludefile
-for exclude in $excludes; do
-    echo $exclude >>$excludefile
-done
 
-# Now exclude recipes which were in ASSUME_PROVIDED
 msg_run "Dumping environment to extract ASSUME_PROVIDED" environment.$target bitbake -e
-
 eval $(grep '^ASSUME_PROVIDED=' $logdir/environment.$target.log)
-for element in $ASSUME_PROVIDED; do
-    echo $element >>$excludefile
-done
 
+{
+    $bindir/dot-to-recipes task-depends.dot $excludetarget
+    for exclude in $excludes; do
+        echo $exclude
+    done
+    for element in $ASSUME_PROVIDED; do
+        echo $element
+    done
+} | sort -u >$excludefile
+
+rm -f *.dot pn-buildlist
+
+# Construct list of recipes to be processed
 msg_run "Preparing recipe list" recipelist.$target bitbake -g $target
 $bindir/dot-to-recipes task-depends.dot $target >$recipelist
-echo $target >>$recipelist
 
 rm -rf $tmpdir.recipelist $sstatedir.recipelist
 rm -f *.dot pn-buildlist
