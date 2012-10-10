@@ -28,7 +28,7 @@ def _get_all_depends(depends, target, seen):
         for depend in _get_all_depends(depends, node, seen):
             yield depend
 
-        yield target
+        yield tuple(node.split('.'))
 
 def get_all_depends(depends, target):
     return _get_all_depends(depends, target, set())

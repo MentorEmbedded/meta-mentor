@@ -1,30 +1,42 @@
 #!/usr/bin/env python
 
+import itertools
 import re
 import sys
 import dot
 
-skip_patterns = ["^task-", "^meta-", "-image$", "-image-"]
 default_task = "do_build"
-built_task = "do_populate_sysroot"
+
+def unique_everseen(iterable, key=None):
+    "List unique elements, preserving order. Remember all elements ever seen."
+    # unique_everseen('AAAABBBCCDAABBB') --> A B C D
+    # unique_everseen('ABBCcAD', str.lower) --> A B C D
+    seen = set()
+    seen_add = seen.add
+    if key is None:
+        for element in itertools.ifilterfalse(seen.__contains__, iterable):
+            seen_add(element)
+            yield element
+    else:
+        for element in iterable:
+            k = key(element)
+            if k not in seen:
+                seen_add(k)
+                yield element
 
 try:
     dotfile = sys.argv[1]
-    requested = sys.argv[2:]
+    target = sys.argv[2]
 except IndexError:
-    sys.exit("Usage: dot-to-recipes.py DOTFILE TARGET [TARGET...]")
+    sys.exit("Usage: dot-to-recipes.py DOTFILE TARGET")
 
+
+# Get dependency information
 depends = dot.parse_depends(dotfile)
-seen_recipes = set()
-skip_patterns = [re.compile(pattern) for pattern in skip_patterns]
-for request in requested:
-    for node in dot.get_all_depends(depends, '%s.%s' % (request, default_task)):
-        recipe, task = node.rsplit(".", 1)
-        if recipe in seen_recipes or task != built_task:
-            continue
 
-        if any(re.search(pattern, recipe) for pattern in skip_patterns):
-            continue
+# Flatten into a list of recipes
+depend_list = dot.get_all_depends(depends, '%s.%s' % (target, default_task))
 
-        seen_recipes.add(recipe)
-        print(recipe)
+recipes = list(node[0] for node in depend_list if node[1] == 'do_populate_sysroot')
+for recipe in recipes:
+    print(recipe)
