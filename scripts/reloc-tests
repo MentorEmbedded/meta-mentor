@@ -87,7 +87,6 @@ log_run () {
         kill $pids 2>/dev/null
         trap - INT
         kill -2 $$
-        echo >&2 "after kill?"
         exit $ret
     fi
     trap - INT PIPE
