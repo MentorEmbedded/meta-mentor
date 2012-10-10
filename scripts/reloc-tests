@@ -7,6 +7,17 @@
 
 set -e
 
+cleanup=
+trap handle_sigint INT PIPE
+
+handle_sigint () {
+    if  [[ -n $cleanup ]]; then
+        eval "$cleanup"
+    fi
+    trap - 2
+    kill -2 $$
+}
+
 abspath () {
     local path=$1
     if [[ -n ${path##/*} ]]; then
@@ -85,11 +96,9 @@ log_run () {
         disown $bg_pid
         pids=$(get_children $bg_pid)
         kill $pids 2>/dev/null
-        trap - INT
-        kill -2 $$
-        exit $ret
+        handle_sigint
     fi
-    trap - INT PIPE
+    trap handle_sigint INT PIPE
 
     if [[ $verbose -eq 0 && $ret -ne 0 ]]; then
         echo >&2 "Error running $@:"
@@ -182,6 +191,7 @@ prepare_auto .recipelist
 # Prepare list of exclusions
 msg_run "Preparing excluded recipe list" recipelist.$target bitbake -g $excludetarget
 
+cleanup="rm -f *.dot pn-buildlist"
 msg_run "Dumping environment to extract ASSUME_PROVIDED" environment.$target bitbake -e
 eval $(grep '^ASSUME_PROVIDED=' $logdir/environment.$target.log)
 
@@ -194,15 +204,14 @@ eval $(grep '^ASSUME_PROVIDED=' $logdir/environment.$target.log)
         echo $element
     done
 } | sort -u >$excludefile
-
-rm -f *.dot pn-buildlist
+eval $cleanup
 
 # Construct list of recipes to be processed
+cleanup="rm -rf $tmpdir.recipelist $sstatedir.recipelist; rm -f *.dot pn-buildlist"
 msg_run "Preparing recipe list" recipelist.$target bitbake -g $target
 $bindir/dot-to-recipes task-depends.dot $target >$recipelist
-
-rm -rf $tmpdir.recipelist $sstatedir.recipelist
-rm -f *.dot pn-buildlist
+eval $cleanup
+cleanup=
 
 # Prepopulate shared state
 rm -rf $tmpdir.populating $sstatedir.populating
@@ -213,10 +222,11 @@ if [[ -e $sstatedir.populated ]]; then
     mv $sstatedir.populated $sstatedir.populating
 fi
 prepare_auto .populating
+cleanup="mv $sstatedir.populating $sstatedir.populated; mv $tmpdir.populating $tmpdir.populated;"
 msg_run "Prebuilding pseudo-native" pseudo-native.$target bitbake -k pseudo-native
 msg_run "Populating shared state" populating.$target bitbake -k $target
-mv $tmpdir.populating $tmpdir.populated
-mv $sstatedir.populating $sstatedir.populated
+eval $cleanup
+cleanup=
 
 # Test recipes
 touch $completedfile
