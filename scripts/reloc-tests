@@ -119,33 +119,46 @@ prepare_auto () {
     echo "SSTATE_MIRRORS = \"\"" >>$topdir/conf/auto.conf
 }
 
+# Locate files with a recipe name in the path, but filter out prefixed or
+# suffixed versions of the recipe name. That is, if you want 'autoconf',
+# don't return an 'autoconf-native' file.
+recipe_filtered_find () {
+    local recipe=$1
+    shift
+
+    find "$@" | while read file; do
+        local wrong_recipe=0
+
+        for suffix in $suffixes; do
+            case $(basename $file) in
+                $recipe$suffix)
+                    wrong_recipe=1
+                    break
+                    ;;
+            esac
+        done
+
+        for prefix in $prefixes; do
+            case $(basename $file) in
+                $prefix$recipe)
+                    wrong_recipe=1
+                    break
+                    ;;
+            esac
+        done
+
+        if [ $wrong_recipe -eq 0 ]; then
+            echo $file
+            return 0
+        fi
+    done
+    return 1
+}
+
 get_sstate () {
     local sstatepath=$1
     local recipe=$2
-    find $sstatepath/ -name sstate-$recipe-*.tgz | while read file; do
-        local found=0
-        for suffix in $suffixes; do
-            case $(basename $file) in
-                sstate-$recipe$suffix-*.tgz)
-                    found=1
-                    break
-                    ;;
-            esac
-        done
-        for prefix in $prefixes; do
-            case $(basename $file) in
-                sstate-$prefix$recipe-*.tgz)
-                    found=1
-                    break
-                    ;;
-            esac
-        done
-        if [[ $found -eq 1 ]]; then
-            continue
-        fi
-        echo $file
-        break
-    done
+    recipe_filtered_find $recipe $sstatepath/ -name sstate-$recipe-*.tgz
 }
 
 recipe_stamp_exists () {
@@ -153,37 +166,7 @@ recipe_stamp_exists () {
     local task=$2
     local stampdir=$3
 
-    stamps=$(mktemp reloc-tests.XXXX)
-    find $stampdir/ -name $recipe-\*.$task.\* >>$stamps
-
-    local found=0
-    while read stamp; do
-        stamp=$(basename $stamp)
-        local bad=0
-        for suffix in suffixes; do
-            case $stamp in
-                stamp-$recipe-$suffix-*)
-                    bad=1
-                    break
-                    ;;
-            esac
-        done
-        for prefix in $prefixes; do
-            case $(basename $stamp) in
-                stamp-$prefix$recipe-*)
-                    bad=1
-                    break
-                    ;;
-            esac
-        done
-
-        if [ $bad -eq 0 ]; then
-            rm -f $stamps
-            return 0
-        fi
-    done <$stamps
-    rm -f $stamps
-    return 1
+    recipe_filtered_find $recipe $stampdir/ -name $recipe-\*.$task.\*
 }
 
 
