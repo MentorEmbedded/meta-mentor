@@ -8,23 +8,20 @@ Add kmem probes based on trace/events/kmem.h.
 Signed-off-by: Wade Farnsworth <wade_farnsworth@mentor.com>
 ---
  instrumentation/events/lttng-module/gfpflags.h |   40 +++
- instrumentation/events/lttng-module/kmem.h     |  308 ++++++++++++++++++++++++
+ instrumentation/events/lttng-module/kmem.h     |  308 +++++++++++++++++++++++++
  instrumentation/events/mainline/gfpflags.h     |   40 +++
- instrumentation/events/mainline/kmem.h         |  308 ++++++++++++++++++++++++
- probes/Makefile                                |    1 +
- probes/lttng-probe-kmem.c                      |   43 ++++
- 6 files changed, 740 insertions(+), 0 deletions(-)
+ instrumentation/events/mainline/kmem.h         |  308 +++++++++++++++++++++++++
+ probes/Makefile                                |    1 
+ probes/lttng-probe-kmem.c                      |   43 +++
+ 6 files changed, 740 insertions(+)
  create mode 100644 instrumentation/events/lttng-module/gfpflags.h
  create mode 100644 instrumentation/events/lttng-module/kmem.h
  create mode 100644 instrumentation/events/mainline/gfpflags.h
  create mode 100644 instrumentation/events/mainline/kmem.h
  create mode 100644 probes/lttng-probe-kmem.c
 
-diff --git a/instrumentation/events/lttng-module/gfpflags.h b/instrumentation/events/lttng-module/gfpflags.h
-new file mode 100644
-index 0000000..23c7076
 --- /dev/null
-+++ b/instrumentation/events/lttng-module/gfpflags.h
++++ git/instrumentation/events/lttng-module/gfpflags.h
 @@ -0,0 +1,40 @@
 +/*
 + * The order of these masks is important. Matching masks will be seen
@@ -66,11 +63,8 @@ index 0000000..23c7076
 +	{(unsigned long)__GFP_NO_KSWAPD,	"GFP_NO_KSWAPD"},	\
 +	{(unsigned long)__GFP_OTHER_NODE,	"GFP_OTHER_NODE"}	\
 +	) : "GFP_NOWAIT"
-diff --git a/instrumentation/events/lttng-module/kmem.h b/instrumentation/events/lttng-module/kmem.h
-new file mode 100644
-index 0000000..bfa2c8d
 --- /dev/null
-+++ b/instrumentation/events/lttng-module/kmem.h
++++ git/instrumentation/events/lttng-module/kmem.h
 @@ -0,0 +1,308 @@
 +#undef TRACE_SYSTEM
 +#define TRACE_SYSTEM kmem
@@ -380,11 +374,8 @@ index 0000000..bfa2c8d
 +
 +/* This part must be outside protection */
 +#include "../../../probes/define_trace.h"
-diff --git a/instrumentation/events/mainline/gfpflags.h b/instrumentation/events/mainline/gfpflags.h
-new file mode 100644
-index 0000000..23c7076
 --- /dev/null
-+++ b/instrumentation/events/mainline/gfpflags.h
++++ git/instrumentation/events/mainline/gfpflags.h
 @@ -0,0 +1,40 @@
 +/*
 + * The order of these masks is important. Matching masks will be seen
@@ -426,11 +417,8 @@ index 0000000..23c7076
 +	{(unsigned long)__GFP_NO_KSWAPD,	"GFP_NO_KSWAPD"},	\
 +	{(unsigned long)__GFP_OTHER_NODE,	"GFP_OTHER_NODE"}	\
 +	) : "GFP_NOWAIT"
-diff --git a/instrumentation/events/mainline/kmem.h b/instrumentation/events/mainline/kmem.h
-new file mode 100644
-index 0000000..a9c87ad
 --- /dev/null
-+++ b/instrumentation/events/mainline/kmem.h
++++ git/instrumentation/events/mainline/kmem.h
 @@ -0,0 +1,308 @@
 +#undef TRACE_SYSTEM
 +#define TRACE_SYSTEM kmem
@@ -740,23 +728,18 @@ index 0000000..a9c87ad
 +
 +/* This part must be outside protection */
 +#include <trace/define_trace.h>
-diff --git a/probes/Makefile b/probes/Makefile
-index 0837366..1c12749 100644
---- a/probes/Makefile
-+++ b/probes/Makefile
-@@ -14,6 +14,7 @@ obj-m += lttng-probe-sched.o
+--- git.orig/probes/Makefile
++++ git/probes/Makefile
+@@ -12,6 +12,7 @@ obj-m += lttng-probe-lttng.o
+ 
+ obj-m += lttng-probe-sched.o
  obj-m += lttng-probe-irq.o
- obj-m += lttng-probe-signal.o
- obj-m += lttng-probe-timer.o
 +obj-m += lttng-probe-kmem.o
  
- obj-m += lttng-probe-statedump.o
- 
-diff --git a/probes/lttng-probe-kmem.c b/probes/lttng-probe-kmem.c
-new file mode 100644
-index 0000000..af67759
+ ifneq ($(CONFIG_KVM),)
+ obj-m += lttng-probe-kvm.o
 --- /dev/null
-+++ b/probes/lttng-probe-kmem.c
++++ git/probes/lttng-probe-kmem.c
 @@ -0,0 +1,43 @@
 +/*
 + * probes/lttng-probe-kmem.c
@@ -801,6 +784,3 @@ index 0000000..af67759
 +MODULE_LICENSE("GPL and additional rights");
 +MODULE_AUTHOR("Wade Farnsworth <wade_farnsworth@mentor.com>");
 +MODULE_DESCRIPTION("LTTng kmem probes");
--- 
-1.7.0.4
-
