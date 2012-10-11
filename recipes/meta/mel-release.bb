@@ -12,6 +12,10 @@ MEL_RELEASE_IMAGE ?= "core-image-base"
 MEL_RELEASE_USE_TAGS ?= "false"
 MEL_RELEASE_USE_TAGS[type] = "boolean"
 
+# Use IMAGE_EXTENSION_xxx to map image type 'xxx' with real image file
+# extension name(s)
+IMAGE_EXTENSION_live = "hddimg iso"
+
 python () {
     extensions = set()
     fstypes = d.getVar('IMAGE_FSTYPES', True).split()
