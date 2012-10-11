@@ -223,7 +223,7 @@ if [[ -e $sstatedir.populated ]]; then
     mv $sstatedir.populated $sstatedir.populating
 fi
 prepare_auto .populating
-cleanup="mv $sstatedir.populating $sstatedir.populated; mv $tmpdir.populating $tmpdir.populated;"
+cleanup="mv $sstatedir.populating $sstatedir.populated; mv $tmpdir.populating $tmpdir.populated"
 msg_run "Prebuilding pseudo-native" pseudo-native.$target bitbake -k pseudo-native
 msg_run "Populating shared state" populating.$target bitbake -k $target
 eval $cleanup
@@ -247,7 +247,7 @@ while read recipe; do
         echo >&2 "Skipping $recipe, as it was excluded"
     else
         msg_run "Building $recipe with its dependencies prebuilt" testing.$recipe bitbake -c populate_sysroot $recipe
-        if ! recipe_stamp_exists $recipe $builttask $tmpdir.testing; then
+        if ! recipe_stamp_exists $recipe $builttask $tmpdir.testing/stamps; then
             echo >&2 "Error: $recipe was not built from scratch"
             exit 4
         fi
