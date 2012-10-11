@@ -246,7 +246,7 @@ while read recipe; do
     if grep -q "^$recipe$" $excludefile || echo $recipe | grep -qE "^$excludepatterns$"; then
         echo >&2 "Skipping $recipe, as it was excluded"
     else
-        msg_run "Building $recipe with its dependencies prebuilt" testing.$recipe bitbake $recipe
+        msg_run "Building $recipe with its dependencies prebuilt" testing.$recipe bitbake -c populate_sysroot $recipe
         if ! recipe_stamp_exists $recipe $builttask $tmpdir.testing; then
             echo >&2 "Error: $recipe was not built from scratch"
             exit 4
