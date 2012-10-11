@@ -266,3 +266,5 @@ while read recipe; do
 
     echo $recipe >>$completedfile
 done <$recipelist
+
+# vim:set sw=4 sts=4 et:
