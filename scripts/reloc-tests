@@ -39,6 +39,7 @@ outputdir=$topdir/reloc-build
 prefixes="nativesdk-"
 suffixes="-native -cross -crosssdk -sdk"
 excludes="external-sourcery-toolchain"
+excludepatterns="(packagegroup-.*|.*-image-*.*)"
 logdir=$outputdir/logs
 completedfile=$outputdir/completed
 excludefile=$outputdir/excluded
@@ -242,7 +243,7 @@ while read recipe; do
         exit 2
     fi
 
-    if grep -q "^$recipe$" $excludefile; then
+    if grep -q "^$recipe$" $excludefile || echo $recipe | grep -qE "^$excludepatterns$"; then
         echo >&2 "Skipping $recipe, as it was excluded"
     else
         msg_run "Building $recipe with its dependencies prebuilt" testing.$recipe bitbake $recipe
