@@ -148,10 +148,9 @@ recipe_filtered_find () {
 
         if [ $wrong_recipe -eq 0 ]; then
             echo $file
-            return 0
+            break
         fi
     done
-    return 1
 }
 
 get_sstate () {
@@ -165,7 +164,8 @@ recipe_stamp_exists () {
     local task=$2
     local stampdir=$3
 
-    recipe_filtered_find $recipe $stampdir/ -name $recipe-\*.$task.\*
+    local stamp=$(recipe_filtered_find $recipe $stampdir/ -name $recipe-\*.$task.\*)
+    test -n "$stamp"
 }
 
 
