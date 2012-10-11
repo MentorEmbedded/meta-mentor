@@ -251,6 +251,18 @@ while read recipe; do
             echo >&2 "Error: $recipe was not built from scratch"
             exit 4
         fi
+
+        history_diff=$(mktemp reloc-tests.XXXX)
+        (
+            cd $topdir/buildhistory
+            buildhistory-diff packages HEAD~1
+        ) >>$history_diff
+        if [[ $(stat -c %s $history_diff) -ne 0 ]]; then
+            echo >&2 "Warning: packages changed after building $recipe:"
+            cat $history_diff
+        fi
+        rm -f $history_diff
+
         msg_run "Cleaning up $recipe" cleaning.$recipe bitbake -c cleansstate $recipe
     fi
 
