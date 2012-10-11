@@ -118,8 +118,8 @@ do_prepare_release () {
     if [ -e ${DEPLOY_DIR_IMAGE}/u-boot-${MACHINE}.bin ]; then
         echo ${DEPLOY_DIR_IMAGE}/u-boot-${MACHINE}.bin >>include
     fi
-    for type in ${IMAGE_FSTYPES}; do
-        echo ${DEPLOY_DIR_IMAGE}/${MEL_RELEASE_IMAGE}-${MACHINE}.$type >>include
+    for extension in ${IMAGE_EXTENSIONS}; do
+        echo ${DEPLOY_DIR_IMAGE}/${MEL_RELEASE_IMAGE}-${MACHINE}.$extension >>include
     done
     echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >>include
     echo "--exclude=.git" >>include
