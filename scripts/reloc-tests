@@ -79,7 +79,7 @@ log_run () {
     local bg_pid=$!
 
     if [[ $verbose -eq 1 ]]; then
-        tail -f $logdir/$logfile.log &
+        tail -f $logdir/$logfile.log 2>/dev/null &
         tail_pid=$!
     fi
     wait %1 || ret=$?
@@ -260,6 +260,8 @@ while read recipe; do
         exit 3
     fi
 
+    # Overwrites the current sstate archive with the one built in the other
+    # tmpdir, for use by subsequent recipe builds.
     trimmed=$(echo $sstate_file|sed "s,^$sstatedir.populated/,,")
     mkdir -p $(dirname $sstatedir.testing/$trimmed)
     cp $sstate_file $sstatedir.testing/$trimmed
