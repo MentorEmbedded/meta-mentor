@@ -1,0 +1,232 @@
+#!/bin/bash -e
+#
+# This script tests for greedy configure scripts in recipe builds, which link
+# against things based on their existence in the sysroot.
+#
+# It does so by building the specified target, then rebuilding all of its
+# dependencies from scratch, one by one, monitoring for buildhistory changes.
+
+
+set -u
+
+cleanup=
+trap handle_sigint INT PIPE
+
+handle_sigint () {
+    if  [[ -n $cleanup ]]; then
+        eval "$cleanup"
+    fi
+    trap - 2
+    kill -2 $$
+}
+
+abspath () {
+    local path=$1
+    if [[ -n ${path##/*} ]]; then
+        path=$PWD/$1
+    fi
+    echo $path
+}
+
+
+bindir=$(abspath ${0%/*})
+topdir=$PWD
+
+verbose=0
+deftarget=core-image-minimal
+builttask=populate_sysroot
+outputdir=$topdir/greedy-deps-tests-build
+
+prefixes="nativesdk-"
+suffixes="-native -cross -crosssdk -sdk"
+excludes="external-sourcery-toolchain"
+excludepatterns="(packagegroup-.*|.*-image-*.*)"
+logdir=$outputdir/logs
+completedfile=$outputdir/completed
+excludefile=$outputdir/excluded
+buildhistorydir=$outputdir/buildhistory
+tmpdir=$outputdir/tmp
+recipelist=$outputdir/recipelist
+
+
+msg_run () {
+    local msg="$1"
+    shift
+
+    if [[ $verbose -eq 1 ]]; then
+        printf >&2 "$msg\n"
+    else
+        printf >&2 "$msg..."
+    fi
+
+    local ret=0
+    log_run "$@" || ret=$?
+    if [ $ret -eq 0 ]; then
+        if [ $verbose -eq 0 ]; then
+            printf >&2 "done\n"
+        fi
+    fi
+    return $ret
+}
+
+intr=0
+
+log_run () {
+    local logfile="$1"
+    shift
+    local ret=0
+
+    trap "intr=1" INT PIPE
+
+    eval "$@ </dev/null 2>&1 >$logdir/$logfile.log &"
+    local bg_pid=$!
+
+    if [[ $verbose -eq 1 ]]; then
+        tail -f $logdir/$logfile.log 2>/dev/null &
+        tail_pid=$!
+    fi
+    wait %1 || ret=$?
+    trap "" INT
+    if [[ $verbose -eq 1 ]]; then
+        disown $tail_pid
+        kill $tail_pid
+    fi
+
+    if [[ $intr -eq 1 ]]; then
+        echo >&2 "Interrupted."
+
+        # Brute force approach, since shutting down bitbake with a signal is
+        # a dicey proposition.
+        disown $bg_pid
+        pids=$(get_children $bg_pid)
+        kill $pids 2>/dev/null
+        handle_sigint
+    fi
+    trap handle_sigint INT PIPE
+
+    if [[ $verbose -eq 0 && $ret -ne 0 ]]; then
+        echo >&2 "Error running $@:"
+        tail -n 30 $logdir/$logfile.log >&2
+    fi
+
+    return $ret
+}
+
+get_children () {
+    for pid; do
+        echo $pid
+        local children=$(pgrep -P $pid)
+        if [[ -n "$children" ]]; then
+            get_children $children
+        fi
+    done
+}
+
+# Locate files with a recipe name in the path, but filter out prefixed or
+# suffixed versions of the recipe name. That is, if you want 'autoconf',
+# don't return an 'autoconf-native' file.
+recipe_filtered_find () {
+    local recipe=$1
+    shift
+
+    find "$@" | while read file; do
+        local wrong_recipe=0
+
+        for suffix in $suffixes; do
+            case $(basename $file) in
+                $recipe$suffix)
+                    wrong_recipe=1
+                    break
+                    ;;
+            esac
+        done
+
+        for prefix in $prefixes; do
+            case $(basename $file) in
+                $prefix$recipe)
+                    wrong_recipe=1
+                    break
+                    ;;
+            esac
+        done
+
+        if [ $wrong_recipe -eq 0 ]; then
+            echo $file
+            break
+        fi
+    done
+}
+
+recipe_stamp_exists () {
+    local recipe=$1
+    local task=$2
+    local stampdir=$3
+
+    local stamp=$(recipe_filtered_find $recipe $stampdir/ -name $recipe-\*.$task.\*)
+    test -n "$stamp"
+}
+
+
+target=$1
+if [[ -z $target ]]; then
+    target=$deftarget
+fi
+
+cat >$topdir/conf/auto.conf <<END
+TMPDIR = "$tmpdir"
+INHERIT += "buildhistory"
+BUILDHISTORY_DIR = "$buildhistorydir"
+BUILDHISTORY_COMMIT = "1"
+END
+
+mkdir -p $logdir
+
+# Prepare exclusions
+msg_run "Dumping environment to extract ASSUME_PROVIDED" environment.$target bitbake -e
+eval $(grep '^ASSUME_PROVIDED=' $logdir/environment.$target.log)
+
+echo $excludes $ASSUME_PROVIDED | sed 's/ /\n/g' >$excludefile
+
+msg_run "Preparing recipe list" recipelist.$target bitbake -g $target
+rm -f *.dot
+mv pn-buildlist $recipelist
+
+msg_run "Building $target" building.$target bitbake -k $target
+
+# Make sure we're building from scratch, even if the sstates are on a mirror
+echo "SSTATE_MIRRORS = \"\"" >>$topdir/conf/auto.conf
+
+touch $completedfile
+while read recipe; do
+    if grep -q "^$recipe$" $completedfile; then
+        continue
+    fi
+
+    if grep -q "^$recipe$" $excludefile || echo $recipe | grep -qE "^$excludepatterns$"; then
+        echo >&2 "Skipping $recipe, as it was excluded"
+    else
+        msg_run "Cleaning $recipe" cleaning.$recipe bitbake -c cleansstate $recipe
+        msg_run "Building $recipe from scratch" building.$recipe bitbake -c $builttask $recipe
+
+        if ! recipe_stamp_exists $recipe do_$builttask $tmpdir/stamps; then
+            echo >&2 "Error: $recipe was not built from scratch"
+            exit 4
+        fi
+
+        history_diff=$(mktemp reloc-tests.XXXX)
+        (
+            cd $buildhistorydir
+            buildhistory-diff packages HEAD~1
+        ) >>$history_diff
+        if [[ $(stat -c %s $history_diff) -ne 0 ]]; then
+            echo >&2 "Error: packages changed after building $recipe:"
+            cat $history_diff
+            exit 1
+        fi
+        rm -f $history_diff
+    fi
+
+    echo $recipe >>$completedfile
+done <$recipelist
+
+# vim:set sw=4 sts=4 et:
