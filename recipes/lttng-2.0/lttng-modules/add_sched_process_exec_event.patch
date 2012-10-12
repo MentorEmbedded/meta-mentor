@@ -22,7 +22,7 @@ index b68616e..ef791ac 100644
 +	),
 +
 +	TP_fast_assign(
-+		tp_strcpy(filename, bprm->filename);
++		tp_strcpy(filename, bprm->filename)
 +		tp_assign(pid, p->pid)
 +		tp_assign(old_pid, old_pid)
 +	),
