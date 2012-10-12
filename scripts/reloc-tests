@@ -256,15 +256,18 @@ while read recipe; do
         fi
 
         history_diff=$(mktemp reloc-tests.XXXX)
+        cleanup="rm -f $history_diff"
         (
             cd $topdir/buildhistory
             buildhistory-diff packages HEAD~1
         ) >>$history_diff
+
         if [[ $(stat -c %s $history_diff) -ne 0 ]]; then
             echo >&2 "Warning: packages changed after building $recipe:"
             cat $history_diff
         fi
         rm -f $history_diff
+        cleanup=
 
         msg_run "Cleaning up $recipe" cleaning.$recipe bitbake -c cleansstate $recipe
     fi
