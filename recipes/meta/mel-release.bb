@@ -12,6 +12,14 @@ MEL_RELEASE_IMAGE ?= "core-image-base"
 MEL_RELEASE_USE_TAGS ?= "false"
 MEL_RELEASE_USE_TAGS[type] = "boolean"
 
+DEPLOY_IMAGE_FILES = "\
+    ${KERNEL_IMAGETYPE}-${MACHINE}* \
+    u-boot-*-${MACHINE}-*.bin \
+    modules-*-${MACHINE}.tgz \
+    ${@' '.join('${MEL_RELEASE_IMAGE}-${MACHINE}.%s' % ext for ext in IMAGE_EXTENSIONS.split())} \
+\
+"
+
 # Use IMAGE_EXTENSION_xxx to map image type 'xxx' with real image file
 # extension name(s)
 IMAGE_EXTENSION_live = "hddimg iso"
@@ -109,18 +117,10 @@ do_prepare_release () {
     echo "--absolute-names" >include
     echo "--transform=s,-${MACHINE}\.,.," >>include
     echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
-    if [ -e ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${MACHINE} ]; then
-        echo ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${MACHINE} >>include
-    fi
-    if [ -e ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${MACHINE}.dtb ]; then
-        echo ${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${MACHINE}.dtb >>include
-    fi
-    if [ -e ${DEPLOY_DIR_IMAGE}/u-boot-${MACHINE}.bin ]; then
-        echo ${DEPLOY_DIR_IMAGE}/u-boot-${MACHINE}.bin >>include
-    fi
-    for extension in ${IMAGE_EXTENSIONS}; do
-        echo ${DEPLOY_DIR_IMAGE}/${MEL_RELEASE_IMAGE}-${MACHINE}.$extension >>include
-    done
+    {
+        ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 -iname "%s" || true' % file for file in DEPLOY_IMAGE_FILES.split())}
+    } >>include
+
     echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >>include
     echo "--exclude=.git" >>include
     echo ${BUILDHISTORY_DIR} >>include
