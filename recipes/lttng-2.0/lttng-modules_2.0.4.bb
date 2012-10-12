@@ -10,7 +10,7 @@ DEPENDS = "virtual/kernel"
 
 inherit module
 
-PR = "r1"
+PR = "r2"
 
 SRC_URI = "http://lttng.org/files/${PN}/${PN}-${PV}.tar.bz2\
            file://lttng-modules-replace-KERNELDIR-with-KERNEL_SRC.patch\
