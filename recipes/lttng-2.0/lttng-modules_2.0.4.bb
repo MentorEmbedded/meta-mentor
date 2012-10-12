@@ -34,6 +34,7 @@ SRC_URI = "http://lttng.org/files/${PN}/${PN}-${PV}.tar.bz2\
 	   file://0018-Fix-ring_buffer_frontend.c-missing-include-lttng-tra.patch\
 	   file://0019-Fix-cleanup-move-lttng-tracer-core.h-include-to-lib-.patch\
            "
+SRC_URI_append_pandaboard = "file://add_sched_process_exec_event.patch"
 SRC_URI[md5sum] = "e2f07c0eb40a0d8027de17f4dd7ebe12"
 SRC_URI[sha256sum] = "f00116c388289192774c774581a651832be094aeb6da2f2c0f9c9e275fed2d14"
 
