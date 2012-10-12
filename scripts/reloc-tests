@@ -186,6 +186,9 @@ fi
 
 mkdir -p $logdir
 
+exec > >(tee -a $logdir/$target.log)
+exec 2>&1
+
 # Prepare the recipe lists
 prepare_auto .recipelist
 
