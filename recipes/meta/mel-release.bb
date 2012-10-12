@@ -29,10 +29,10 @@ python () {
 }
 
 
-tar () {
-    command tar --absolute-names "--transform=s,^${MELDIR}/,," --exclude=.svn \
+mel_tar () {
+    tar --absolute-names "$@" "--transform=s,^${MELDIR}/,," --exclude=.svn \
         --exclude=.git --exclude=\*.pyc --exclude=\*.pyo --exclude=.gitignore \
-        "$@"
+        -v --show-stored-names
 }
 
 git_tar () {
@@ -45,9 +45,9 @@ git_tar () {
         else
             version=$(git --git-dir=$repo/.git rev-list HEAD | wc -l)
         fi
-        tar $repo "$@" "--transform=s,^$repo,$name," -cjf deploy/${name}_$version.tar.bz2
+        mel_tar $repo "$@" "--transform=s,^$repo,$name," -cjf deploy/${name}_$version.tar.bz2
     else
-        tar $repo "$@" "--transform=s,^$repo,$name," -cjf deploy/$name.tar.bz2
+        mel_tar $repo "$@" "--transform=s,^$repo,$name," -cjf deploy/$name.tar.bz2
     fi
 }
 
