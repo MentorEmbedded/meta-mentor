@@ -5,11 +5,15 @@
 # filesystem, to catch relocation problems.
 
 
-set -e
+set -eu
+
+# Emit a useful diagnostic if something fails:
+on_error() {
+    echo >&2 "Error: exited with $? from ${BASH_SOURCE[0]##*/}:${BASH_LINENO[0]}:$BASH_COMMAND"
+}
+trap on_error ERR
 
 cleanup=
-trap handle_sigint INT PIPE
-
 handle_sigint () {
     if  [[ -n $cleanup ]]; then
         eval "$cleanup"
@@ -17,6 +21,7 @@ handle_sigint () {
     trap - 2
     kill -2 $$
 }
+trap handle_sigint INT PIPE
 
 abspath () {
     local path=$1
@@ -68,6 +73,7 @@ msg_run () {
     return $ret
 }
 
+intr=0
 log_run () {
     local logfile="$1"
     shift
