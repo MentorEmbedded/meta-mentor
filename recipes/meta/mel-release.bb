@@ -103,7 +103,7 @@ do_prepare_release () {
     for file in ${SB_RELEASE_EXCLUDED_SOURCES}; do
         rm -f sources/$file
     done
-    tar -cjhf deploy/${MACHINE}-sources.tar.bz2 sources/
+    mel_tar -cjhf deploy/${MACHINE}-sources.tar.bz2 sources/
 
     # Kill dead links
     find ${SSTATE_DIR} -type l | while read fn; do
@@ -111,7 +111,7 @@ do_prepare_release () {
             rm -f "$fn"
         fi
     done
-    tar "--transform=s,^${SSTATE_DIR},cached-binaries," --exclude=\*.done \
+    mel_tar "--transform=s,^${SSTATE_DIR},cached-binaries," --exclude=\*.done \
             -cjhf deploy/${MACHINE}-sstate.tar.bz2 ${SSTATE_DIR}
 
     echo "--absolute-names" >include
@@ -131,7 +131,7 @@ do_prepare_release () {
     echo "${S}/local.conf.sample" >>include
     echo "${S}/bblayers.conf.sample" >>include
 
-    tar --files-from=include -cjhf deploy/${MACHINE}.tar.bz2
+    mel_tar --files-from=include -cjhf deploy/${MACHINE}.tar.bz2
 
     cp bblayers.conf.sample local.conf.sample deploy/
     echo ${DISTRO_VERSION} >deploy/distro-version
