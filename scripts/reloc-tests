@@ -9,8 +9,9 @@ set -eu
 
 # Emit a useful diagnostic if something fails:
 on_error() {
-    echo >&2 "Error: exited with $? from ${BASH_SOURCE[0]##*/}:${BASH_LINENO[0]}:$BASH_COMMAND"
+    echo >&2 "Error: exited with $? while executing '$BASH_COMMAND', from ${BASH_SOURCE[1]##*/}:${BASH_LINENO[0]}(${FUNCNAME[1]})"
 }
+set -o errtrace
 trap on_error ERR
 
 cleanup=
