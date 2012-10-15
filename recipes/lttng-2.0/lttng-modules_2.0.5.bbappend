@@ -21,3 +21,6 @@ SRC_URI += "\
     file://0018-Fix-ring_buffer_frontend.c-missing-include-lttng-tra.patch \
     file://0019-Fix-cleanup-move-lttng-tracer-core.h-include-to-lib-.patch \
 "
+
+SRC_URI_append_pandaboard = "file://add_sched_process_exec_event.patch"
+SRC_URI_append_imx6qsabrelite = "file://add_sched_process_exec_event.patch"
