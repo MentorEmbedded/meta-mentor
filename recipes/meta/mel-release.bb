@@ -149,6 +149,12 @@ do_prepare_release[depends] += "${MEL_RELEASE_IMAGE}:do_build"
 do_prepare_release[recrdeptask] += "do_package_write"
 do_prepare_release[recrdeptask] += "do_populate_sysroot"
 
+python () {
+    if oe.utils.inherits(d, 'copyleft_compliance'):
+        d.appendVarFlag('do_prepare_release', 'recrdeptask',
+                        ' do_prepare_copyleft_sources')
+}
+
 do_fetch[noexec] = "1"
 do_unpack[noexec] = "1"
 do_patch[noexec] = "1"
