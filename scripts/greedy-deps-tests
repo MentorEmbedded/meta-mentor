@@ -51,6 +51,7 @@ completedfile=$outputdir/completed
 excludefile=$outputdir/excluded
 buildhistorydir=$outputdir/buildhistory
 tmpdir=$outputdir/tmp
+sstatedir=$outputdir/sstate-cache
 recipelist=$outputdir/recipelist
 
 
@@ -179,6 +180,8 @@ fi
 
 cat >$topdir/conf/auto.conf <<END
 TMPDIR = "$tmpdir"
+SSTATE_DIR_forcevariable = "$sstatedir"
+SSTATE_MIRRORS_forcevariable = ""
 INHERIT += "buildhistory"
 BUILDHISTORY_DIR = "$buildhistorydir"
 BUILDHISTORY_COMMIT = "1"
@@ -203,9 +206,6 @@ rm -f *.dot
 mv pn-buildlist $recipelist
 
 msg_run "Building $target" building.$target bitbake -k $target
-
-# Make sure we're building from scratch, even if the sstates are on a mirror
-echo "SSTATE_MIRRORS = \"\"" >>$topdir/conf/auto.conf
 
 touch $completedfile
 while read recipe; do
