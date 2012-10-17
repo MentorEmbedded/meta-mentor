@@ -178,6 +178,11 @@ if [[ -z $target ]]; then
     target=$deftarget
 fi
 
+populate_target=$2
+if [[ -z $populate_target ]]; then
+    populate_target=$deftarget
+fi
+
 cat >$topdir/conf/auto.conf <<END
 TMPDIR = "$tmpdir"
 SSTATE_DIR_forcevariable = "$sstatedir"
@@ -206,6 +211,10 @@ rm -f *.dot
 mv pn-buildlist $recipelist
 
 msg_run "Building $target" building.$target bitbake -k $target
+
+if [[ $target != $populate_target ]]; then
+    msg_run "Building $populate_target to prepopulate tmpdir" building.$populate_target bitbake -k $populate_target
+fi
 
 touch $completedfile
 while read recipe; do
