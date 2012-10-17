@@ -38,6 +38,7 @@ topdir=$PWD
 
 verbose=0
 deftarget=core-image-minimal
+excludetarget=pseudo-native
 builttask=populate_sysroot
 outputdir=$topdir/greedy-deps-tests-build
 
@@ -185,11 +186,17 @@ END
 
 mkdir -p $logdir
 
-# Prepare exclusions
+msg_run "Preparing excluded recipe list" recipelist.$target bitbake -g $excludetarget
+
+cleanup="rm -f *.dot pn-buildlist"
 msg_run "Dumping environment to extract ASSUME_PROVIDED" environment.$target bitbake -e
 eval $(grep '^ASSUME_PROVIDED=' $logdir/environment.$target.log)
 
-echo $excludes $ASSUME_PROVIDED | sed 's/ /\n/g' >$excludefile
+{
+    $bindir/dot-to-recipes task-depends.dot $excludetarget
+    echo $excludes $ASSUME_PROVIDED | sed 's/ /\n/g'
+} | sort -u >$excludefile
+eval $cleanup
 
 msg_run "Preparing recipe list" recipelist.$target bitbake -g $target
 rm -f *.dot
