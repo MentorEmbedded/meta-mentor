@@ -730,14 +730,14 @@ Signed-off-by: Wade Farnsworth <wade_farnsworth@mentor.com>
 +#include <trace/define_trace.h>
 --- git.orig/probes/Makefile
 +++ git/probes/Makefile
-@@ -12,6 +12,7 @@ obj-m += lttng-probe-lttng.o
- 
- obj-m += lttng-probe-sched.o
+@@ -14,6 +14,7 @@ obj-m += lttng-probe-sched.o
  obj-m += lttng-probe-irq.o
+ obj-m += lttng-probe-signal.o
+ obj-m += lttng-probe-timer.o
 +obj-m += lttng-probe-kmem.o
  
- ifneq ($(CONFIG_KVM),)
- obj-m += lttng-probe-kvm.o
+ obj-m += lttng-probe-statedump.o
+ 
 --- /dev/null
 +++ git/probes/lttng-probe-kmem.c
 @@ -0,0 +1,43 @@
