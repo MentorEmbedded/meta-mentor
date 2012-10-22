@@ -24,3 +24,4 @@ SRC_URI += "\
 
 SRC_URI_append_pandaboard = "file://add_sched_process_exec_event.patch"
 SRC_URI_append_imx6qsabrelite = "file://add_sched_process_exec_event.patch"
+COMPATIBLE_HOST = '(x86_64.*|i.86.*|arm.*|powerpc.*|mips.*)-linux.*'
