@@ -60,6 +60,15 @@ MACHINE ??= "qemux86"
 
 EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-lttng"
 
+# User features lets you manipulate the distro features. To add a distro
+# feature, simply add it to USER_FEATURES. To remove, prefix it with ~.
+#
+# # Disable x11
+# USER_FEATURES += "~x11"
+#
+# Disable 3g by default, as most won't need it.
+USER_FEATURES += "~3g"
+
 # How many tasks bitbake should run in parallel
 #BB_NUMBER_THREADS = "4"
 
