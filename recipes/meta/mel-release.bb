@@ -92,18 +92,18 @@ do_prepare_release () {
         git_tar ${MELDIR}/$basedir
     done
 
-    mkdir -p sources
+    mkdir -p downloads
     find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
         src=`readlink $source` || continue
         if echo $src | grep -q "^${DL_DIR}/"; then
-            ln -sf $source sources/
-            touch sources/$(basename $source).done
+            ln -sf $source downloads/
+            touch downloads/$(basename $source).done
         fi
     done
     for file in ${SB_RELEASE_EXCLUDED_SOURCES}; do
-        rm -f sources/$file
+        rm -f downloads/$file
     done
-    mel_tar -cjhf deploy/${MACHINE}-sources.tar.bz2 sources/
+    mel_tar -cjhf deploy/${MACHINE}-sources.tar.bz2 downloads/
 
     # Kill dead links
     find ${SSTATE_DIR} -type l | while read fn; do
