@@ -1,3 +1,5 @@
+SRC_URI = "${KERNELORG_MIRROR}/linux/utils/kernel/hotplug/udev-${PV}.tar.gz"
+
 include udev.inc
 
 PR = "r17"
