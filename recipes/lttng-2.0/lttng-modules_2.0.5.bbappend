@@ -20,6 +20,8 @@ SRC_URI += "\
     file://0017-Add-lock-probes.patch \
     file://0018-Fix-ring_buffer_frontend.c-missing-include-lttng-tra.patch \
     file://0019-Fix-cleanup-move-lttng-tracer-core.h-include-to-lib-.patch \
+    file://0001-LTTng-Modules-ARM-syscall-instrumentation.patch \
+    file://fix-arm-syscall-bloat.patch \
 "
 
 SRC_URI_append_pandaboard = "file://add_sched_process_exec_event.patch"

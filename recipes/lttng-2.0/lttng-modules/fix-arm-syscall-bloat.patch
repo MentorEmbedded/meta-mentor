@@ -1,0 +1,119 @@
+Index: lttng-modules-2.0.4/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers_override.h
+===================================================================
+--- lttng-modules-2.0.4.orig/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers_override.h	2012-10-23 07:58:29.692020433 -0700
++++ lttng-modules-2.0.4/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers_override.h	2012-10-23 08:00:24.772090359 -0700
+@@ -1,68 +1,2 @@
+-
+-
+-#define OVERRIDE_TABLE_32_sys_arm_fadvise64_64
+-#define OVERRIDE_TABLE_32_sys_sync_file_range2
+-#define OVERRIDE_TABLE_32_sys_set_tls
+-
+-#ifndef CREATE_SYSCALL_TABLE
+-
+-SC_TRACE_EVENT(sys_arm_fadvise64_64,
+-	TP_PROTO(int fd, int advice, loff_t offset, loff_t len),
+-	TP_ARGS(fd, advice, offset, len),
+-	TP_STRUCT__entry(
+-		__field_hex(int, fd)
+-		__field_hex(int, advice)
+-		__field_hex(loff_t, offset)
+-		__field_hex(loff_t, len)),
+-	TP_fast_assign(
+-		tp_assign(fd, fd)
+-		tp_assign(advice, advice)
+-		tp_assign(offset, offset)
+-		tp_assign(len, len)),
+-	TP_printk()
+-)
+-
+-SC_TRACE_EVENT(sys_sync_file_range2,
+-	TP_PROTO(int fd, loff_t offset, loff_t nbytes, unsigned int flags),
+-	TP_ARGS(fd, offset, nbytes, flags),
+-	TP_STRUCT__entry(
+-		__field_hex(int, fd)
+-		__field_hex(loff_t, offset)
+-		__field_hex(loff_t, nbytes)
+-		__field_hex(unsigned int, flags)),
+-	TP_fast_assign(
+-		tp_assign(fd, fd)
+-		tp_assign(offset, offset)
+-		tp_assign(nbytes, nbytes)
+-		tp_assign(flags, flags)),
+-	TP_printk()
+-)
+-
+-SC_TRACE_EVENT(sys_set_tls,
+-	TP_PROTO(unsigned int tid, unsigned long tls),
+-	TP_ARGS(tid, tls),
+-	TP_STRUCT__entry(
+-		__field(unsigned int, tid)
+-		__field_hex(unsigned int, tls)),
+-	TP_fast_assign(
+-		tp_assign(tid, tid)
+-		tp_assign(tls, tls)),
+-	TP_printk()
+-)
+-
+-#else	/* CREATE_SYSCALL_TABLE */
+-
+-#define OVVERRIDE_TABLE_32_sys_mmap
+-TRACE_SYSCALL_TABLE(sys_mmap, sys_mmap, 90, 6) 
+-
+-#define OVERRIDE_TABLE_32_sys_arm_fadvise64_64
+-TRACE_SYSCALL_TABLE(sys_arm_fadvise64_64, sys_arm_fadvise64_64, 270, 4)
+-#define OVERRIDE_TABLE_32_sys_sync_file_range2
+-TRACE_SYSCALL_TABLE(sys_sync_file_range2, sys_sync_file_range2, 341, 4)
+-#define OVERRIDE_TABLE_32_sys_set_tls
+-TRACE_SYSCALL_TABLE(sys_set_tls, sys_set_tls, 0xf0005, 2)
+-
+-
+-#endif /* CREATE_SYSCALL_TABLE */
+-
++/* PLACEHOLDER */
+ 
+Index: lttng-modules-2.0.4/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers_override.h
+===================================================================
+--- lttng-modules-2.0.4.orig/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers_override.h	2012-10-23 07:58:29.664006784 -0700
++++ lttng-modules-2.0.4/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers_override.h	2012-10-23 08:01:26.354088579 -0700
+@@ -1,39 +1,2 @@
+-
+-#define OVERRIDE_TABLE_32_sys_mmap2
+-
+-
+-#ifndef CREATE_SYSCALL_TABLE
+-
+-SC_TRACE_EVENT(sys_mmap2,
+-	TP_PROTO(void *addr, size_t len, int prot,
+-                 int flags, int fd, off_t pgoff),
+-	TP_ARGS(addr, len, prot, flags, fd, pgoff),
+-	TP_STRUCT__entry(
+-		__field_hex(void *, addr)
+-		__field(size_t, len)
+-		__field(int, prot)
+-		__field(int, flags)
+-		__field(int, fd)
+-		__field(off_t, pgoff)),
+-	TP_fast_assign(
+-		tp_assign(addr, addr)
+-		tp_assign(len, len)
+-		tp_assign(prot, prot)
+-		tp_assign(flags, flags)
+-		tp_assign(fd, fd)
+-		tp_assign(pgoff, pgoff)),
+-	TP_printk()
+-)
+-
+-#else	/* CREATE_SYSCALL_TABLE */
+-
+-#define OVERRIDE_TABLE_32_sys_execve
+-TRACE_SYSCALL_TABLE(sys_execve, sys_execve, 11, 3)
+-#define OVERRIDE_TABLE_32_sys_clone
+-TRACE_SYSCALL_TABLE(sys_clone, sys_clone, 120, 5)
+-#define OVERRIDE_TABLE_32_sys_mmap2
+-TRACE_SYSCALL_TABLE(sys_mmap2, sys_mmap2, 192, 6)
+-
+-#endif /* CREATE_SYSCALL_TABLE */
+-
++/* PLACEHOLDER */
+ 
