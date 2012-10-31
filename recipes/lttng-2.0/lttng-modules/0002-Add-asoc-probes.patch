@@ -16,12 +16,11 @@ Signed-off-by: Wade Farnsworth <wade_farnsworth@mentor.com>
  create mode 100644 instrumentation/events/mainline/asoc.h
  create mode 100644 probes/lttng-probe-asoc.c
 
-diff --git a/instrumentation/events/lttng-module/asoc.h b/instrumentation/events/lttng-module/asoc.h
-new file mode 100644
-index 0000000..7acb5ea
+Index: git/instrumentation/events/lttng-module/asoc.h
+===================================================================
 --- /dev/null
-+++ b/instrumentation/events/lttng-module/asoc.h
-@@ -0,0 +1,333 @@
++++ git/instrumentation/events/lttng-module/asoc.h
+@@ -0,0 +1,340 @@
 +#undef TRACE_SYSTEM
 +#define TRACE_SYSTEM asoc
 +
@@ -30,12 +29,15 @@ index 0000000..7acb5ea
 +
 +#include <linux/ktime.h>
 +#include <linux/tracepoint.h>
++#include <linux/version.h>
 +
 +#ifndef _TRACE_ASOC_DEF
 +#define _TRACE_ASOC_DEF
 +struct snd_soc_jack;
 +struct snd_soc_codec;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,1,0))
 +struct snd_soc_platform;
++#endif
 +struct snd_soc_card;
 +struct snd_soc_dapm_widget;
 +#endif
@@ -87,6 +89,7 @@ index 0000000..7acb5ea
 +
 +)
 +
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,1,0))
 +DECLARE_EVENT_CLASS(snd_soc_preg,
 +
 +	TP_PROTO(struct snd_soc_platform *platform, unsigned int reg,
@@ -130,6 +133,7 @@ index 0000000..7acb5ea
 +	TP_ARGS(platform, reg, val)
 +
 +)
++#endif
 +
 +DECLARE_EVENT_CLASS(snd_soc_card,
 +
@@ -243,6 +247,7 @@ index 0000000..7acb5ea
 +
 +)
 +
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,1,0))
 +TRACE_EVENT(snd_soc_dapm_walk_done,
 +
 +	TP_PROTO(struct snd_soc_card *card),
@@ -267,6 +272,7 @@ index 0000000..7acb5ea
 +		  __get_str(name), (int)__entry->power_checks,
 +		  (int)__entry->path_checks, (int)__entry->neighbour_checks)
 +)
++#endif
 +
 +TRACE_EVENT(snd_soc_jack_irq,
 +
@@ -355,11 +361,10 @@ index 0000000..7acb5ea
 +
 +/* This part must be outside protection */
 +#include "../../../probes/define_trace.h"
-diff --git a/instrumentation/events/mainline/asoc.h b/instrumentation/events/mainline/asoc.h
-new file mode 100644
-index 0000000..ab26f8a
+Index: git/instrumentation/events/mainline/asoc.h
+===================================================================
 --- /dev/null
-+++ b/instrumentation/events/mainline/asoc.h
++++ git/instrumentation/events/mainline/asoc.h
 @@ -0,0 +1,330 @@
 +#undef TRACE_SYSTEM
 +#define TRACE_SYSTEM asoc
@@ -691,10 +696,10 @@ index 0000000..ab26f8a
 +
 +/* This part must be outside protection */
 +#include <trace/define_trace.h>
-diff --git a/probes/Makefile b/probes/Makefile
-index 969dc34..41ea755 100644
---- a/probes/Makefile
-+++ b/probes/Makefile
+Index: git/probes/Makefile
+===================================================================
+--- git.orig/probes/Makefile
++++ git/probes/Makefile
 @@ -34,6 +34,13 @@ ifneq ($(CONFIG_NET),)
  obj-m += lttng-probe-net.o
  endif
@@ -709,11 +714,10 @@ index 969dc34..41ea755 100644
  ifneq ($(CONFIG_KPROBES),)
  obj-m += lttng-kprobes.o
  endif
-diff --git a/probes/lttng-probe-asoc.c b/probes/lttng-probe-asoc.c
-new file mode 100644
-index 0000000..8432d51
+Index: git/probes/lttng-probe-asoc.c
+===================================================================
 --- /dev/null
-+++ b/probes/lttng-probe-asoc.c
++++ git/probes/lttng-probe-asoc.c
 @@ -0,0 +1,45 @@
 +/*
 + * probes/lttng-probe-block.c
@@ -758,8 +762,5 @@ index 0000000..8432d51
 +#include "../instrumentation/events/lttng-module/asoc.h"
 +
 +MODULE_LICENSE("GPL and additional rights");
-+MODULE_AUTHOR("Wade Farnsworth <wade_farnsworth@mentor.com>");
++MODULE_AUTHOR("Wade Farnsworth <wade_farnsworth@mentor.com> and Paul Woegerer <paul_woegerer@mentor.com>");
 +MODULE_DESCRIPTION("LTTng asoc probes");
--- 
-1.7.0.4
-

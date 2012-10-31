@@ -1,0 +1,28 @@
+From 110ac217d93da636bd82b434541bb4fa56a6552a Mon Sep 17 00:00:00 2001
+From: Wade Farnsworth <wade_farnsworth@mentor.com>
+Date: Wed, 26 Sep 2012 09:16:12 -0500
+Subject: [PATCH] syscall.h: include linux/sched.h
+
+task_thread_info() is defined in linux/sched.h.  Explicitly include this
+file in linux/sched.h.  This fixes a compile error in lttng-modules.
+
+Signed-off-by: Wade Farnsworth <wade_farnsworth@mentor.com>
+---
+ arch/arm/include/asm/syscall.h |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/include/asm/syscall.h b/arch/arm/include/asm/syscall.h
+index 47486a4..9fdded6 100644
+--- a/arch/arm/include/asm/syscall.h
++++ b/arch/arm/include/asm/syscall.h
+@@ -8,6 +8,7 @@
+ #define _ASM_ARM_SYSCALL_H
+ 
+ #include <linux/err.h>
++#include <linux/sched.h>
+ 
+ #include <asm/unistd.h>
+ 
+-- 
+1.7.0.4
+
