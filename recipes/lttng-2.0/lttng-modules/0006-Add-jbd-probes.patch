@@ -16,10 +16,11 @@ Signed-off-by: Wade Farnsworth <wade_farnsworth@mentor.com>
  create mode 100644 instrumentation/events/mainline/jbd.h
  create mode 100644 probes/lttng-probe-jbd.c
 
-Index: git/instrumentation/events/lttng-module/jbd.h
-===================================================================
+diff --git a/instrumentation/events/lttng-module/jbd.h b/instrumentation/events/lttng-module/jbd.h
+new file mode 100644
+index 0000000..70aa58b
 --- /dev/null
-+++ git/instrumentation/events/lttng-module/jbd.h
++++ b/instrumentation/events/lttng-module/jbd.h
 @@ -0,0 +1,203 @@
 +#undef TRACE_SYSTEM
 +#define TRACE_SYSTEM jbd
@@ -224,10 +225,11 @@ Index: git/instrumentation/events/lttng-module/jbd.h
 +
 +/* This part must be outside protection */
 +#include "../../../probes/define_trace.h"
-Index: git/instrumentation/events/mainline/jbd.h
-===================================================================
+diff --git a/instrumentation/events/mainline/jbd.h b/instrumentation/events/mainline/jbd.h
+new file mode 100644
+index 0000000..aff64d8
 --- /dev/null
-+++ git/instrumentation/events/mainline/jbd.h
++++ b/instrumentation/events/mainline/jbd.h
 @@ -0,0 +1,203 @@
 +#undef TRACE_SYSTEM
 +#define TRACE_SYSTEM jbd
@@ -432,27 +434,28 @@ Index: git/instrumentation/events/mainline/jbd.h
 +
 +/* This part must be outside protection */
 +#include <trace/define_trace.h>
-Index: git/probes/Makefile
-===================================================================
---- git.orig/probes/Makefile
-+++ git/probes/Makefile
+diff --git a/probes/Makefile b/probes/Makefile
+index 2c7ed6b..0837366 100644
+--- a/probes/Makefile
++++ b/probes/Makefile
 @@ -57,6 +57,12 @@ ifneq ($(CONFIG_JBD2),)
  obj-m += lttng-probe-jbd2.o
  endif
  
 +ifneq ($(CONFIG_JBD),)
 +obj-m +=  $(shell \
-+	if [ $(VERSION) -ge 3 -a $(PATCHLEVEL) -ge 1 ] ; then \
++	if [ $(VERSION) -ge 3 ] ; then \
 +		echo "lttng-probe-jbd.o" ; fi;)
 +endif
 +
  ifneq ($(CONFIG_KPROBES),)
  obj-m += lttng-kprobes.o
  endif
-Index: git/probes/lttng-probe-jbd.c
-===================================================================
+diff --git a/probes/lttng-probe-jbd.c b/probes/lttng-probe-jbd.c
+new file mode 100644
+index 0000000..b99f0ab
 --- /dev/null
-+++ git/probes/lttng-probe-jbd.c
++++ b/probes/lttng-probe-jbd.c
 @@ -0,0 +1,43 @@
 +/*
 + * probes/lttng-probe-jbd.c
@@ -495,5 +498,8 @@ Index: git/probes/lttng-probe-jbd.c
 +#include "../instrumentation/events/lttng-module/jbd.h"
 +
 +MODULE_LICENSE("GPL and additional rights");
-+MODULE_AUTHOR("Wade Farnsworth <wade_farnsworth@mentor.com> and Paul Woegerer <paul_woegerer@mentor.com>");
++MODULE_AUTHOR("Wade Farnsworth <wade_farnsworth@mentor.com>");
 +MODULE_DESCRIPTION("LTTng jbd probes");
+-- 
+1.7.0.4
+
