@@ -1,0 +1,98 @@
+From 296f7ea75b45913d5e2067baef0812087e0b6eb9 Mon Sep 17 00:00:00 2001
+From: Satoru Moriya <satoru.moriya@hds.com>
+Date: Fri, 17 Jun 2011 11:58:39 +0000
+Subject: [PATCH] udp: add tracepoints for queueing skb to rcvbuf
+
+This patch adds a tracepoint to __udp_queue_rcv_skb to get the
+return value of ip_queue_rcv_skb. It indicates why kernel drops
+a packet at this point.
+
+ip_queue_rcv_skb returns following values in the packet drop case:
+
+rcvbuf is full                 : -ENOMEM
+sk_filter returns error        : -EINVAL, -EACCESS, -ENOMEM, etc.
+__sk_mem_schedule returns error: -ENOBUF
+
+Signed-off-by: Satoru Moriya <satoru.moriya@hds.com>
+Acked-by: Neil Horman <nhorman@tuxdriver.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ include/trace/events/udp.h |   32 ++++++++++++++++++++++++++++++++
+ net/core/net-traces.c      |    1 +
+ net/ipv4/udp.c             |    2 ++
+ 3 files changed, 35 insertions(+)
+ create mode 100644 include/trace/events/udp.h
+
+diff --git a/include/trace/events/udp.h b/include/trace/events/udp.h
+new file mode 100644
+index 0000000..a664bb9
+--- /dev/null
++++ b/include/trace/events/udp.h
+@@ -0,0 +1,32 @@
++#undef TRACE_SYSTEM
++#define TRACE_SYSTEM udp
++
++#if !defined(_TRACE_UDP_H) || defined(TRACE_HEADER_MULTI_READ)
++#define _TRACE_UDP_H
++
++#include <linux/udp.h>
++#include <linux/tracepoint.h>
++
++TRACE_EVENT(udp_fail_queue_rcv_skb,
++
++	TP_PROTO(int rc, struct sock *sk),
++
++	TP_ARGS(rc, sk),
++
++	TP_STRUCT__entry(
++		__field(int, rc)
++		__field(__u16, lport)
++	),
++
++	TP_fast_assign(
++		__entry->rc = rc;
++		__entry->lport = inet_sk(sk)->inet_num;
++	),
++
++	TP_printk("rc=%d port=%hu", __entry->rc, __entry->lport)
++);
++
++#endif /* _TRACE_UDP_H */
++
++/* This part must be outside protection */
++#include <trace/define_trace.h>
+diff --git a/net/core/net-traces.c b/net/core/net-traces.c
+index 7f1bb2a..13aab64 100644
+--- a/net/core/net-traces.c
++++ b/net/core/net-traces.c
+@@ -28,6 +28,7 @@
+ #include <trace/events/skb.h>
+ #include <trace/events/net.h>
+ #include <trace/events/napi.h>
++#include <trace/events/udp.h>
+ 
+ EXPORT_TRACEPOINT_SYMBOL_GPL(kfree_skb);
+ 
+diff --git a/net/ipv4/udp.c b/net/ipv4/udp.c
+index abca870..37aa9bf 100644
+--- a/net/ipv4/udp.c
++++ b/net/ipv4/udp.c
+@@ -105,6 +105,7 @@
+ #include <net/route.h>
+ #include <net/checksum.h>
+ #include <net/xfrm.h>
++#include <trace/events/udp.h>
+ #include "udp_impl.h"
+ 
+ struct udp_table udp_table __read_mostly;
+@@ -1363,6 +1364,7 @@ static int __udp_queue_rcv_skb(struct sock *sk, struct sk_buff *skb)
+ 					 is_udplite);
+ 		UDP_INC_STATS_BH(sock_net(sk), UDP_MIB_INERRORS, is_udplite);
+ 		kfree_skb(skb);
++		trace_udp_fail_queue_rcv_skb(rc, sk);
+ 		return -1;
+ 	}
+ 
+-- 
+1.7.10.4
+
