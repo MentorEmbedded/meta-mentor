@@ -3,6 +3,7 @@ python () {
         d.getVar('VIRTUAL-RUNTIME_lttng', True) != 'packagegroup-tools-lttng'):
         d.appendVarFlag('do_unpack', 'postfuncs', ' enable_lttng2')
         d.appendVarFlag('do_unpack', 'vardeps', ' enable_lttng2')
+        d.appendVarFlag('do_configure', 'postfuncs', ' check_lttng2')
         bb.debug(1, "Enabling lttng2 kernel options")
     else:
         bb.debug(1, "Not enabling lttng2 kernel options")
@@ -31,5 +32,14 @@ enable_lttng2 () {
         option="CONFIG_$(echo $option | tr 'a-z' 'A-Z')"
         sed -i "/$option=/d" ${KERNEL_DEFCONFIG}
         echo "$option=y" >>${KERNEL_DEFCONFIG}
+    done
+}
+
+check_lttng2 () {
+    for option in ${LTTNG2_OPTIONS}; do
+        option="CONFIG_$(echo $option | tr 'a-z' 'A-Z')"
+        if ! grep -q "^$option=y$" ${B}/.config; then
+            bbfatal "Option $option is not set in ${B}/.config"
+        fi
     done
 }
