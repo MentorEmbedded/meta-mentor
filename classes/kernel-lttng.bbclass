@@ -17,14 +17,16 @@ LTTNG2_OPTIONS = '\
     kretprobes \
 '
 
+KERNEL_DEFCONFIG ?= "${WORKDIR}/defconfig"
+
 enable_lttng2 () {
-    if [ ! -e ${WORKDIR}/defconfig ]; then
+    if [ ! -e ${KERNEL_DEFCONFIG} ] || ! echo "${KERNEL_DEFCONFIG}" | grep -q "^${WORKDIR}/"; then
         return
     fi
 
     for option in ${LTTNG2_OPTIONS}; do
         option="CONFIG_$(echo $option | tr 'a-z' 'A-Z')"
-        sed -i "/$option=/d" ${WORKDIR}/defconfig
-        echo "$option=y" >>${WORKDIR}/defconfig
+        sed -i "/$option=/d" ${KERNEL_DEFCONFIG}
+        echo "$option=y" >>${KERNEL_DEFCONFIG}
     done
 }
