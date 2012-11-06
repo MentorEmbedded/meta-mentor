@@ -3,6 +3,9 @@ python () {
         d.getVar('VIRTUAL-RUNTIME_lttng', True) != 'packagegroup-tools-lttng'):
         d.appendVarFlag('do_unpack', 'postfuncs', ' enable_lttng2')
         d.appendVarFlag('do_unpack', 'vardeps', ' enable_lttng2')
+        bb.debug(1, "Enabling lttng2 kernel options")
+    else:
+        bb.debug(1, "Not enabling lttng2 kernel options")
 }
 
 LTTNG2_OPTIONS = '\
