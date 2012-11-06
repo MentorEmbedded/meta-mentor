@@ -1,0 +1,35 @@
+OpenEmbedded/Yocto Distribution layer for Mentor Graphics
+=========================================================
+
+This layer holds the Mentor Embedded Linux distro configuration and
+supplementary files, and acts as a staging area for changes which Mentor
+Graphics requires, but which have not yet been merged into the upstream
+layers.
+
+This layer depends on:
+
+URI: git://git.openembedded.org/openembedded-core
+Branch: danny
+Revision: f609bf5525450bfdb8e0864d44c41cce7f9319c9
+          Aka, the '1.3' tag of poky.
+
+URI: git://git.openembedded.org/meta-openembedded
+Revision: 68f05443333afa527e3b24e4caae6115dfb6b6b6
+
+
+To bypass the meta-oe dependency:
+
+    BBMASK = "/meta-mentor/recipes/busybox/"
+
+Contributing
+------------
+
+To contribute to this layer you should the patches for review to the mailing
+list, however the mailing list creation is still in progress. In the meantime,
+you can email Christopher Larson (chris_larson@mentor.com or
+kergoth@gmail.com) directly with any concerns or contributions.
+
+Browse url: http://git.yoctoproject.org/cgit/cgit.cgi/meta-mentor
+Clone url: git://git.yoctoproject.org/meta-mentor.git
+
+When sending single patches, please use git send-email.
