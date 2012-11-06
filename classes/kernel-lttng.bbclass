@@ -13,6 +13,7 @@ LTTNG2_OPTIONS = '\
     modules \
     kallsyms \
     high_res_timers \
+    ftrace \
     tracepoints \
     have_syscall_tracepoints \
     perf_events \
