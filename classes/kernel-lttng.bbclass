@@ -1,10 +1,11 @@
 python () {
-    if oe.utils.inherits(d, 'kernel'):
-        d.appendVarFlag('do_unpack', 'postfuncs', ' enable_lttng')
-        d.appendVarFlag('do_unpack', 'vardeps', ' enable_lttng')
+    if (oe.utils.inherits(d, 'kernel') and
+        d.getVar('VIRTUAL-RUNTIME_lttng', True) != 'packagegroup-tools-lttng'):
+        d.appendVarFlag('do_unpack', 'postfuncs', ' enable_lttng2')
+        d.appendVarFlag('do_unpack', 'vardeps', ' enable_lttng2')
 }
 
-LTTNG_OPTIONS = '\
+LTTNG2_OPTIONS = '\
     modules \
     kallsyms \
     high_res_timers \
@@ -16,12 +17,12 @@ LTTNG_OPTIONS = '\
     kretprobes \
 '
 
-enable_lttng () {
+enable_lttng2 () {
     if [ ! -e ${WORKDIR}/defconfig ]; then
         return
     fi
 
-    for option in ${LTTNG_OPTIONS}; do
+    for option in ${LTTNG2_OPTIONS}; do
         option="CONFIG_$(echo $option | tr 'a-z' 'A-Z')"
         sed -i "/$option=/d" ${WORKDIR}/defconfig
         echo "$option=y" >>${WORKDIR}/defconfig
