@@ -24,12 +24,16 @@ To bypass the meta-oe dependency:
 Contributing
 ------------
 
-To contribute to this layer you should the patches for review to the mailing
-list, however the mailing list creation is still in progress. In the meantime,
-you can email Christopher Larson (chris_larson@mentor.com or
-kergoth@gmail.com) directly with any concerns or contributions.
-
 Browse url: http://git.yoctoproject.org/cgit/cgit.cgi/meta-mentor
 Clone url: git://git.yoctoproject.org/meta-mentor.git
 
-When sending single patches, please use git send-email.
+To contribute to this layer you should the patches for review to the
+mailing list.
+
+Mailing list: meta-mentor@yoctoproject.org
+
+When sending single patches, please use something like
+'git send-email -1 --to meta-mentor@yoctoproject.org'
+
+When sending a series, please use poky/meta/scripts/create-pull-request (aka
+oe-core/scripts/create-pull-request).
