@@ -7,16 +7,12 @@ python () {
         bb.debug(1, "Not enabling lttng2 kernel options")
 }
 
-LTTNG2_OPTIONS_DISABLE = '\
-    ftrace \
-'
-
 LTTNG2_OPTIONS_ENABLE = '\
     modules \
     kallsyms \
     high_res_timers \
+    ftrace \
     tracepoints \
-    \
     have_syscall_tracepoints \
     perf_events \
     event_tracing \
@@ -32,15 +28,9 @@ enable_lttng2 () {
     fi
 
     if grep -q "CONFIG_LTT[= ]" ${KERNEL_DEFCONFIG}; then
-        # lttng 1.x already enabled
+        # lttng 1.x patched in, disable enabling of lttng2
         return
     fi
-
-    for option in ${LTTNG2_OPTIONS_DISABLE}; do
-        option="CONFIG_$(echo $option | tr 'a-z' 'A-Z')"
-        sed -i "/$option=/d" ${KERNEL_DEFCONFIG}
-        echo "# $option is not set" >>${KERNEL_DEFCONFIG}
-    done
 
     for option in ${LTTNG2_OPTIONS_ENABLE}; do
         option="CONFIG_$(echo $option | tr 'a-z' 'A-Z')"
