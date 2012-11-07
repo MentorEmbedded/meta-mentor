@@ -8,7 +8,6 @@ BBFILES = ''
 
 BBLAYERS ?= "\
     ${MELDIR}/meta-sourcery \
-    ${MELDIR}/meta-tracing \
     ${MELDIR}/meta-mentor \
     ${MELDIR}/meta-intel \
     ${MELDIR}/meta-oe/meta-oe \
