@@ -1,7 +1,7 @@
 python () {
     if (oe.utils.inherits(d, 'kernel') and
         not oe.utils.inherits(d, 'kernel-yocto') and
-        d.getVar('VIRTUAL-RUNTIME_lttng', True) != 'packagegroup-tools-lttng')):
+        d.getVar('VIRTUAL-RUNTIME_lttng', True) != 'packagegroup-tools-lttng'):
         d.appendVarFlag('do_unpack', 'postfuncs', ' enable_lttng2')
         d.appendVarFlag('do_unpack', 'vardeps', ' enable_lttng2')
         bb.debug(1, "Enabling lttng2 kernel options")
