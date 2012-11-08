@@ -8,8 +8,6 @@ SRC_URI += " \
 	   file://devfs-udev.rules \
 	   file://links.conf \
            file://permissions.rules \
-	   file://mount.sh \
-	   file://network.sh \
 	   file://local.rules \
            file://udev-cache \
            file://init"
@@ -64,9 +62,4 @@ do_install () {
 	if [ "${UDEV_DEVFS_RULES}" = "1" ]; then
 		install -m 0644 ${WORKDIR}/devfs-udev.rules ${D}${sysconfdir}/udev/rules.d/devfs-udev.rules
 	fi
-
-	install -d ${D}${sysconfdir}/udev/scripts/
-
-	install -m 0755 ${WORKDIR}/mount.sh ${D}${sysconfdir}/udev/scripts/mount.sh
-	install -m 0755 ${WORKDIR}/network.sh ${D}${sysconfdir}/udev/scripts
 }

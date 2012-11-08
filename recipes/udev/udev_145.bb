@@ -1,13 +1,19 @@
+LIC_FILES_CHKSUM = "file://COPYING;md5=751419260aa954499f7abaabaa882bbe \
+                    file://libudev/libudev.h;beginline=6;endline=9;md5=4d4026873e33acf43c17b4debb57eabf"
+
 RPROVIDES_${PN} = "hotplug"
 
-PR = "r11"
+PR = "r12"
 
 SRC_URI = "${KERNELORG_MIRROR}/linux/utils/kernel/hotplug/udev-${PV}.tar.gz \
            file://enable-gudev.patch \
+           file://udev-166-v4l1-1.patch \
 	   file://run.rules \
 	   "
+SRC_URI[md5sum] = "21c7cca07e934d59490184dd33c9a416"
+SRC_URI[sha256sum] = "b511c3f597a1eaa026cec74a0d43d35f8f638d9df89666795db95cd1c65fa0ca"
 
-require udev.inc
+require udev-old.inc
 
 INITSCRIPT_PARAMS = "start 03 S ."
 
@@ -20,8 +26,7 @@ EXTRA_OECONF = "--with-udev-prefix= --disable-extras --disable-introspection"
 DEPENDS += "glib-2.0"
 
 do_install () {
-	install -d ${D}${usrsbindir} \
-		   ${D}${sbindir}
+	install -d ${D}${sbindir}
 	oe_runmake 'DESTDIR=${D}' INSTALL=install install
 	install -d ${D}${sysconfdir}/init.d
 	install -m 0755 ${WORKDIR}/init ${D}${sysconfdir}/init.d/udev
@@ -44,11 +49,6 @@ do_install () {
 	#rm ${D}${sysconfdir}/udev/rules.d/60-persistent-input.rules
 	#rm ${D}${sysconfdir}/udev/rules.d/60-persistent-storage.rules
 	#rm ${D}${sysconfdir}/udev/rules.d/60-persistent-storage-tape.rules
-
-	install -d ${D}${sysconfdir}/udev/scripts/
-
-	install -m 0755 ${WORKDIR}/mount.sh ${D}${sysconfdir}/udev/scripts/mount.sh
-	install -m 0755 ${WORKDIR}/network.sh ${D}${sysconfdir}/udev/scripts
-
-	install -d ${D}${base_libdir}/udev/
 }
+
+FILESPATH .= ":${@base_set_filespath(['${COREBASE}/meta/recipes-core/udev/udev'], d)}"

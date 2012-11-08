@@ -14,7 +14,7 @@ Index: udev-164/libudev/libudev-util-private.c
  #include <sys/wait.h>
  #include <sys/param.h>
 +#include <sys/resource.h>
-
+ 
  #include "libudev.h"
  #include "libudev-private.h"
 Index: udev-164/udev/udevd.c
@@ -26,6 +26,6 @@ Index: udev-164/udev/udevd.c
  #include <sys/inotify.h>
  #include <sys/utsname.h>
 +#include <sys/resource.h>
-
+ 
  #include "udev.h"
  #include "sd-daemon.h"
