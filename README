@@ -9,12 +9,10 @@ layers.
 This layer depends on:
 
 URI: git://git.openembedded.org/openembedded-core
-Branch: danny
-Revision: f609bf5525450bfdb8e0864d44c41cce7f9319c9
-          Aka, the '1.3' tag of poky.
+Branch: master
 
 URI: git://git.openembedded.org/meta-openembedded
-Revision: 68f05443333afa527e3b24e4caae6115dfb6b6b6
+Revision: master
 
 
 To bypass the meta-oe dependency:
