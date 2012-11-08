@@ -1,4 +1,4 @@
-PRINC := "${@int(PRINC) + 1}"
+PRINC := "${@int(PRINC) + 2}"
 FILESEXTRAPATHS_prepend := "${THISDIR}/${BPN}:"
 SRC_URI += "\
     file://0001-Add-net-probes.patch \
@@ -26,4 +26,6 @@ SRC_URI += "\
 
 SRC_URI_append_pandaboard = "file://add_sched_process_exec_event.patch"
 SRC_URI_append_imx6qsabrelite = "file://add_sched_process_exec_event.patch"
+SRC_URI_append_p4080ds = "file://add_sched_process_exec_event.patch"
+SRC_URI_append_p2020rdb = "file://add_sched_process_exec_event.patch"
 COMPATIBLE_HOST = '(x86_64.*|i.86.*|arm.*|powerpc.*|mips.*)-linux.*'
