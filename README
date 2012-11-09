@@ -47,13 +47,15 @@ Distro bits:
     - core-image-base - added package-management
     - e2fsprogs - killed e2fsprogs compat dep on blkid/badblocks
     - mel-release - used to archive up content for release
-    - packagegroups
+    - nfs-utils and packagegroup-core-nfs: prefer rpcbind, not portmap
+    - other packagegroups
 
 To push upstream next:
 
     - font-alias
     - freetype
     - gst-plugins-base
+    - packagegroup-core-device-devel
     - pulseaudio
     - samba
     - tar
