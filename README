@@ -35,3 +35,56 @@ When sending single patches, please use something like
 
 When sending a series, please use poky/meta/scripts/create-pull-request (aka
 oe-core/scripts/create-pull-request).
+
+Content Review
+--------------
+
+Distro bits:
+
+    - base-files - issue files
+    - netbase - adjusted default interfaces file
+    - psplash - mel splash image
+    - core-image-base - added package-management
+    - e2fsprogs - killed e2fsprogs compat dep on blkid/badblocks
+    - mel-release - used to archive up content for release
+    - packagegroups
+
+To push upstream next:
+
+    - font-alias
+    - freetype
+    - gst-plugins-base
+    - pulseaudio
+    - samba
+    - tar
+    - wireless-tools
+    - zip
+
+DSO Link Change:
+
+    - shared-mime-info
+    - wpa-supplicant
+
+Parallel make / install:
+
+    - gettext
+    - libtool
+    - lttng2-ust
+    - openssh
+
+Lttng:
+
+    - liburcu - patched for mips
+    - lttng2-ust, lttng-{ust,tools,modules}:
+        adjusted COMPATIBLE_HOST due to liburcu being patched for mips
+        patches for improved tracing for MESA, etc
+    - various kernel bbappends: improved tracing
+
+Misc:
+
+    - busybox: dep on meta-oe's fbset-modes if CONFIG_FBSET=y
+    - binutils-libs, oprofile: add and use more minimal binutils recipe for
+                               oprofile. This recipe just builds libbfd and
+                               libiberty
+    - libffi: patches for mips o32/n32
+    - boot-format: use a different repo with additional files
