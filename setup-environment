@@ -109,7 +109,6 @@ mel_setup () {
             mel_found=0
             for layerconf in $MELDIR/*/conf/layer.conf $MELDIR/*/*/conf/layer.conf; do
                 if [ -e "$layerconf" ]; then
-                    echo >&2 checking $layer/conf/machine
                     if [ -e $(dirname $(dirname $layerconf))/conf/machine/$MACHINE.conf ]; then
                         mel_found=1
                         break
