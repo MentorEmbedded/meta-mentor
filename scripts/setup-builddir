@@ -79,15 +79,21 @@ prioritized_layers () {
 if [ -n "$MACHINE" ] &&
    [ -e $BUILDDIR/conf/bblayers.conf -o -e $BUILDDIR/conf/layer.conf ]; then
     echo >&2 "Build directory is configured, but machine was specified."
-    read -p "Reconfigure for $MACHINE (y|n)? " -n 1 reconfigure
-    echo
-
-    case $reconfigure in
-        [nN])
-            echo >&2 "Aborting at user request"
-            exit 2
-            ;;
-    esac
+    while true; do
+        read -p "Reconfigure for $MACHINE (Y|n)? " reconfigure
+        case $reconfigure in
+            [nN])
+                echo >&2 "Aborting at user request"
+                exit 2
+                ;;
+            ""|[yY])
+                break
+                ;;
+            *)
+                echo >&2 "Invalid input: $reconfigure"
+                ;;
+        esac
+    done
 fi
 
 mkdir -p $BUILDDIR/conf
