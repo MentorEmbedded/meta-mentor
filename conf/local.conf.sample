@@ -17,9 +17,6 @@ MACHINE ??= "qemux86"
 #TCMODE = "external-sourcery-rebuild-libc"
 #CSL_SRC_FILE = "/path/to/sourcery/src.tar.gz"
 
-# Uncomment to build a toolchain rather than using an external one
-#TCMODE = "default"
-
 # Uncomment to switch the built toolchain from eglibc to uclibc
 #TCLIBC = "uclibc"
 
