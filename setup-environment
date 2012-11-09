@@ -107,9 +107,10 @@ mel_setup () {
             TEMPLATECONF=$MELDIR/$MACHINE/conf $layerdir/scripts/setup-builddir $BUILDDIR || return 1
         else
             mel_found=0
-            for layer in $MELDIR/*/conf/layer.conf $MELDIR/*/*/conf/layer.conf; do
-                if [ -e "$layer" ]; then
-                    if [ -e $layer/conf/machine/$MACHINE.conf ]; then
+            for layerconf in $MELDIR/*/conf/layer.conf $MELDIR/*/*/conf/layer.conf; do
+                if [ -e "$layerconf" ]; then
+                    echo >&2 checking $layer/conf/machine
+                    if [ -e $(dirname $(dirname $layerconf))/conf/machine/$MACHINE.conf ]; then
                         mel_found=1
                         break
                     fi
