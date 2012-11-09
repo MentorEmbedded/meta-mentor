@@ -145,6 +145,7 @@ mel_setup () {
         fi
     fi
     PATH="$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH"
+    PATH="$(printf "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/::/:/g; s/:$//; s/^://')"
     echo "PATH=\"$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:\$PATH\"; cd $BUILDDIR" > $BUILDDIR/setup-environment
 
     cd $BUILDDIR
