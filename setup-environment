@@ -89,7 +89,7 @@ mel_setup () {
             BUILDDIR=$PWD/build
         fi
     fi
-    echo "Creating/configuring build directory $BUILDDIR"
+    echo "Creating/configuring build directory $BUILDDIR.."
 
     if [ $force_overwrite -eq 1 ]; then
         rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
@@ -106,6 +106,21 @@ mel_setup () {
             # User specified machine and we have the binary content for this BSP
             TEMPLATECONF=$MELDIR/$MACHINE/conf $layerdir/scripts/setup-builddir $BUILDDIR || return 1
         else
+            mel_found=0
+            for layer in $MELDIR/*/conf/layer.conf $MELDIR/*/*/conf/layer.conf; do
+                if [ -e "$layer" ]; then
+                    if [ -e $layer/conf/machine/$MACHINE.conf ]; then
+                        mel_found=1
+                        break
+                    fi
+                fi
+            done
+            if [ "$mel_found" -eq 0 ]; then
+                echo >&2 "Error: machine $MACHINE does not exist"
+                return 2
+            fi
+            unset mel_found
+
             # User specified machine, without the binary content -- search
             TEMPLATECONF=$layerdir/conf $layerdir/scripts/setup-builddir $BUILDDIR $MACHINE || return 1
         fi
