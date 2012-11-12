@@ -150,6 +150,7 @@ addtask prepare_release before do_build
 do_prepare_release[dirs] =+ "${DEPLOY_DIR_INSTALLER} ${MELDIR} ${S}"
 do_prepare_release[cleandirs] = "${S}"
 do_prepare_release[nostamp] = "1"
+do_prepare_release[depends] += "tar-replacement-native:do_populate_sysroot"
 do_prepare_release[depends] += "${MEL_RELEASE_IMAGE}:do_rootfs"
 do_prepare_release[depends] += "${MEL_RELEASE_IMAGE}:do_build"
 do_prepare_release[recrdeptask] += "do_package_write"
