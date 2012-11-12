@@ -1,5 +1,4 @@
 DESCRIPTION = "Meta package for packaging a Mentor Embedded Linux release"
-PR = "r0"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=3f40d7994397109285ec7b81fdeb3b58 \
                     file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
@@ -13,11 +12,13 @@ MEL_RELEASE_USE_TAGS ?= "false"
 MEL_RELEASE_USE_TAGS[type] = "boolean"
 
 DEPLOY_IMAGE_FILES = "\
-    ${KERNEL_IMAGETYPE}-${MACHINE}* \
-    u-boot-*-${MACHINE}-*.bin \
     modules-*-${MACHINE}.tgz \
-    ${@' '.join('${MEL_RELEASE_IMAGE}-${MACHINE}.%s' % ext for ext in IMAGE_EXTENSIONS.split())} \
 \
+"
+DEPLOY_IMAGE_LINKS = "\
+    u-boot-*${MACHINE}*.bin \
+    ${@' '.join('${MEL_RELEASE_IMAGE}-${MACHINE}.%s' % ext for ext in IMAGE_EXTENSIONS.split())} \
+    ${KERNEL_IMAGETYPE}-${MACHINE}* \
 "
 
 # Use IMAGE_EXTENSION_xxx to map image type 'xxx' with real image file
@@ -118,7 +119,8 @@ do_prepare_release () {
     echo "--transform=s,-${MACHINE}\.,.," >>include
     echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
     {
-        ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 -iname "%s" || true' % file for file in DEPLOY_IMAGE_FILES.split())}
+        ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 -type f -iname "%s" || true' % file for file in DEPLOY_IMAGE_FILES.split())}
+        ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 -type l -iname "%s" || true' % file for file in DEPLOY_IMAGE_LINKS.split())}
     } >>include
 
     echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >>include
