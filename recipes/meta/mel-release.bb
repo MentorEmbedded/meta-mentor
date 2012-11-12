@@ -126,6 +126,8 @@ do_prepare_release () {
     } >>include
 
     echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >>include
+    echo "--transform=s,-${MACHINE},,i" >>include
+    echo "--transform=s,${MACHINE},,i" >>include
     echo "--exclude=.git" >>include
     echo ${BUILDHISTORY_DIR} >>include
 
