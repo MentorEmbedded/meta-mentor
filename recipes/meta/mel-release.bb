@@ -17,6 +17,7 @@ DEPLOY_IMAGE_FILES = "\
 "
 DEPLOY_IMAGE_LINKS = "\
     u-boot-*${MACHINE}*.bin \
+    u-boot-*${MACHINE}*.imx \
     ${@' '.join('${MEL_RELEASE_IMAGE}-${MACHINE}.%s' % ext for ext in IMAGE_EXTENSIONS.split())} \
     ${MEL_RELEASE_IMAGE}-${MACHINE}.license_manifest \
     ${MEL_RELEASE_IMAGE}-${MACHINE}.license_manifest.csv \
