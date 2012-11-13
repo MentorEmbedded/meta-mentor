@@ -52,6 +52,7 @@ Distro bits:
 
 To push upstream next:
 
+    - bash
     - font-alias
     - freetype
     - gst-plugins-base
@@ -90,3 +91,4 @@ Misc:
                                libiberty
     - libffi: patches for mips o32/n32
     - boot-format: use a different repo with additional files
+    - udev: retained 164 recipe for machines that still need it
