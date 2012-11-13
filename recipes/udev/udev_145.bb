@@ -3,6 +3,7 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=751419260aa954499f7abaabaa882bbe \
 
 RPROVIDES_${PN} = "hotplug"
 
+DEFAULT_PREFERENCE = "-2"
 PR = "r12"
 
 SRC_URI = "${KERNELORG_MIRROR}/linux/utils/kernel/hotplug/udev-${PV}.tar.gz \

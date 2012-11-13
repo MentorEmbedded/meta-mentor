@@ -1,5 +1,6 @@
 require recipes-core/udev/udev.inc
 
+DEFAULT_PREFERENCE = "-1"
 PR = "r18"
 
 LIC_FILES_CHKSUM = "file://COPYING;md5=751419260aa954499f7abaabaa882bbe \
