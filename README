@@ -52,7 +52,6 @@ Distro bits:
 
 To push upstream next:
 
-    - bash
     - freetype
     - gst-plugins-base
     - packagegroup-core-device-devel
