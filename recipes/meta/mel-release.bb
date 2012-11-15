@@ -16,12 +16,10 @@ MEL_RELEASE_IMAGE ?= "core-image-base"
 MEL_RELEASE_USE_TAGS ?= "false"
 MEL_RELEASE_USE_TAGS[type] = "boolean"
 
-DEPLOY_IMAGE_FILES = "\
-    modules-*-${MACHINE}.tgz \
-\
-"
-DEPLOY_IMAGE_LINKS = "\
-    u-boot-*${MACHINE}*.bin \
+# Kernel images and filesystems are handled separately, as they produce
+# timestamped filenames, and we only want the current ones (symlinked ones).
+DEPLOY_IMAGES_EXCLUDE_PATTERN = "(${KERNEL_IMAGETYPE}|README|\.|.*-image-)"
+DEPLOY_IMAGES = "\
     ${@' '.join('${MEL_RELEASE_IMAGE}-${MACHINE}.%s' % ext for ext in IMAGE_EXTENSIONS.split())} \
     ${MEL_RELEASE_IMAGE}-${MACHINE}.license_manifest \
     ${MEL_RELEASE_IMAGE}-${MACHINE}.license_manifest.csv \
@@ -185,16 +183,7 @@ do_prepare_release () {
     fi
 
     if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w images; then
-        echo "--transform=s,-${MACHINE}\.,.," >include
-        echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
-        {
-            ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 -type f -iname "%s" || true' % file for file in DEPLOY_IMAGE_FILES.split())}
-            ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 -type l -iname "%s" || true' % file for file in DEPLOY_IMAGE_LINKS.split())}
-        } >>include
-
-        echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >>include
-        echo "--transform=s,-${MACHINE},,i" >>include
-        echo "--transform=s,${MACHINE},,i" >>include
+        echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >include
         echo ${BUILDHISTORY_DIR} >>include
 
         if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w templates; then
@@ -203,7 +192,22 @@ do_prepare_release () {
             echo "${S}/bblayers.conf.sample" >>include
         fi
 
-        mel_tar --files-from=include -cjhf deploy/${MACHINE}.tar.bz2
+        echo "--transform=s,-${MACHINE},,i" >>include
+        echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
+
+        find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 \( -type f -o -type l \) | \
+            grep -Ev '^${DEPLOY_DIR_IMAGE}/${DEPLOY_IMAGES_EXCLUDE_PATTERN}' >>include
+
+        mel_tar --files-from=include -cf deploy/${MACHINE}.tar
+
+        echo "--transform=s,-${MACHINE},,i" >include
+        echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
+        {
+            ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 -type l -iname "%s" || true' % pattern for pattern in DEPLOY_IMAGES.split())}
+        } >>include
+        mel_tar --files-from=include -rhf deploy/${MACHINE}.tar
+
+        bzip2 deploy/${MACHINE}.tar
     fi
 
     echo ${DISTRO_VERSION} >deploy/distro-version
