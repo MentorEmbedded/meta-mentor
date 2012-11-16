@@ -56,7 +56,15 @@ base_layers () {
     done
 }
 layer_priority () {
-    sed -n "s,BBFILE_PRIORITY_[^ ]* *= *[\"']\(.*\)[\"']$,\1,p" $1/conf/layer.conf
+    case $1 in
+        */meta-oe)
+            # Terrible hack
+            echo 1
+            ;;
+        *)
+            sed -n "s,BBFILE_PRIORITY_[^ ]* *= *[\"']\(.*\)[\"']$,\1,p" $1/conf/layer.conf
+            ;;
+    esac
 }
 prioritized_layers () {
     layerfile=`mktemp`
