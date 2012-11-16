@@ -1,13 +1,38 @@
-# Use an isolated per-build SSTATE_DIR while still populating a shared sstate
-# directory for use across multiple builds.
+# Populate an isolated SSTATE_DIR while still populating the default shared
+# sstate directory. This is useful if SSTATE_DIR is shared, so we have access
+# to the set of cached binaries which were used in this build.
 
-SHARED_SSTATE_DIR := "${SSTATE_DIR}"
-SSTATE_DIR = "${TMPDIR}/sstate-cache"
-SSTATE_MIRRORS += "file://.* file://${SHARED_SSTATE_DIR}/PATH \n "
+ISOLATED_SSTATE_DIR ?= "${TMPDIR}/sstate-cache"
+ISOLATED_SSTATE_PATHSPEC = "${@SSTATE_PATHSPEC.replace(SSTATE_DIR, ISOLATED_SSTATE_DIR)}"
+
+sstate_write_isolated () {
+    if [ -n "${ISOLATED_SSTATE_DIR}" ]; then
+        isolated_dest=$(echo ${SSTATE_PKG} | sed 's,^${SSTATE_DIR}/,${ISOLATED_SSTATE_DIR}/,')
+        mkdir -p $(dirname $isolated_dest)
+        rm -f $isolated_dest
+        ln -s ${SSTATE_PKG} $isolated_dest
+    fi
+}
 
 sstate_create_package_append () {
-    outdir=${SHARED_SSTATE_DIR}/$(dirname ${SSTATE_PKGNAME})
-    mkdir -p $outdir/
-    mv ${SSTATE_PKG} $outdir/
-    ln -sf ${SHARED_SSTATE_DIR}/${SSTATE_PKGNAME} ${SSTATE_PKG}
+    sstate_write_isolated
+}
+
+# Copy existing/fetched archives from SSTATE_DIR to ISOLATED_SSTATE_DIR
+sstate_write_isolated_preinst () {
+    sstate_write_isolated
+}
+
+SSTATEPREINSTFUNCS += "sstate_write_isolated_preinst"
+
+def cleansstate_isolated(d):
+    isolated = d.getVar('ISOLATED_SSTATE_DIR', True)
+    if isolated:
+        for task in (d.getVar('SSTATETASKS', True) or "").split():
+                ss = sstate_state_fromvars(d, task[3:])
+                sstatepkgfile = d.getVar('ISOLATED_SSTATE_PATHSPEC', True) + "*_" + ss['name'] + ".tgz*"
+                oe.path.remove(sstatepkgfile)
+
+python do_cleansstate_append() {
+        cleansstate_isolated(d)
 }
