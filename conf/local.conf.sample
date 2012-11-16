@@ -37,7 +37,6 @@ MACHINE ??= "qemux86"
 #  "tools-debug"     - add debugging tools (gdb, strace)
 #  "tools-profile"   - add profiling tools (oprofile, exmap, lttng valgrind (x86 only))
 #  "tools-benchmark" - add benchmarking tools (bonnie++, netperfc, lmbench, etc)
-#  "tools-lttng"     - add tools for the Linux Trace Toolkit
 #  "tools-testapps"  - add useful testing tools (ts_print, aplay, arecord etc.)
 #  "codebench-debug" - core debug tools for use with codebench. this is
 #                      a subset of tools-debug (gdbserver, strace, sftp server)
@@ -55,7 +54,7 @@ MACHINE ??= "qemux86"
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
 # details.
 
-EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-lttng"
+EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-profile"
 
 # User features lets you manipulate the distro features. To add a distro
 # feature, simply add it to USER_FEATURES. To remove, prefix it with ~.
