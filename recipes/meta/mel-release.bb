@@ -160,7 +160,7 @@ do_prepare_release () {
                 touch downloads/$(basename $source).done
             fi
         done
-        for file in ${SB_RELEASE_EXCLUDED_SOURCES}; do
+        for file in ${MEL_RELEASE_EXCLUDED_SOURCES}; do
             rm -f downloads/$file
         done
         mel_tar -cjhf deploy/${MACHINE}-sources.tar.bz2 downloads/
