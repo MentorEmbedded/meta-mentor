@@ -39,7 +39,8 @@ oe-core/scripts/create-pull-request).
 Content Review
 --------------
 
-Distro bits:
+Distro bits
+===========
 
     - base-files - issue files
     - netbase - adjusted default interfaces file
@@ -95,7 +96,8 @@ Distro bits:
       variables to work around the issue. A proper fix would likely be to stop
       using package name OVERRIDES in the packaging classes.
 
-To push upstream next:
+To push upstream next
+=====================
 
     - freetype
     - gst-plugins-base
@@ -116,19 +118,22 @@ To push upstream next:
     - copyleft_compliance class - if an scm mirror tarball is available, use
       that rather than grabbing the scm directory
 
-DSO Link Change:
+DSO Link Change
+===============
 
     - shared-mime-info
     - wpa-supplicant
 
-Parallel make / install:
+Parallel make / install
+=======================
 
     - gettext
     - libtool
     - lttng2-ust
     - openssh
 
-Lttng:
+Lttng
+=====
 
     - liburcu - patched for mips
     - lttng2-ust, lttng-{ust,tools,modules}:
@@ -136,7 +141,8 @@ Lttng:
         patches for improved tracing for MESA, etc
     - various kernel bbappends: improved tracing
 
-Misc:
+Misc
+====
 
     - busybox: dep on meta-oe's fbset-modes if CONFIG_FBSET=y
     - binutils-libs, oprofile: add and use more minimal binutils recipe for
