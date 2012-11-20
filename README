@@ -105,6 +105,9 @@ To push upstream next
     - zip
     - autogen-native
     - perf
+    - libaio
+    - libacpi
+    - blktrace
 
     - cml1 class: fix menuconfig terminal type issue. The fundamental issue
       here is an ncurses-native relocation issue. The ncurses library is
