@@ -99,7 +99,6 @@ To push upstream next:
 
     - freetype
     - gst-plugins-base
-    - pulseaudio
     - samba
     - tar
     - wireless-tools
