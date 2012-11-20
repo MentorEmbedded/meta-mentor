@@ -24,7 +24,6 @@ SRC_URI += "\
     file://fix-arm-syscall-bloat.patch \
 "
 
-SRC_URI_append_pandaboard = "file://add_sched_process_exec_event.patch"
 SRC_URI_append_imx6qsabrelite = "file://add_sched_process_exec_event.patch"
 SRC_URI_append_p4080ds = "file://add_sched_process_exec_event.patch"
 SRC_URI_append_p2020rdb = "file://add_sched_process_exec_event.patch"
