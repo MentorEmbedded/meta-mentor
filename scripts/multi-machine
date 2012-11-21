@@ -13,20 +13,45 @@ usage () {
     echo >&2 "  -b BUILDDIR           Specify the build directory. (default: build)"
     echo >&2 "  -o BITBAKE_ARGUMENTS  Specify bitbake args (default: core-image-base)"
     echo >&2 "  -k                    Continue when one build fails"
+    echo >&2 "  -c                    Clean the TMPDIR between builds"
     echo >&2 "  -h                    Show this usage information"
     exit 1
+}
+
+bgrm () {
+    # bgrm PATH [PATH...]
+    #
+    # Remove the specified paths in the background, after renaming them, so
+    # you're free to recreate and use those paths while they're being removed.
+
+    toremove=""
+    for item in "$@"; do
+        if basename "$item" | grep -q "^bgrm."; then
+            continue
+        fi
+
+        tempdir=$(mktemp -d $(dirname $item)/bgrm.XXXXXX) || exit 1
+        mkdir -p $tempdir
+        toremove="$toremove $tempdir"
+        mv "$item" "$tempdir/"
+    done
+    rm -rf $toremove &
 }
 
 builddir=build
 bitbakeopts=core-image-base
 continue=0
-while getopts b:o:kh opt; do
+clean=0
+while getopts b:o:ckh opt; do
     case "$opt" in
         b)
             builddir="$OPTARG"
             ;;
         o)
             bitbakeopts="$OPTARG"
+            ;;
+        c)
+            clean=1
             ;;
         k)
             continue=1
@@ -57,6 +82,14 @@ for machine; do
         else
             echo >&2 "Warning: build for $machine failed with exit code $ret"
         fi
+    fi
+    if [ $clean -eq 1 ]; then
+        eval $(bitbake -e | grep '^TMPDIR=')
+        if [ -z "$TMPDIR" ]; then
+            echo >&2 "Error: failed to extract TMPDIR from bitbake -e"
+            exit 2
+        fi
+        bgrm $TMPDIR
     fi
     cd $topdir
 done
