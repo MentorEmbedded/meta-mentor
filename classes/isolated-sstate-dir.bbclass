@@ -1,9 +1,10 @@
 # Use an isolated per-build SSTATE_DIR while still populating a shared sstate
 # directory for use across multiple builds.
 
+ISOLATED_SSTATE_DIR ?= "${TMPDIR}/sstate-cache"
 SHARED_SSTATE_DIR := "${SSTATE_DIR}"
 SHARED_SSTATE_PATHSPEC = "${@SSTATE_PATHSPEC.replace(SSTATE_DIR, SHARED_SSTATE_DIR)}"
-SSTATE_DIR = "${TMPDIR}/sstate-cache"
+SSTATE_DIR = "${ISOLATED_SSTATE_DIR}"
 SSTATE_MIRRORS += "file://.* file://${SHARED_SSTATE_DIR}/PATH \n "
 
 sstate_create_package_append () {
