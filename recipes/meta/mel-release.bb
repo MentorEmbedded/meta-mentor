@@ -16,6 +16,11 @@ MEL_RELEASE_IMAGE ?= "core-image-base"
 MEL_RELEASE_USE_TAGS ?= "false"
 MEL_RELEASE_USE_TAGS[type] = "boolean"
 
+# If we have an isolated set of shared state archives, use that, so as to
+# avoid archiving sstates which were unused.
+SSTATE_DIR := "${@ISOLATED_SSTATE_DIR \
+                 if oe.utils.inherits(d, 'isolated-sstate-dir') else SSTATE_DIR}"
+
 # Kernel images and filesystems are handled separately, as they produce
 # timestamped filenames, and we only want the current ones (symlinked ones).
 DEPLOY_IMAGES_EXCLUDE_PATTERN = "(${KERNEL_IMAGETYPE}|README|\.|.*-image-)"
