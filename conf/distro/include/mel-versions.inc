@@ -1,0 +1,3 @@
+PREFERRED_VERSION_udev ?= "182"
+PREFERRED_VERSION_udev_am37x-evm = "164"
+PREFERRED_VERSION_udev_dm37x-evm = "164"
