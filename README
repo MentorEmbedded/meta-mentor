@@ -103,7 +103,6 @@ To push upstream next
     - tar
     - wireless-tools
     - zip
-    - autogen-native
     - perf
     - libaio
     - libacpi
