@@ -79,12 +79,10 @@ Distro bits
           SSTATE_MIRROR_DISTROS += "RedHatEnterprise-5"
           SSTATE_MIRROR_SITES += "file:///cache/sstate http://my.server/sstate-cache"
 
-    - isolated-sstate-dir class: Use an isolated shared state directory. The
-      user specified SSTATE_DIR will still be used, and updated, but the
-      actual SSTATE_DIR used by bitbake will be under TMPDIR. This ensures
-      that we can identify what shared state archives were used by this build,
-      and means mel-release will only archive those shared state archives, not
-      the entire shared SSTATE_DIR, if one exists.
+    - isolated-sstate-dir class: link any used shared state archives into an
+      isolated sstate directory, so we can distinguish between the contents of
+      SSTATE_DIR and the sstate archives actually used for the build. This is
+      needed by our release process.
     - package_early_expand class: work around self referential variable bug
       with SUMMARY and DESCRIPTION. Multiple packaging classes add a package
       name override, then getVar('SUMMARY', True). Yet the default values of
