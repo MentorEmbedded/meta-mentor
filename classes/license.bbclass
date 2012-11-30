@@ -209,10 +209,7 @@ def return_spdx(d, license):
     """
     This function returns the spdx mapping of a license.
     """
-    if d.getVarFlag('SPDXLICENSEMAP', license) != None:
-        return license
-    else:
-        return d.getVarFlag('SPDXLICENSEMAP', license_type)
+    return d.getVarFlag('SPDXLICENSEMAP', license) or license
 
 def incompatible_license(d, dont_want_license, package=""):
     """
