@@ -81,7 +81,7 @@ python do_prepare_copyleft_sources () {
     bb.mkdirhier(dest)
 
     for u in ud.values():
-        local = fetch.localpath(u.url)
+        local = os.path.normpath(fetch.localpath(u.url))
         if local.endswith('.bb'):
             continue
 
