@@ -105,6 +105,7 @@ To push upstream next
     - libaio
     - libacpi
     - blktrace
+    - libpcre
 
     - cml1 class: fix menuconfig terminal type issue. The fundamental issue
       here is an ncurses-native relocation issue. The ncurses library is
