@@ -3,6 +3,7 @@ expression pattern matching using the same syntax and semantics as Perl 5. PCRE 
 has its own native API, as well as a set of wrapper functions that correspond \
 to the POSIX regular expression API."
 SUMMARY = "Perl Compatible Regular Expressions"
+HOMEPAGE = "http://www.pcre.org"
 SECTION = "devel"
 PR = "r0"
 LICENSE = "BSD"
