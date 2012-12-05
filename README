@@ -96,7 +96,6 @@ To push upstream next
 =====================
 
     - freetype
-    - gst-plugins-base
     - samba
     - tar
     - wireless-tools
