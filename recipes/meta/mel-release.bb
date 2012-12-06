@@ -35,6 +35,7 @@ DEPLOY_IMAGES = "\
 # extension name(s)
 IMAGE_EXTENSION_live = "hddimg iso"
 
+
 python () {
     extensions = set()
     fstypes = d.getVar('IMAGE_FSTYPES', True).split()
@@ -122,6 +123,11 @@ prepare_templates () {
     if [ -n "$csl_version" ]; then
         sed -i "s,^#*\(CSL_VER_REQUIRED =\).*,\1 \"$csl_version\"," local.conf.sample
     fi
+    {
+        echo
+        echo '# Prefer the cached upstream SCM revisions'
+        echo 'BB_SRCREV_POLICY = "cache"'
+    } >>local.conf.sample
 
     sed -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' ${META_MENTOR_PATH}/conf/bblayers.conf.sample >bblayers.conf.sample
     echo 'BBLAYERS = "\' >>bblayers.conf.sample
@@ -203,6 +209,9 @@ do_prepare_release () {
         find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 \( -type f -o -type l \) | \
             grep -Ev '^${DEPLOY_DIR_IMAGE}/${DEPLOY_IMAGES_EXCLUDE_PATTERN}' >>include
 
+        echo "--transform=s,${WORKDIR}/dumped-headrevs.db,${@DUMP_HEADREVS_DB.replace('${MELDIR}/', '')}," >>include
+        echo ${WORKDIR}/dumped-headrevs.db >>include
+
         mel_tar --files-from=include -cf deploy/${MACHINE}.tar
 
         echo "--transform=s,-${MACHINE},,i" >include
@@ -219,7 +228,12 @@ do_prepare_release () {
 
     mv deploy/* ${DEPLOY_DIR_RELEASE}/
 }
-addtask prepare_release before do_build
+addtask prepare_release before do_build after do_dump_headrevs
+
+python do_dump_headrevs () {
+    dump_headrevs(d, os.path.join(d.getVar('WORKDIR', True), 'dumped-headrevs.db'))
+}
+addtask dump_headrevs
 
 
 do_prepare_release[dirs] =+ "${DEPLOY_DIR_RELEASE} ${MELDIR} ${S}"
