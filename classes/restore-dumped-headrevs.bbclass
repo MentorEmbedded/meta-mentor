@@ -26,6 +26,7 @@ python restore_dumped_headrevs() {
     dump_db_path = e.data.getVar('DUMP_HEADREVS_DB', True)
     if not os.path.exists(stamp_path) and os.path.exists(dump_db_path):
         restore_headrevs(e.data, dump_db_path)
+        bb.utils.mkdirhier(os.path.dirname(stamp_path))
         open(stamp_path, 'w').close()
 }
 addhandler restore_dumped_headrevs
