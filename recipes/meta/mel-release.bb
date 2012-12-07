@@ -10,6 +10,7 @@ EXCLUDE_FROM_WORLD = "1"
 MELDIR ?= "${COREBASE}/.."
 META_MENTOR_PATH = "${FILE_DIRNAME}/../.."
 
+DUMP_HEADREVS_DB ?= ""
 DEPLOY_DIR_RELEASE ?= "${DEPLOY_DIR}/release-artifacts"
 MEL_RELEASE_ARTIFACTS ?= "layers bitbake templates images downloads sstate"
 MEL_RELEASE_IMAGE ?= "core-image-base"
@@ -209,8 +210,10 @@ do_prepare_release () {
         find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 \( -type f -o -type l \) | \
             grep -Ev '^${DEPLOY_DIR_IMAGE}/${DEPLOY_IMAGES_EXCLUDE_PATTERN}' >>include
 
-        echo "--transform=s,${WORKDIR}/dumped-headrevs.db,${@DUMP_HEADREVS_DB.replace('${MELDIR}/', '')}," >>include
-        echo ${WORKDIR}/dumped-headrevs.db >>include
+        if [ -n "${DUMP_HEADREVS_DB}" ]; then
+            echo "--transform=s,${WORKDIR}/dumped-headrevs.db,${@DUMP_HEADREVS_DB.replace('${MELDIR}/', '')}," >>include
+            echo ${WORKDIR}/dumped-headrevs.db >>include
+        fi
 
         mel_tar --files-from=include -cf deploy/${MACHINE}.tar
 
