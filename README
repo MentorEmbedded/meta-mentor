@@ -99,7 +99,6 @@ To push upstream next
     - samba
     - tar
     - wireless-tools
-    - zip
     - perf
     - libacpi
     - blktrace
