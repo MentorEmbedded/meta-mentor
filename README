@@ -101,7 +101,6 @@ To push upstream next
     - wireless-tools
     - zip
     - perf
-    - libaio
     - libacpi
     - blktrace
     - libpcre
