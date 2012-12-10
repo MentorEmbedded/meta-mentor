@@ -20,6 +20,13 @@ sstate_write_isolated () {
 
 SSTATE_POSTPROCESS_FUNCS += "sstate_write_isolated"
 
+# Copy existing/fetched archives from SSTATE_DIR to ISOLATED_SSTATE_DIR
+sstate_write_isolated_preinst () {
+    sstate_write_isolated "${SSTATE_PKG}"
+}
+
+SSTATEPREINSTFUNCS += "sstate_write_isolated_preinst"
+
 def cleansstate_isolated(d):
     isolated = d.getVar('ISOLATED_SSTATE_DIR', True)
     if isolated:
