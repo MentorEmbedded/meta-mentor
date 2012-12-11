@@ -1,4 +1,2 @@
-PRINC := "${@int(PRINC) + 2}"
-DEPENDS = "popt binutils-libs"
-RDEPENDS_${PN} = ""
+PRINC := "${@int(PRINC) + 3}"
 FILES_${PN}-staticdev += "${libexecdir}/*.a"
