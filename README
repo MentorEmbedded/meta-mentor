@@ -95,7 +95,6 @@ Distro bits
 To push upstream next
 =====================
 
-    - freetype
     - samba
     - tar
     - wireless-tools
