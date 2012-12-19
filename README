@@ -99,7 +99,6 @@ To push upstream next
     - tar
     - wireless-tools
     - perf
-    - libacpi
     - blktrace
     - libpcre
 
