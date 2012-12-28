@@ -85,7 +85,8 @@ prioritized_layers () {
 
 # We'll be reconfiguring the build directory, so let the user back out
 if [ -n "$MACHINE" ] &&
-   [ -e $BUILDDIR/conf/bblayers.conf -o -e $BUILDDIR/conf/layer.conf ]; then
+   [ -e $BUILDDIR/conf/bblayers.conf -o -e $BUILDDIR/conf/layer.conf ] &&
+   [ "$MACHINE" != "$(sed -n '/^MACHINE /s/.*"\(.*\)"/\1/p' conf/local.conf)" ]; then
     echo >&2 "Build directory is configured, but machine was specified."
     while true; do
         read -p "Reconfigure for $MACHINE (Y|n)? " reconfigure
