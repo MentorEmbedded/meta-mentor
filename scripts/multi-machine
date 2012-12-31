@@ -12,6 +12,7 @@ usage () {
     echo >&2 "Options:"
     echo >&2 "  -b BUILDDIR           Specify the build directory. (default: build)"
     echo >&2 "  -o BITBAKE_ARGUMENTS  Specify bitbake args (default: core-image-base)"
+    echo >&2 "  -s SETUP_ENVIRONMENT  Specify the setup-environment script to use"
     echo >&2 "  -k                    Continue when one build fails"
     echo >&2 "  -c                    Clean the TMPDIR between builds"
     echo >&2 "  -h                    Show this usage information"
@@ -40,15 +41,19 @@ bgrm () {
 
 builddir=build
 bitbakeopts=core-image-base
+setupscript=$(dirname $0)/../setup-environment
 continue=0
 clean=0
-while getopts b:o:ckh opt; do
+while getopts b:o:s:ckh opt; do
     case "$opt" in
         b)
             builddir="$OPTARG"
             ;;
         o)
             bitbakeopts="$OPTARG"
+            ;;
+        s)
+            setupscript="$OPTARG"
             ;;
         c)
             clean=1
@@ -71,7 +76,7 @@ fi
 bitbakeopts="-k $bitbakeopts"
 topdir=$PWD
 for machine; do
-    . $(dirname $0)/../setup-environment -f -b $builddir $machine >/dev/null
+    . $setupscript -f -b $builddir $machine >/dev/null
     echo "Running bitbake $bitbakeopts for $machine.."
     eval bitbake $bitbakeopts
     ret=$?
