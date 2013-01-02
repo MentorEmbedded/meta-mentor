@@ -144,14 +144,9 @@ package_install_internal_ipk() {
 
 	opkg-cl ${ipkg_args} update
 
-	# Uclibc builds don't provide this stuff...
-	if [ x${TCLIBC} != "uclibc" ]; then
-		if [ ! -z "${package_linguas}" ]; then
-			for i in ${package_linguas}; do
-				opkg-cl ${ipkg_args} install $i
-			done
-		fi
-	fi
+	for i in ${package_linguas}; do
+		opkg-cl ${ipkg_args} install $i
+	done
 
 	if [ ! -z "${package_to_install}" ]; then
 		opkg-cl ${ipkg_args} install ${package_to_install}

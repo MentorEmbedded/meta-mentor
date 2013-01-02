@@ -379,11 +379,6 @@ EOF
 		done
 	fi
 
-	# Uclibc builds don't provide this stuff...
-	if [ x${TCLIBC} = "uclibc" ]; then
-		package_linguas=""
-	fi
-
 	# Construct install scriptlet wrapper
 	cat << EOF > ${WORKDIR}/scriptlet_wrapper
 #!/bin/bash
