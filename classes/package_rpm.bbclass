@@ -380,7 +380,7 @@ EOF
 	fi
 
 	# Uclibc builds don't provide this stuff...
-	if [ x${TARGET_OS} != "xlinux" ] && [ x${TARGET_OS} != "xlinux-gnueabi" ] ; then
+	if [ x${TCLIBC} = "uclibc" ]; then
 		package_linguas=""
 	fi
 

@@ -145,7 +145,7 @@ package_install_internal_ipk() {
 	opkg-cl ${ipkg_args} update
 
 	# Uclibc builds don't provide this stuff...
-	if [ x${TARGET_OS} = "xlinux" ] || [ x${TARGET_OS} = "xlinux-gnueabi" ] ; then
+	if [ x${TCLIBC} != "uclibc" ]; then
 		if [ ! -z "${package_linguas}" ]; then
 			for i in ${package_linguas}; do
 				opkg-cl ${ipkg_args} install $i
