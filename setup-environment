@@ -53,6 +53,18 @@ mel_prompt_machine () {
     unset machine_count
 }
 
+mel_list_all_machines () {
+    for layerconf in $MELDIR/*/conf/layer.conf $MELDIR/*/*/conf/layer.conf; do
+        if [ -e "$layerconf" ]; then
+            for machineconf in $(dirname $layerconf)/machine/*.conf; do
+                if [ -e "$machineconf" ]; then
+                    echo $machineconf | sed 's,.*/,,; s,\.conf$,,'
+                fi
+            done
+        fi
+    done
+}
+
 mel_abspath () {
     readlink -f "$1"
 }
@@ -137,7 +149,15 @@ mel_setup () {
                 else
                     echo >&2 "Error: no installed bsp, must specify MACHINE"
                     echo >&2
-                    mel_usage
+                    echo >&2 "The following machines are available in your layers:"
+                    echo >&2
+                    mel_list_all_machines | sort | {
+                        if which fmt >/dev/null 2>&1; then
+                            fmt
+                        else
+                            sed 's,^,  ,'
+                        fi
+                    }
                     return 1
                 fi
             fi
@@ -176,6 +196,9 @@ if [ -z "$ZSH_NAME" ] && [ "${0##*/}" = "setup-environment" ]; then
 else
     if [ -n "$ZSH_NAME" ]; then
         layerdir=${0%/*}
+
+        # Don't error if a glob fails to match anything
+        set -3
     elif [ -n "$BASH_SOURCE" ]; then
         layerdir=${BASH_SOURCE%/*}
     else
@@ -187,5 +210,5 @@ else
     layerdir=$(mel_abspath $layerdir)
     mel_setup "$@"
     unset layerdir
-    unset -f mel_setup mel_usage mel_prompt_machine mel_abspath
+    unset -f mel_setup mel_usage mel_prompt_machine mel_list_all_machines mel_abspath
 fi
