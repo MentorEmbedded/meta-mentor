@@ -13,9 +13,6 @@ BOOTDD_VOLUME_ID ?= "boot"
 # Boot partition size [in KiB]
 BOOT_SPACE ?= "8192"
 
-# Set alignment to 4MB
-IMAGE_ROOTFS_ALIGNMENT = "${@4096 * 1024}"
-
 IMAGE_DEPENDS_sdcard = "virtual/kernel ${IMAGE_BOOTLOADER}"
 
 SDCARD = "${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}.rootfs.sdcard"
