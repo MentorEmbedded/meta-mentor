@@ -108,8 +108,6 @@ To push upstream next
       that path no longer exists, when using cached binaries (sstate). Export
       TERMINFO pointing at the current sysroot, so the attempt to run mconf is
       able to find the correct terminfo db.
-    - copyleft_compliance class: if an scm mirror tarball is available, use
-      that rather than grabbing the scm directory
 
 DSO Link Change
 ===============
