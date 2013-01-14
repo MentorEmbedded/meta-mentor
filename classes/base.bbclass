@@ -476,8 +476,8 @@ python () {
                 for pkg in packages:
                     if incompatible_license(d, dont_want_license, pkg):
                             skipped_packages[pkg] = this_license
-                            dont_skip_recipe = True
                     else:
+                        dont_skip_recipe = True
                         unskipped_packages.append(pkg)
                 if not unskipped_packages:
                     # if we hit here and have excluded all packages, then we can just exclude the recipe
