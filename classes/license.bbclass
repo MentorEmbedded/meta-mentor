@@ -227,8 +227,8 @@ def incompatible_license(d, dont_want_license, package=""):
     dont_want_licenses.append(d.getVar('INCOMPATIBLE_LICENSE', True))
     recipe_license = d.getVar('LICENSE', True)
     if package != "":
-        if d.getVar('LICENSE_' + package, True):
-            license = d.getVar('LICENSE_' + package, True)
+        if d.getVar('LICENSE_' + pn + '-' + package, True):
+            license = d.getVar('LICENSE_' + pn + '-' + package, True)
         else:
             license = recipe_license
     else:
