@@ -10,6 +10,9 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=e647752e045a8c45b6f583771bd561ef \
 
 DEPENDS = "liburcu"
 
+RCONFLICTS_${PN} += "lttng-ust (<= 1.0)"
+RREPLACES_${PN} += "lttng-ust (<= 1.0)"
+
 PR = "r1"
 PE = "1"
 
