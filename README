@@ -95,12 +95,13 @@ Distro bits
 To push upstream next
 =====================
 
+    - blktrace
+    - libpcre
+    - newt
+    - perf
     - samba
     - tar
     - wireless-tools
-    - perf
-    - blktrace
-    - libpcre
 
     - cml1 class: fix menuconfig terminal type issue. The fundamental issue
       here is an ncurses-native relocation issue. The ncurses library is
