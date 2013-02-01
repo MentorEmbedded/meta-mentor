@@ -40,11 +40,17 @@ find_layers () {
         fi
     done | sort -u
 }
-machine_layers () {
+additional_layers () {
     find_layers | while read layer; do
         if [ -e $layer/conf/machine/$1.conf ]; then
             echo $layer
         fi
+        for collection in $(sed -n 's/^BBFILE_COLLECTIONS.*= "\(.*\)"/\1/p' $layer/conf/layer.conf); do
+            if echo "$OPTIONALLAYERS" | sed 's/ /\n/g' | grep -qx "$collection"; then
+                echo >&2 "Warning: Detected optional layer $collection, adding to configuration."
+                echo $layer
+            fi
+        done
     done
 }
 base_layers () {
@@ -70,7 +76,7 @@ prioritized_layers () {
     layerfile=`mktemp`
     trap "rm -f $layerfile" EXIT
 
-    machine_layers $MACHINE >>$layerfile
+    additional_layers $MACHINE >>$layerfile
     if [ `wc -l $layerfile|awk '{print $1}'` = 0 ]; then
         echo >&2 "Unable to find machine .conf for $MACHINE"
         exit 2
