@@ -170,8 +170,6 @@ mel_setup () {
 
     cd $BUILDDIR
 
-    unset MACHINE BUILDDIR MELDIR force_overwrite
-
     cat <<END
 
 You can now run 'bitbake <target>'
@@ -208,7 +206,14 @@ else
         layerdir=$layerdir/meta-mentor
     fi
     layerdir=$(mel_abspath $layerdir)
+    if [ -z "$OPTIONALLAYERS" ]; then
+        OPTIONALLAYERS="ade mentor-private"
+        TO_UNSET="OPTIONALLAYERS"
+    fi
+    export OPTIONALLAYERS
     mel_setup "$@"
-    unset layerdir
+
+    unset $TO_UNSET TO_UNSET
+    unset MACHINE BUILDDIR MELDIR force_overwrite layerdir
     unset -f mel_setup mel_usage mel_prompt_machine mel_list_all_machines mel_abspath
 fi
