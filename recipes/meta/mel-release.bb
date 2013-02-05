@@ -119,7 +119,7 @@ prepare_templates () {
     csl_version="$(echo ${CSL_VER_MAIN} | sed 's/-.*$//')"
 
     sed 's,^MACHINE ??=.*,MACHINE ??= "${MACHINE}",' ${META_MENTOR_PATH}/conf/local.conf.sample >local.conf.sample
-    sed -i 's,^EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "$,' local.conf.sample
+    sed -i 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "$,' local.conf.sample
     sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/..",' local.conf.sample
     if [ -n "$csl_version" ]; then
         sed -i "s,^#*\(CSL_VER_REQUIRED =\).*,\1 \"$csl_version\"," local.conf.sample
