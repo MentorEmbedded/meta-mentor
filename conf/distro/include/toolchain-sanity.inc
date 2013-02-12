@@ -63,8 +63,8 @@ python toolchain_sanity_check () {
     if toolchain_required_version:
         csl_ver_main = version(d.getVar('CSL_VER_MAIN', True))
         if csl_ver_main:
-            if toolchain_required_version != csl_ver_main:
-                bb.fatal('Found toolchain version `%s`, expected `%s`. Please install the supported toolchain.' % ('-'.join(toolchain_required_version), '-'.join(csl_ver_main)))
+            if csl_ver_main != toolchain_required_version:
+                bb.fatal('Found toolchain version `%s`, expected `%s`. Please install the supported toolchain.' % ('-'.join(csl_ver_main), '-'.join(toolchain_required_version)))
 
     # Check that debug files are available, to be packaged into -dbg
     if '-g0' in toolchain_sanity_flags(d):
