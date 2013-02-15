@@ -154,7 +154,7 @@ prioritized_layers () {
         layerpriority=${layerpriorities[$layer]}
         layerpath=${layerpaths[$layer]}
         echo $layerpriority $layerpath
-    done | sort -n -r | cut -d" " -f2- | sort -u
+    done | sort -n -r | cut -d" " -f2- | uniq
 }
 
 # We'll be reconfiguring the build directory, so let the user back out
