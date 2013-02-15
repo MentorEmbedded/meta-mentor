@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright 2007-2012 Mentor Graphics Corporation
 #
@@ -17,6 +17,11 @@
 JOBS_FACTOR="2"
 THREADS_FACTOR="3 / 2"
 
+declare -A priorityoverrides
+# Don't let meta-oe override oe-core
+priorityoverrides[openembedded_layer]=0
+
+
 abspath () {
     _path="$1"
     if [ -n "${_path##/*}" ]; then
@@ -33,26 +38,51 @@ fi
 BUILDDIR=$(abspath $BUILDDIR)
 MACHINE=$2
 
-find_layers () {
+
+declare -a all_layers
+declare -a machinelayers
+declare -A layerpriorities
+declare -A layerpaths
+declare -A layerdepends
+gather_layer_data () {
     for i in $MELDIR/*/conf/layer.conf $MELDIR/*/*/conf/layer.conf; do
-        if [ -e "$i" ]; then
-            echo $i | sed 's,/conf/layer.conf$,,'
+        if [ ! -e "$i" ]; then
+            continue
         fi
-    done | sort -u
-}
-additional_layers () {
-    find_layers | while read layer; do
-        if [ -e $layer/conf/machine/$1.conf ]; then
-            echo $layer
+        layerpath=${i%/conf/layer.conf}
+        layernames="$(sed -n 's/^BBFILE_COLLECTIONS.*= "\(.*\)"/\1/p' $i)"
+        if [ -z "$layernames" ]; then
+            echo >&2 "Warning: layer $layerpath has no defined layer name"
+            layername=${layerpath##*/}
+        elif [[ "$layernames" =~ " " ]]; then
+            echo >&2 "Warning: layer $layerpath has more than one layer name, not handling"
+            layername=${layerpath##*/}
+        else
+            layername="$layernames"
         fi
-        for collection in $(sed -n 's/^BBFILE_COLLECTIONS.*= "\(.*\)"/\1/p' $layer/conf/layer.conf); do
-            if echo "$OPTIONALLAYERS" | sed 's/ /\n/g' | grep -qx "$collection"; then
-                echo >&2 "Warning: Detected optional layer $collection, adding to configuration."
-                echo $layer
-            fi
-        done
+        layerdeps="$(sed -n "s/^LAYERDEPENDS_$layername.*= \"\(.*\)\"/\1/p" $i)"
+        layerpriority="$(sed -n "s/^BBFILE_PRIORITY_$layername.*= \"\(.*\)\"/\1/p" $i)"
+
+        layername="${layername//-/_}"
+        layerdeps="${layerdeps//-/_}"
+
+        override="${priorityoverrides[$layername]}"
+        if [ -n "$override" ]; then
+            layerpriority="$override"
+        elif [ -z "$layerpriority" ]; then
+            layerpriority=0
+        fi
+
+        layerpaths[$layername]="$layerpath"
+        layerpriorities[$layername]="$layerpriority"
+        layerdepends[$layername]="$layerdeps"
+        if [ -e "$layerpath/conf/machine/$MACHINE.conf" ]; then
+            machinelayers=(${machinelayers[@]} $layername)
+        fi
+        all_layers=(${all_layers[@]} $layername)
     done
 }
+
 base_layers () {
     # Extract base layer list from bblayers.conf.sample
     sed -n '/^BBLAYERS/{s/^[^"]*"//; :start; /\\$/{s/ *\\$//; p; n; b start}; s/"//; p}' $TEMPLATECONF/bblayers.conf.sample | sed -e"s,\${MELDIR},$MELDIR,; s,##COREBASE##,$MELDIR/poky,g" | sort -u | while read layer; do
@@ -61,32 +91,70 @@ base_layers () {
         fi
     done
 }
-layer_priority () {
-    case $1 in
-        */meta-oe)
-            # Terrible hack
-            echo 1
-            ;;
-        *)
-            sed -n "s,BBFILE_PRIORITY_[^ ]* *= *[\"']\(.*\)[\"']$,\1,p" $1/conf/layer.conf
-            ;;
-    esac
-}
 prioritized_layers () {
     layerfile=`mktemp`
     trap "rm -f $layerfile" EXIT
 
-    additional_layers $MACHINE >>$layerfile
-    if [ `wc -l $layerfile|awk '{print $1}'` = 0 ]; then
-        echo >&2 "Unable to find machine .conf for $MACHINE"
-        exit 2
-    fi
-    base_layers >>$layerfile
+    gather_layer_data
 
-    cat $layerfile | sort -u | while read layer; do
-        priority=`layer_priority $layer`
-        echo $layer $priority
-    done | sort -n -k2 -r | cut -d" " -f1
+    declare -a baselayers
+    base_layers >$layerfile
+    while read base_layerpath; do
+        layername=
+        for layer in ${all_layers[@]}; do
+            layerpath=${layerpaths[$layer]}
+            if [ "$layerpath" = "$base_layerpath" ]; then
+                layername=$layer
+            fi
+        done
+        if [ -z "$layername" ]; then
+            echo >&2 "Error: unable to find name for base layer $layerpath, aborting"
+            return 2
+        fi
+        baselayers+=($layername)
+    done <$layerfile
+
+    includedlayers=(${baselayers[@]} ${machinelayers[@]})
+
+    # Check for missing required dependencies
+    missingdeps=0
+    for layer in ${includedlayers[@]}; do
+        for layerdep in ${layerdepends[$layer]}; do
+            if [ -z "${layerpaths[$layerdep]}" ]; then
+                missingdeps=1
+                echo >&2 "Error: $layer requires layer '$layerdep', but no such layer exists, aborting"
+            else
+                includedlayers+=($layerdep)
+            fi
+        done
+    done
+    if [ $missingdeps -eq 1 ]; then
+        return 3
+    fi
+
+    # Gather up optional layers, following their dependencies
+    declare -a fromoptional
+    for layer in ${OPTIONALLAYERS//-/_}; do
+        if [ -n "${layerpaths[$layer]}" ]; then
+            unincluded_deps=0
+            for layerdep in ${layerdepends[$layer]}; do
+                if ! echo "${includedlayers[@]}" | grep -qw "$layerdep"; then
+                # if [[ "${includedlayers[*]}" !~ "\b$layerdep\b" ]]; then
+                    unincluded_deps=1
+                fi
+            done
+            if [ $unincluded_deps -eq 0 ]; then
+                echo "Including optional layer '${layerpaths[$layer]}'" >&2
+                includedlayers+=($layer)
+            fi
+        fi
+    done
+
+    for layer in ${includedlayers[@]}; do
+        layerpriority=${layerpriorities[$layer]}
+        layerpath=${layerpaths[$layer]}
+        echo $layerpriority $layerpath
+    done | sort -n -r | cut -d" " -f2- | sort -u
 }
 
 # We'll be reconfiguring the build directory, so let the user back out
