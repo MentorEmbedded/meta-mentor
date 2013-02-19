@@ -97,17 +97,6 @@ def process_arguments(cmdline_args):
     return opts
 
 
-def add_layer_python_search_paths(layers):
-    path = []
-
-    for layer in reversed(layers):
-        libdir = os.path.join(layer.path, 'lib')
-        if os.path.exists(libdir):
-            path.append(libdir)
-
-    sys.path[0:0] = path
-
-
 class Layer(object):
     def __init__(self, path, confpath, name, priority, pattern, depends):
         self.path = path
@@ -320,7 +309,6 @@ def setup_build(cmdline_opts):
         all_layers = get_layers(data, opts.oedir)
 
     all_layers = sorted(all_layers, key=lambda l: l.priority)
-    add_layer_python_search_paths(all_layers)
 
     for layer in all_layers:
         if not layer.pattern:
