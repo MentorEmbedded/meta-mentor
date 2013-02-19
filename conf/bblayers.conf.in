@@ -17,5 +17,4 @@ BBLAYERS ?= "\
     ${MELDIR}/poky/meta \
     ${MELDIR}/meta-oe/meta-networking \
     ${MELDIR}/meta-intel \
-    ${MELDIR}/meta-tracing \
 "
