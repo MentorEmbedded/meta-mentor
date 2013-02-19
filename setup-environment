@@ -26,7 +26,7 @@ changing its configuration.
 
 Options:
   -b BUILDDIR  Specify the build directory to create (default: 'build')
-  -o MELDIR     Specify the root of the MEL install, where you can find bitbake and the layers
+  -o MELDIR    Specify the root of the MEL install, where you can find bitbake and the layers
   -f           Force overwrite of existing configuration files in the build
                directory. This includes local.conf and bblayers.conf, but not
                site.conf
@@ -116,7 +116,7 @@ mel_setup () {
     if [ -n "$MACHINE" ]; then
         if [ -e $MELDIR/$MACHINE/binary ]; then
             # User specified machine and we have the binary content for this BSP
-            TEMPLATECONF=$MELDIR/$MACHINE/conf $layerdir/scripts/setup-builddir $BUILDDIR || return 1
+            $layerdir/scripts/setup-build -t $MELDIR/$MACHINE/conf $BUILDDIR || return 1
         else
             mel_found=0
             for layerconf in $MELDIR/*/conf/layer.conf $MELDIR/*/*/conf/layer.conf; do
@@ -134,18 +134,18 @@ mel_setup () {
             unset mel_found
 
             # User specified machine, without the binary content -- search
-            TEMPLATECONF=$layerdir/conf $layerdir/scripts/setup-builddir $BUILDDIR $MACHINE || return 1
+            $layerdir/scripts/setup-build -m $MACHINE $BUILDDIR || return 1
         fi
     else
         if ! [ -e $BUILDDIR/conf/local.conf -a -e $BUILDDIR/conf/bblayers.conf ]; then
             binary_dirs="`echo $MELDIR/*/binary`" 2>/dev/null
             if [ "`echo $binary_dirs | wc -w`" -gt 1 ]; then
                 mel_prompt_machine `echo $binary_dirs | sed -e's,$MELDIR/,,g; s,/binary,,g'`
-                TEMPLATECONF=$MELDIR/$MACHINE/conf $layerdir/scripts/setup-builddir $BUILDDIR || return 1
+                $layerdir/scripts/setup-build -t $MELDIR/$MACHINE/conf $BUILDDIR || return 1
             else
                 if [ -e "$binary_dirs" ]; then
                     # Found single installed BSP, using its templates
-                    TEMPLATECONF=`dirname $binary_dirs`/conf $layerdir/scripts/setup-builddir $BUILDDIR || return 1
+                    $layerdir/scripts/setup-build -t $(dirname $binary_dirs)/conf $BUILDDIR || return 1
                 else
                     echo >&2 "Error: no installed bsp, must specify MACHINE"
                     echo >&2
