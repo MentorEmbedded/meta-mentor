@@ -291,6 +291,8 @@ def get_configured_layers(data, opts, all_layers, missing_deps, bblconf):
         if os.path.exists(os.path.join(layer.path, 'conf', 'machine',
                                        '{0}.conf'.format(opts.machine))):
             configured_layers.add(layer)
+            for dep in layer.depends:
+                configured_layers.add(dep)
         elif layer.name in optional_layers:
             optional.add(layer)
             configured_layers.add(layer)
