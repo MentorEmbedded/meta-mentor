@@ -10,10 +10,9 @@ mel_usage () {
     cat >&2 <<END
 Usage: $0 [OPTIONS...] [MACHINE]"
 
-When operating from a MEL install, this script will use the local.conf.sample
-and bblayers.conf.sample from the installed BSP. If multiple BSPs are
-installed, you must specify MACHINE, and the script will use the templates
-from that BSP.
+When operating from a MEL install, this script will use the template config
+files from the installed BSP. If multiple BSPs are installed, you must specify
+MACHINE, and the script will use the templates from that BSP.
 
 When no installed BSP is available, MACHINE is required, and this script will
 set up the build directory with a base set of layers + all layers which
