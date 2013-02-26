@@ -118,24 +118,24 @@ bb_layers () {
 prepare_templates () {
     csl_version="$(echo ${CSL_VER_MAIN} | sed 's/-.*$//')"
 
-    sed 's,^MACHINE ??=.*,MACHINE ??= "${MACHINE}",' ${META_MENTOR_PATH}/conf/local.conf.sample >local.conf.sample
-    sed -i 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "$,' local.conf.sample
-    sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/..",' local.conf.sample
+    sed 's,^MACHINE ??=.*,MACHINE ??= "${MACHINE}",' ${META_MENTOR_PATH}/conf/local.conf.in >local.conf.in
+    sed -i 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "$,' local.conf.in
+    sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/..",' local.conf.in
     if [ -n "$csl_version" ]; then
-        sed -i "s,^#*\(CSL_VER_REQUIRED =\).*,\1 \"$csl_version\"," local.conf.sample
+        sed -i "s,^#*\(CSL_VER_REQUIRED =\).*,\1 \"$csl_version\"," local.conf.in
     fi
     {
         echo
         echo '# Prefer the cached upstream SCM revisions'
         echo 'BB_SRCREV_POLICY = "cache"'
-    } >>local.conf.sample
+    } >>local.conf.in
 
-    sed -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' ${META_MENTOR_PATH}/conf/bblayers.conf.sample >bblayers.conf.sample
-    echo 'BBLAYERS = "\' >>bblayers.conf.sample
+    sed -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' ${META_MENTOR_PATH}/conf/bblayers.conf.in >bblayers.conf.in
+    echo 'BBLAYERS = "\' >>bblayers.conf.in
     bb_layers | while read path relpath; do
-        printf '    $%s%s \\\n' '{MELDIR}/' "$relpath" >>bblayers.conf.sample
+        printf '    $%s%s \\\n' '{MELDIR}/' "$relpath" >>bblayers.conf.in
     done
-    echo '"' >>bblayers.conf.sample
+    echo '"' >>bblayers.conf.in
 }
 
 do_prepare_release () {
@@ -191,7 +191,7 @@ do_prepare_release () {
 
     if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w templates; then
         prepare_templates
-        cp bblayers.conf.sample local.conf.sample deploy/
+        cp bblayers.conf.in local.conf.in deploy/
     fi
 
     if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w images; then
@@ -200,8 +200,8 @@ do_prepare_release () {
 
         if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w templates; then
             echo "--transform=s,${S}/,${MACHINE}/conf/," >>include
-            echo "${S}/local.conf.sample" >>include
-            echo "${S}/bblayers.conf.sample" >>include
+            echo "${S}/local.conf.in" >>include
+            echo "${S}/bblayers.conf.in" >>include
         fi
 
         echo "--transform=s,-${MACHINE},,i" >>include
