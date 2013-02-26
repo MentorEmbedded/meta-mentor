@@ -290,6 +290,8 @@ def get_configured_layers(data, opts, all_layers, missing_deps, bblconf):
     for layer in all_layers:
         if os.path.exists(os.path.join(layer.path, 'conf', 'machine',
                                        '{0}.conf'.format(opts.machine))):
+            if layer.name in optional_layers:
+                optional_layers.remove(layer.name)
             configured_layers.add(layer)
             for dep in layer.depends:
                 configured_layers.add(dep)
@@ -298,12 +300,19 @@ def get_configured_layers(data, opts, all_layers, missing_deps, bblconf):
             configured_layers.add(layer)
 
     for layer in list(configured_layers):
-        if layer.name in missing_deps:
-            if layer.name in optional_layers:
-                configured_layers.remove(layer)
-            else:
-                deps = missing_deps[layer.name]
-                raise Exception("Missing layer dependencies for '%s': %s" % (layer.name, ', '.join(deps)))
+        missing = set()
+        for dep in layer.depends:
+            if dep not in configured_layers:
+                missing.add(dep)
+
+        if not missing:
+            continue
+
+        if layer.name in optional_layers:
+            configured_layers.remove(layer)
+            optional.remove(layer)
+        else:
+            raise Exception("Missing layer dependencies for '%s': %s" % (layer.name, ', '.join(d.name for d in missing)))
 
     return configured_layers, optional
 
