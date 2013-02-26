@@ -63,23 +63,23 @@ git_tar () {
 prepare_templates () {
     csl_version="$(echo ${CSL_VER_MAIN} | sed 's/-.*$//')"
 
-    sed 's,^MACHINE ??=.*,MACHINE ??= "${MACHINE}",' ${MELDIR}/meta-mentor/conf/local.conf.sample >local.conf.sample
-    sed -i 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "$,' local.conf.sample
-    sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/..",' local.conf.sample
+    sed 's,^MACHINE ??=.*,MACHINE ??= "${MACHINE}",' ${MELDIR}/meta-mentor/conf/local.conf.in >local.conf.in
+    sed -i 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "$,' local.conf.in
+    sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/..",' local.conf.in
     if [ -n "$csl_version" ]; then
-        sed -i "s,^#*\(CSL_VER_REQUIRED =\).*,\1 \"$csl_version\"," local.conf.sample
+        sed -i "s,^#*\(CSL_VER_REQUIRED =\).*,\1 \"$csl_version\"," local.conf.in
     fi
 
-    sed -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' ${MELDIR}/meta-mentor/conf/bblayers.conf.sample >bblayers.conf.sample
-    echo 'BBLAYERS = "\' >>bblayers.conf.sample
+    sed -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' ${MELDIR}/meta-mentor/conf/bblayers.conf.in >bblayers.conf.in
+    echo 'BBLAYERS = "\' >>bblayers.conf.in
     for layer in ${BBLAYERS}; do
         if ! echo $layer | grep -q "^${MELDIR}/"; then
             continue
         fi
         layer="`echo $layer | sed 's,^${MELDIR}/,,'`"
-        printf '    $%s%s \\\n' '{MELDIR}/' "$layer" >>bblayers.conf.sample
+        printf '    $%s%s \\\n' '{MELDIR}/' "$layer" >>bblayers.conf.in
     done
-    echo '"' >>bblayers.conf.sample
+    echo '"' >>bblayers.conf.in
 }
 
 do_prepare_release () {
@@ -122,8 +122,8 @@ do_prepare_release () {
     prepare_templates
 
     echo "--transform=s,${S}/,${MACHINE}/conf/," >>include
-    echo "${S}/local.conf.sample" >>include
-    echo "${S}/bblayers.conf.sample" >>include
+    echo "${S}/local.conf.in" >>include
+    echo "${S}/bblayers.conf.in" >>include
 
     echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >>include
     echo "--exclude=.git" >>include
@@ -143,7 +143,7 @@ do_prepare_release () {
 
     bzip2 deploy/${MACHINE}.tar
 
-    cp bblayers.conf.sample local.conf.sample deploy/
+    cp bblayers.conf.in local.conf.in deploy/
     echo ${DISTRO_VERSION} >deploy/distro-version
 
     mv deploy/* ${DEPLOY_DIR_INSTALLER}/
