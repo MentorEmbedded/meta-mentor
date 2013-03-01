@@ -5,25 +5,37 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=3f40d7994397109285ec7b81fdeb3
 INHIBIT_DEFAULT_DEPS = "1"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 PACKAGES = ""
+EXCLUDE_FROM_WORLD = "1"
 
-DEPLOY_DIR_INSTALLER ?= "${DEPLOY_DIR}/release-artifacts"
+MELDIR ?= "${COREBASE}/.."
+META_MENTOR_PATH = "${FILE_DIRNAME}/../.."
+
+DUMP_HEADREVS_DB ?= ""
+DEPLOY_DIR_RELEASE ?= "${DEPLOY_DIR}/release-artifacts"
+MEL_RELEASE_ARTIFACTS ?= "layers bitbake templates images downloads sstate"
 MEL_RELEASE_IMAGE ?= "core-image-base"
 MEL_RELEASE_USE_TAGS ?= "false"
 MEL_RELEASE_USE_TAGS[type] = "boolean"
+
+# If we have an isolated set of shared state archives, use that, so as to
+# avoid archiving sstates which were unused.
+SSTATE_DIR := "${@ISOLATED_SSTATE_DIR \
+                 if oe.utils.inherits(d, 'isolated-sstate-dir') else SSTATE_DIR}"
 
 # Kernel images and filesystems are handled separately, as they produce
 # timestamped filenames, and we only want the current ones (symlinked ones).
 DEPLOY_IMAGES_EXCLUDE_PATTERN = "(${KERNEL_IMAGETYPE}|README|\.|.*-image-)"
 DEPLOY_IMAGES = "\
-    ${KERNEL_IMAGETYPE}-${MACHINE}* \
     ${@' '.join('${MEL_RELEASE_IMAGE}-${MACHINE}.%s' % ext for ext in IMAGE_EXTENSIONS.split())} \
     ${MEL_RELEASE_IMAGE}-${MACHINE}.license_manifest \
     ${MEL_RELEASE_IMAGE}-${MACHINE}.license_manifest.csv \
+    ${KERNEL_IMAGETYPE}-${MACHINE}* \
 "
 
 # Use IMAGE_EXTENSION_xxx to map image type 'xxx' with real image file
 # extension name(s)
 IMAGE_EXTENSION_live = "hddimg iso"
+
 
 python () {
     extensions = set()
@@ -35,8 +47,10 @@ python () {
 
     if 'live' in fstypes:
         d.appendVarFlag('do_prepare_release', 'depends', ' ${MEL_RELEASE_IMAGE}:do_bootimg')
-}
 
+    # Make sure MELDIR is absolute, as we use it in transforms
+    d.setVar('MELDIR', os.path.abspath(d.getVar('MELDIR', True)))
+}
 
 mel_tar () {
     tar --absolute-names "$@" "--transform=s,^${MELDIR}/,," --exclude=.svn \
@@ -48,7 +62,7 @@ git_tar () {
     repo=$1
     shift
     name=`basename $repo`
-    if [ -d $repo/.git ]; then
+    if [ -e $repo/.git ]; then
         if [ "${@oe.data.typed_value('MEL_RELEASE_USE_TAGS', d)}" == "True" ]; then
             version=$(git --git-dir=$repo/.git describe --tags)
         else
@@ -60,24 +74,66 @@ git_tar () {
     fi
 }
 
+repo_root () {
+    git_root=$(cd $1 && git rev-parse --show-toplevel 2>/dev/null)
+    # There's a chance this repo could be the overall environment
+    # repository, not the layer repository, so just grab the layer
+    # if the repo has submodules
+    if [ -n "$git_root" ] && [ ! -e $git_root/.gitmodules ]; then
+        echo $(cd $git_root && pwd)
+        return
+    fi
+
+    rel=${1#${MELDIR}/}
+    case "$rel" in
+        /*)
+            echo "$1"
+            ;;
+        *)
+            echo "${MELDIR}/${rel%%/*}"
+            ;;
+    esac
+}
+
+bb_layers () {
+    # Workaround shell function dependency issue
+    if false; then
+        repo_root
+    fi
+
+    for layer in ${BBLAYERS}; do
+        layer="${layer%/}"
+        topdir="$(repo_root "$layer")"
+        repo_name="${topdir##*/}"
+        layer_relpath="${layer#${topdir}/}"
+        if [ "$layer_relpath" = "$topdir" ]; then
+            layer_relpath=$repo_name
+        else
+            layer_relpath=$repo_name/$layer_relpath
+        fi
+        printf "%s %s\n" "$topdir" "$layer_relpath"
+    done
+}
+
 prepare_templates () {
     csl_version="$(echo ${CSL_VER_MAIN} | sed 's/-.*$//')"
 
-    sed 's,^MACHINE ??=.*,MACHINE ??= "${MACHINE}",' ${MELDIR}/meta-mentor/conf/local.conf.in >local.conf.in
+    sed 's,^MACHINE ??=.*,MACHINE ??= "${MACHINE}",' ${META_MENTOR_PATH}/conf/local.conf.in >local.conf.in
     sed -i 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "$,' local.conf.in
     sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/..",' local.conf.in
     if [ -n "$csl_version" ]; then
         sed -i "s,^#*\(CSL_VER_REQUIRED =\).*,\1 \"$csl_version\"," local.conf.in
     fi
+    {
+        echo
+        echo '# Prefer the cached upstream SCM revisions'
+        echo 'BB_SRCREV_POLICY = "cache"'
+    } >>local.conf.in
 
-    sed -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' ${MELDIR}/meta-mentor/conf/bblayers.conf.in >bblayers.conf.in
+    sed -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' ${META_MENTOR_PATH}/conf/bblayers.conf.in >bblayers.conf.in
     echo 'BBLAYERS = "\' >>bblayers.conf.in
-    for layer in ${BBLAYERS}; do
-        if ! echo $layer | grep -q "^${MELDIR}/"; then
-            continue
-        fi
-        layer="`echo $layer | sed 's,^${MELDIR}/,,'`"
-        printf '    $%s%s \\\n' '{MELDIR}/' "$layer" >>bblayers.conf.in
+    bb_layers | while read path relpath; do
+        printf '    $%s%s \\\n' '{MELDIR}/' "$relpath" >>bblayers.conf.in
     done
     echo '"' >>bblayers.conf.in
 }
@@ -85,75 +141,108 @@ prepare_templates () {
 do_prepare_release () {
     mkdir -p deploy
 
-    for layer in ${BBLAYERS}; do
-        if ! echo $layer | grep -q "^${MELDIR}/"; then
-            continue
+    if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w layers; then
+        bb_layers | cut -d" " -f1 | sort -u | while read path; do
+            git_tar $path
+        done
+    fi
+
+    if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w bitbake; then
+        found_bitbake=0
+        bb_layers | while read path _; do
+            case "$bitbake_dir" in
+                $path/*)
+                    found_bitbake=1
+                    break
+                    ;;
+            esac
+        done
+        if [ $found_bitbake -eq 0 ]; then
+            # Likely using separate bitbake rather than poky
+            git_tar "$(repo_root $(dirname $(which bitbake))/..)"
         fi
-        basedir=$(echo $layer|sed 's,^${MELDIR}/,,; s,/.*$,,')
-        git_tar ${MELDIR}/$basedir
-    done
+    fi
 
-    mkdir -p downloads
-    find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
-        src=`readlink $source` || continue
-        if echo $src | grep -q "^${DL_DIR}/"; then
-            ln -sf $source downloads/
-            touch downloads/$(basename $source).done
+    if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w downloads; then
+        mkdir -p downloads
+        find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
+            src=`readlink $source` || continue
+            if echo $src | grep -q "^${DL_DIR}/"; then
+                ln -sf $source downloads/
+                touch downloads/$(basename $source).done
+            fi
+        done
+        for file in ${MEL_RELEASE_EXCLUDED_SOURCES}; do
+            rm -f downloads/$file
+        done
+        mel_tar -cjhf deploy/${MACHINE}-sources.tar.bz2 downloads/
+    fi
+
+    if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w sstate; then
+        # Kill dead links
+        find ${SSTATE_DIR} -type l | while read fn; do
+            if [ ! -e "$fn" ]; then
+                rm -f "$fn"
+            fi
+        done
+        mel_tar "--transform=s,^${SSTATE_DIR},cached-binaries," --exclude=\*.done \
+                -cjhf deploy/${MACHINE}-sstate.tar.bz2 ${SSTATE_DIR}
+    fi
+
+    if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w templates; then
+        prepare_templates
+        cp bblayers.conf.in local.conf.in deploy/
+    fi
+
+    if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w images; then
+        echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >include
+        echo ${BUILDHISTORY_DIR} >>include
+
+        if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w templates; then
+            echo "--transform=s,${S}/,${MACHINE}/conf/," >>include
+            echo "${S}/local.conf.in" >>include
+            echo "${S}/bblayers.conf.in" >>include
         fi
-    done
-    for file in ${SB_RELEASE_EXCLUDED_SOURCES}; do
-        rm -f downloads/$file
-    done
-    mel_tar -cjhf deploy/${MACHINE}-sources.tar.bz2 downloads/
 
-    # Kill dead links
-    find ${SSTATE_DIR} -type l | while read fn; do
-        if [ ! -e "$fn" ]; then
-            rm -f "$fn"
+        echo "--transform=s,-${MACHINE},,i" >>include
+        echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
+
+        find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 \( -type f -o -type l \) | \
+            grep -Ev '^${DEPLOY_DIR_IMAGE}/${DEPLOY_IMAGES_EXCLUDE_PATTERN}' >>include
+
+        if [ -n "${DUMP_HEADREVS_DB}" ]; then
+            echo "--transform=s,${WORKDIR}/dumped-headrevs.db,${@DUMP_HEADREVS_DB.replace('${MELDIR}/', '')}," >>include
+            echo ${WORKDIR}/dumped-headrevs.db >>include
         fi
-    done
-    mel_tar "--transform=s,^${SSTATE_DIR},cached-binaries," --exclude=\*.done \
-            -cjhf deploy/${MACHINE}-sstate.tar.bz2 ${SSTATE_DIR}
 
-    echo "--absolute-names" >include
-    echo "--transform=s,-${MACHINE}\.,.," >>include
-    echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
+        mel_tar --files-from=include -cf deploy/${MACHINE}.tar
 
-    prepare_templates
+        echo "--transform=s,-${MACHINE},,i" >include
+        echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
+        {
+            ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 -type l -iname "%s" || true' % pattern for pattern in DEPLOY_IMAGES.split())}
+        } >>include
+        mel_tar --files-from=include -rhf deploy/${MACHINE}.tar
 
-    echo "--transform=s,${S}/,${MACHINE}/conf/," >>include
-    echo "${S}/local.conf.in" >>include
-    echo "${S}/bblayers.conf.in" >>include
+        bzip2 deploy/${MACHINE}.tar
+    fi
 
-    echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >>include
-    echo "--exclude=.git" >>include
-    echo ${BUILDHISTORY_DIR} >>include
-
-    find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 \( -type f -o -type l \) | grep -Ev '^${DEPLOY_DIR_IMAGE}/${DEPLOY_IMAGES_EXCLUDE_PATTERN}' >>include
-
-    mel_tar --files-from=include -cf deploy/${MACHINE}.tar
-
-    echo "--absolute-names" >include
-    echo "--transform=s,-${MACHINE}\.,.," >>include
-    echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
-    {
-        ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 -type l -iname "%s" || true' % pattern for pattern in DEPLOY_IMAGES.split())}
-    } >>include
-    mel_tar --files-from=include -rhf deploy/${MACHINE}.tar
-
-    bzip2 deploy/${MACHINE}.tar
-
-    cp bblayers.conf.in local.conf.in deploy/
     echo ${DISTRO_VERSION} >deploy/distro-version
 
-    mv deploy/* ${DEPLOY_DIR_INSTALLER}/
+    mv deploy/* ${DEPLOY_DIR_RELEASE}/
 }
-addtask prepare_release before do_build
+addtask prepare_release before do_build after do_dump_headrevs
+
+python do_dump_headrevs () {
+    dump_headrevs(d, os.path.join(d.getVar('WORKDIR', True), 'dumped-headrevs.db'))
+}
+addtask dump_headrevs
 
 
-do_prepare_release[dirs] =+ "${DEPLOY_DIR_INSTALLER} ${MELDIR} ${S}"
+do_prepare_release[dirs] =+ "${DEPLOY_DIR_RELEASE} ${MELDIR} ${S}"
 do_prepare_release[cleandirs] = "${S}"
 do_prepare_release[nostamp] = "1"
+do_prepare_release[depends] += "tar-replacement-native:do_populate_sysroot"
 do_prepare_release[depends] += "${MEL_RELEASE_IMAGE}:do_rootfs"
 do_prepare_release[depends] += "${MEL_RELEASE_IMAGE}:do_build"
 do_prepare_release[recrdeptask] += "do_package_write"
@@ -173,6 +262,7 @@ do_compile[noexec] = "1"
 do_install[noexec] = "1"
 do_populate_sysroot[noexec] = "1"
 do_package[noexec] = "1"
+do_packagedata[noexec] = "1"
 do_package_write[noexec] = "1"
 do_package_write_ipk[noexec] = "1"
 do_package_write_deb[noexec] = "1"
