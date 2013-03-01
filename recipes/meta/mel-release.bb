@@ -195,8 +195,10 @@ do_prepare_release () {
     fi
 
     if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w images; then
-        echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >include
-        echo ${BUILDHISTORY_DIR} >>include
+        if [ -e "${BUILDHISTORY_DIR}" ]; then
+            echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >include
+            echo ${BUILDHISTORY_DIR} >>include
+        fi
 
         if echo "${MEL_RELEASE_ARTIFACTS}" | grep -w templates; then
             echo "--transform=s,${S}/,${MACHINE}/conf/," >>include
