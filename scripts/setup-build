@@ -244,10 +244,8 @@ def configure_bblayers(bblconf, layers, opts):
     with open(bblconf, 'rU') as f:
         lines = f.readlines()
 
-    lines = reconfigure_variables(lines, line_filter=lambda l: not l.startswith('MELDIR '), BBLAYERS=value)
-
+    lines = reconfigure_variables(lines, BBLAYERS=value)
     with open(bblconf, 'w') as f:
-        f.write('MELDIR ?= "{0}"\n'.format(opts.oedir))
         f.writelines(lines)
 
 
@@ -348,16 +346,18 @@ def setup_build(cmdline_opts):
     tmpl_lconf = os.path.join(opts.templatedir, 'local.conf.in')
     new_lconf = os.path.join(opts.builddir, 'conf', 'local.conf')
     if not os.path.exists(new_lconf) or opts.force:
+        copied = True
         with status("Copying template conf/local.conf.in to conf/local.conf"):
             shutil.copyfile(tmpl_lconf, new_lconf)
     else:
+        copied = False
         print("conf/local.conf already exists, skipping copy")
 
     if opts.machine:
-        if os.path.exists(new_lconf) and not opts.force:
-            message = "Reconfiguring existing local.conf for {0}".format(opts.machine)
-        else:
+        if copied:
             message = "Configuring new local.conf for {0}".format(opts.machine)
+        else:
+            message = "Reconfiguring existing local.conf for {0}".format(opts.machine)
 
         with status(message):
             configure_local(new_lconf, opts)
@@ -366,9 +366,16 @@ def setup_build(cmdline_opts):
     tmpl_bblconf = os.path.join(opts.templatedir, 'bblayers.conf.in')
     new_bblconf = os.path.join(opts.builddir, 'conf', 'bblayers.conf')
     if not os.path.exists(new_bblconf) or opts.force:
+        copied = True
         with status("Copying template conf/bblayers.conf.in to conf/bblayers.conf"):
-            shutil.copyfile(tmpl_bblconf, new_bblconf)
+            with open(tmpl_bblconf, 'rU') as tmpf:
+                lines = [l for l in tmpf.readlines() if not l.startswith('MELDIR ')]
+
+            with open(new_bblconf, 'w') as f:
+                f.write('MELDIR ?= "{0}"\n'.format(opts.oedir))
+                f.writelines(lines)
     else:
+        copied = False
         print("conf/bblayers.conf already exists, skipping copy")
 
     if opts.machine:
@@ -381,10 +388,10 @@ def setup_build(cmdline_opts):
         for layer in optional:
             print("Layer '{0}' was detected, including in configuration".format(layer.name))
 
-        if os.path.exists(new_bblconf) and not opts.force:
-            message = "Reconfiguring existing bblayers.conf for {0}".format(opts.machine)
-        else:
+        if copied:
             message = "Configuring new bblayers.conf for {0}".format(opts.machine)
+        else:
+            message = "Reconfiguring existing bblayers.conf for {0}".format(opts.machine)
 
         with status(message):
             configure_bblayers(new_bblconf, configured_layers, opts)
