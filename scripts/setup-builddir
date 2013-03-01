@@ -1,0 +1,172 @@
+#!/bin/sh
+#
+# Copyright 2007-2012 Mentor Graphics Corporation
+#
+# This file is licensed under the terms of the GNU General Public License
+# version 2.  This program  is licensed "as is" without any warranty of any
+# kind, whether express or implied.
+#
+JOBS_FACTOR="2"
+THREADS_FACTOR="3 / 2"
+
+usage () {
+    cat >&2 <<END
+Usage: $0 [OPTIONS...] [MACHINE]"
+
+This scripts sets up a build directory, using the template local.conf.in and
+bblayers.conf.in as a starting point, reconfiguring them as appropriate.
+
+For local.conf, by default, we set BB_NUMBER_THREADS to \$NCPU * 1.5 and
+PARALLEL_MAKE to \$NCPU * 2
+
+If a MACHINE is specified, both local.conf and bblayers.conf are configured
+for this machine. For bblayers, the script will locate the correct layers
+to use for this MACHINE and include them. If the local.conf and bblayers.conf
+already exist in the build directory, and a MACHINE is specified, it will
+prompt to confirm that you wish to reconfigure your existing config files.
+
+Options:
+  -b BUILDDIR    Specify the build directory to create (default: './build')
+  -o OEDIR       Specify the root directory of your layers (default: ${0%/*}/../..)
+  -t TEMPLATEDIR Specify the directory holding our template config files.
+                 Default: ${0%/*}/../conf
+  -f             Force overwrite of existing configuration files in the build
+                 directory. This includes local.conf and bblayers.conf, but not
+                 site.conf
+END
+}
+
+process_options () {
+    BUILDDIR=
+    OEDIR=$(cd ${0%/*}/../.. && pwd)
+    TEMPLATEDIR=${0%/*}/../conf
+    force_overwrite=0
+    while getopts b:o:t:fh opt; do
+        case "$opt" in
+            b)
+                BUILDDIR="$(abspath $OPTARG)"
+                ;;
+            o)
+                OEDIR="$(abspath $OPTARG)"
+                ;;
+            t)
+                TEMPLATEDIR="$OPTARG"
+                ;;
+            f)
+                force_overwrite=1
+                ;;
+            \?|h)
+                usage
+                return 1
+                ;;
+        esac
+    done
+
+    BUILDDIR=$(abspath $BUILDDIR)
+}
+
+abspath () {
+    _path="$1"
+    if [ -n "${_path##/*}" ]; then
+        _path="$PWD/$1"
+    fi
+    echo "$_path"
+}
+
+process_options "$@"
+shift $(expr $OPTIND - 1)
+
+if [ -z $BUILDDIR ]; then
+    if [ -f conf/bblayers.conf -o -f conf/local.conf ]; then
+        # Assuming we're already in the build dir
+        BUILDDIR=$PWD
+    else
+        BUILDDIR=$PWD/build
+    fi
+fi
+
+echo "Creating/configuring build directory $BUILDDIR.."
+
+if [ $force_overwrite -eq 1 ]; then
+    rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
+fi
+
+MACHINE=$1
+
+
+# We'll be reconfiguring the build directory, so let the user back out
+if [ -n "$MACHINE" ] &&
+   [ -e $BUILDDIR/conf/bblayers.conf -o -e $BUILDDIR/conf/layer.conf ] &&
+   [ "$MACHINE" != "$(sed -n '/^MACHINE /s/.*"\(.*\)"/\1/p' $BUILDDIR/conf/local.conf 2>/dev/null)" ]; then
+    echo >&2 "Build directory is configured, but machine was specified."
+    while true; do
+        read -p "Reconfigure for $MACHINE (Y|n)? " reconfigure
+        case $reconfigure in
+            [nN])
+                echo >&2 "Aborting at user request"
+                exit 2
+                ;;
+            ""|[yY])
+                break
+                ;;
+            *)
+                echo >&2 "Invalid input: $reconfigure"
+                ;;
+        esac
+    done
+fi
+
+mkdir -p $BUILDDIR/conf
+if [ ! -e $BUILDDIR/conf/local.conf ]; then
+    cp $TEMPLATEDIR/local.conf.in $BUILDDIR/conf/local.conf
+    echo "You had no local.conf file. This configuration file has therefore been"
+    echo "created for you with some default values."
+
+    NCPU=`grep -c processor /proc/cpuinfo`
+    JOBS=`expr $NCPU \* $JOBS_FACTOR`
+    THREADS=`expr $NCPU \* $THREADS_FACTOR`
+    sed -i -e"s/^#*PARALLEL_MAKE *?*=.*/PARALLEL_MAKE ?= \"-j$JOBS\"/" $BUILDDIR/conf/local.conf
+    sed -i -e"s/^#*BB_NUMBER_THREADS *?*=.*/BB_NUMBER_THREADS ?= \"$THREADS\"/" $BUILDDIR/conf/local.conf
+else
+    if [ -n "$MACHINE" ]; then
+        echo "Reconfiguring existing local.conf for $MACHINE"
+    fi
+fi
+if [ -n "$MACHINE" ]; then
+    sed -i -e"s/^#*MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
+fi
+
+if [ ! -e $BUILDDIR/conf/bblayers.conf ]; then
+    echo "OEDIR = \"$OEDIR\"" >$BUILDDIR/conf/bblayers.conf
+    echo >>$BUILDDIR/conf/bblayers.conf
+    cat $TEMPLATEDIR/bblayers.conf.in >>$BUILDDIR/conf/bblayers.conf
+    echo "You had no bblayers.conf file. This configuration file has therefore been"
+    echo "created for you with some default values."
+else
+    if [ -n "$MACHINE" ]; then
+        echo "Reconfiguring existing bblayers.conf for $MACHINE"
+    fi
+fi
+
+if [ -n "$MACHINE" ]; then
+    # Remove existing BBLAYERS
+    sed -i -n '/^BBLAYERS/{ :start; /\\$/{n; b start}; d; }; p' $BUILDDIR/conf/bblayers.conf
+
+    echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
+    layersfile=$(mktemp setup-builddir.XXXXXX)
+    $(dirname $0)/bb-determine-layers -g "*:*/*:$OEDIR/*:$OEDIR/*/*" -o "$OPTIONALLAYERS" $MACHINE >$layersfile
+    if [ $? -ne 0 ]; then
+        rm -f $layersfile
+        echo >&2 "Error in execution of bb-determine-layers, aborting"
+        exit 1
+    fi
+    sed 's,^,    ,; s,$, \\,' <$layersfile >>$BUILDDIR/conf/bblayers.conf
+    rm -f $layersfile
+    echo '"' >> $BUILDDIR/conf/bblayers.conf
+fi
+
+if [ ! -e $BUILDDIR/conf/site.conf -a -e $TEMPLATEDIR/site.conf ]; then
+    echo "You had no site.conf file, but one exists in the template directory."
+    echo "This file has been copied into your build directory."
+    cp $TEMPLATEDIR/site.conf $BUILDDIR/conf/site.conf
+fi

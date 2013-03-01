@@ -68,10 +68,14 @@ mel_abspath () {
     readlink -f "$1"
 }
 
+run_builddir () {
+    $layerdir/scripts/setup-builddir -b $BUILDDIR $force_overwrite "$@"
+}
+
 mel_setup () {
     BUILDDIR=
     MELDIR=
-    force_overwrite=0
+    force_overwrite=
     while getopts b:o:f opt; do
         case "$opt" in
             b)
@@ -81,7 +85,7 @@ mel_setup () {
                 MELDIR="$(mel_abspath $OPTARG)"
                 ;;
             f)
-                force_overwrite=1
+                force_overwrite="-f"
                 ;;
             \?|h)
                 mel_usage
@@ -93,58 +97,40 @@ mel_setup () {
     OPTIND=1
 
     if [ -z $BUILDDIR ]; then
-        if [ -f conf/local.conf ]; then
+        if [ -f conf/local.conf -o -f conf/bblayers.conf ]; then
             # Assuming we're already in the build dir
             BUILDDIR=$PWD
         else
             BUILDDIR=$PWD/build
         fi
     fi
-    echo "Creating/configuring build directory $BUILDDIR.."
-
-    if [ $force_overwrite -eq 1 ]; then
-        rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
-    fi
-    unset force_overwrite
 
     if [ -z "$MELDIR" ]; then
         MELDIR=$(dirname $layerdir)
     fi
 
+    PATH="$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH"
+    PATH="$(printf "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/::/:/g; s/:$//; s/^://')"
+
     MACHINE=$1
     if [ -n "$MACHINE" ]; then
         if [ -e $MELDIR/$MACHINE/binary ]; then
             # User specified machine and we have the binary content for this BSP
-            $layerdir/scripts/setup-build -t $MELDIR/$MACHINE/conf $BUILDDIR || return 1
+            run_builddir -t $MELDIR/$MACHINE/conf || return 1
         else
-            mel_found=0
-            for layerconf in $MELDIR/*/conf/layer.conf $MELDIR/*/*/conf/layer.conf; do
-                if [ -e "$layerconf" ]; then
-                    if [ -e $(dirname $(dirname $layerconf))/conf/machine/$MACHINE.conf ]; then
-                        mel_found=1
-                        break
-                    fi
-                fi
-            done
-            if [ "$mel_found" -eq 0 ]; then
-                echo >&2 "Error: machine $MACHINE does not exist"
-                return 2
-            fi
-            unset mel_found
-
             # User specified machine, without the binary content -- search
-            $layerdir/scripts/setup-build -m $MACHINE $BUILDDIR || return 1
+            run_builddir $MACHINE || return 1
         fi
     else
         if ! [ -e $BUILDDIR/conf/local.conf -a -e $BUILDDIR/conf/bblayers.conf ]; then
             binary_dirs="`echo $MELDIR/*/binary`" 2>/dev/null
             if [ "`echo $binary_dirs | wc -w`" -gt 1 ]; then
                 mel_prompt_machine `echo $binary_dirs | sed -e's,$MELDIR/,,g; s,/binary,,g'`
-                $layerdir/scripts/setup-build -t $MELDIR/$MACHINE/conf $BUILDDIR || return 1
+                run_builddir -t $MELDIR/$MACHINE/conf | return 1
             else
                 if [ -e "$binary_dirs" ]; then
                     # Found single installed BSP, using its templates
-                    $layerdir/scripts/setup-build -t $(dirname $binary_dirs)/conf $BUILDDIR || return 1
+                    run_builddir -t $(dirname $binary_dirs)/conf || return 1
                 else
                     echo >&2 "Error: no installed bsp, must specify MACHINE"
                     echo >&2
@@ -163,8 +149,7 @@ mel_setup () {
             unset binary_dirs
         fi
     fi
-    PATH="$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH"
-    PATH="$(printf "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/::/:/g; s/:$//; s/^://')"
+
     echo "PATH=\"$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:\$PATH\"; cd $BUILDDIR" > $BUILDDIR/setup-environment
 
     cd $BUILDDIR
@@ -215,4 +200,5 @@ else
     unset $TO_UNSET TO_UNSET
     unset MACHINE BUILDDIR MELDIR force_overwrite layerdir
     unset -f mel_setup mel_usage mel_prompt_machine mel_list_all_machines mel_abspath
+    unset -f run_builddir
 fi
