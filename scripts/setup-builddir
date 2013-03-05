@@ -27,7 +27,7 @@ prompt to confirm that you wish to reconfigure your existing config files.
 
 Options:
   -b BUILDDIR    Specify the build directory to create (default: './build')
-  -o OEDIR       Specify the root directory of your layers (default: ${0%/*}/../..)
+  -o MELDIR       Specify the root directory of your layers (default: ${0%/*}/../..)
   -t TEMPLATEDIR Specify the directory holding our template config files.
                  Default: ${0%/*}/../conf
   -f             Force overwrite of existing configuration files in the build
@@ -38,7 +38,7 @@ END
 
 process_options () {
     BUILDDIR=
-    OEDIR=$(cd ${0%/*}/../.. && pwd)
+    MELDIR=$(cd ${0%/*}/../.. && pwd)
     TEMPLATEDIR=${0%/*}/../conf
     force_overwrite=0
     while getopts b:o:t:fh opt; do
@@ -47,7 +47,7 @@ process_options () {
                 BUILDDIR="$(abspath $OPTARG)"
                 ;;
             o)
-                OEDIR="$(abspath $OPTARG)"
+                MELDIR="$(abspath $OPTARG)"
                 ;;
             t)
                 TEMPLATEDIR="$OPTARG"
@@ -137,7 +137,7 @@ if [ -n "$MACHINE" ]; then
 fi
 
 if [ ! -e $BUILDDIR/conf/bblayers.conf ]; then
-    echo "OEDIR = \"$OEDIR\"" >$BUILDDIR/conf/bblayers.conf
+    echo "MELDIR = \"$MELDIR\"" >$BUILDDIR/conf/bblayers.conf
     echo >>$BUILDDIR/conf/bblayers.conf
     cat $TEMPLATEDIR/bblayers.conf.in >>$BUILDDIR/conf/bblayers.conf
     echo "You had no bblayers.conf file. This configuration file has therefore been"
@@ -154,7 +154,7 @@ if [ -n "$MACHINE" ]; then
 
     echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
     layersfile=$(mktemp setup-builddir.XXXXXX)
-    $(dirname $0)/bb-determine-layers -g "*:*/*:$OEDIR/*:$OEDIR/*/*" -o "$OPTIONALLAYERS" $MACHINE >$layersfile
+    $(dirname $0)/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -o "$OPTIONALLAYERS" $MACHINE >$layersfile
     if [ $? -ne 0 ]; then
         rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
