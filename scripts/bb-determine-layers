@@ -198,16 +198,20 @@ def get_configured_layers(all_layers, optional_layer_names, missing_deps, machin
     if not machine_layers:
         raise Exception("No layer found for machine '{0}'".format(machine))
 
-    for layer in list(configured_layers):
-        missing = missing_deps.get(layer)
-        if not missing:
-            continue
+    for layer in list(optional):
+        if not layer.missingdeps:
+            for dep in layer.depends:
+                if dep not in configured_layers:
+                    break
+            else:
+                continue
 
-        if layer.name in optional_layer_names:
-            configured_layers.remove(layer)
-            optional.remove(layer)
-        else:
-            raise Exception("Missing layer dependencies for '{0}': {1}".format(layer.name, ', '.join(missing)))
+        configured_layers.remove(layer)
+        optional.remove(layer)
+
+    for layer in list(configured_layers):
+        if layer in missing_deps:
+            raise Exception("Missing layer dependencies for '{0}': {1}".format(layer.name, ', '.join(missing_deps[layer])))
 
     return configured_layers, optional
 
