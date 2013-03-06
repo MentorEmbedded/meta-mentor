@@ -1,5 +1,6 @@
 SSTATE_MIRRORS ?= ""
 SSTATE_MIRROR_SITES ?= ""
+SSTATE_MIRROR_SITES += "file://${SSTATE_DIR}"
 SSTATE_MIRROR_DISTROS ?= ""
 
 # Yield unique elements of an iterable
