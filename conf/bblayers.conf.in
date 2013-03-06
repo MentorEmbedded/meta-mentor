@@ -6,11 +6,4 @@ TOPDIR := "${@os.path.dirname(os.path.dirname(FILE))}"
 BBPATH = '${TOPDIR}:${HOME}/.oe'
 BBFILES = ''
 
-BBLAYERS ?= "\
-    ${MELDIR}/meta-sourcery \
-    ${MELDIR}/meta-mentor \
-    ${MELDIR}/meta-intel \
-    ${MELDIR}/meta-oe/meta-oe \
-    ${MELDIR}/poky/meta-yocto \
-    ${MELDIR}/poky/meta \
-"
+BBLAYERS ?= ""
