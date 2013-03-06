@@ -1,0 +1,297 @@
+#!/usr/bin/env python
+
+import contextlib
+import glob
+import optparse
+import os
+import signal
+import sys
+from collections import defaultdict
+
+
+glob_default = './*/:./*/*/:{scriptdir}/../../*/:{scriptdir}/../../*/*/'
+layers_default = 'sourcery mentor toolchain-layer openembedded-layer core yocto networking intel'
+priority_overrides = {
+    'openembedded-layer': 1,
+}
+
+
+class Terminate(BaseException):
+    pass
+
+
+def sigterm_exception(signum, stackframe):
+    raise Terminate()
+
+
+def setup_command_import(command, relpath='../lib'):
+    """Set up sys.path based on the location of a binary in the PATH """
+    PATH = os.getenv('PATH').split(':')
+    cmd_paths = [os.path.join(path, relpath)
+                for path in PATH if os.path.exists(os.path.join(path, command))]
+    if not cmd_paths:
+        raise ImportError("Unable to locate bb, please ensure PATH is set correctly.")
+
+    sys.path[0:0] = cmd_paths
+
+
+def find(dir, **walkoptions):
+    """ Given a directory, recurse into that directory,
+    returning all files as absolute paths. """
+
+    for root, dirs, files in os.walk(dir, **walkoptions):
+        for file in files:
+            yield os.path.join(root, file)
+
+
+@contextlib.contextmanager
+def status(message, outfile=sys.stderr):
+    """Show the user what we're doing, and whether we succeed"""
+    outfile.write('{0}..'.format(message))
+    outfile.flush()
+    try:
+        yield
+    except KeyboardInterrupt:
+        outfile.write('.interrupted\n')
+        raise
+    except Terminate:
+        outfile.write('.terminated\n')
+        raise
+    except BaseException:
+        outfile.write('.failed\n')
+        raise
+    outfile.write('.done\n')
+
+
+def process_arguments(cmdline_args):
+    parser = optparse.OptionParser(description='Determine the bitbake layers to use for a given machine, with sanity checks')
+    parser.add_option('-l', '--layers', default=layers_default,
+            help='base layers to include. space separated. default="{0}"'.format(layers_default))
+    parser.add_option('-o', '--optional-layers', default='',
+            help='optional layers to include. space separated.')
+    parser.add_option('-g', '--globs', default=glob_default,
+            help='wildcard patterns to locate layers. colon separated. default="{0}"'.format(glob_default))
+    parser.add_option('-p', '--paths',
+            help='paths to search recursively to find layers. colon separated. equivalent to the "find" command', default='')
+
+    scriptdir = os.path.dirname(__file__)
+    opts, args = parser.parse_args(cmdline_args)
+
+    opts.layers = opts.layers.split()
+    opts.optional_layers = opts.optional_layers.split()
+
+    new_globs = []
+    for pattern in opts.globs.split(':'):
+        pattern = os.path.abspath(pattern.format(scriptdir=scriptdir))
+        new_globs.append(pattern)
+    opts.globs = new_globs
+
+    new_paths = []
+    if opts.paths:
+        for path in opts.paths.split(':'):
+            path = os.path.abspath(path.format(scriptdir=scriptdir))
+            new_paths.append(path)
+    opts.paths = new_paths
+
+    if len(args) < 1:
+        parser.print_help()
+        sys.exit(2)
+
+    opts.machine = args[0]
+
+    return opts
+
+
+class LayerError(Exception):
+    pass
+
+
+class Layer(object):
+    def __init__(self, path, confpath, name, priority, pattern, depends):
+        self.path = path
+        self.confpath = confpath
+        self.name = name
+        self.priority = priority
+        self.depends = depends
+        self.pattern = pattern
+
+    def __repr__(self):
+        return 'Layer(%s, %s, %s, %s, %s, %s)' % (repr(self.path), repr(self.confpath), repr(self.name), repr(self.priority), repr(self.pattern), repr(self.depends))
+
+    def __hash__(self):
+        return hash(repr(self))
+
+    @staticmethod
+    def from_layerpath(layer_path, data=None):
+        layers = []
+
+        if data is None:
+            data = bb.data.init()
+            bb.parse.init_parser(data)
+
+        lconf = os.path.join(layer_path, 'conf', 'layer.conf')
+        ldata = data.createCopy()
+        ldata.setVar('LAYERDIR', layer_path)
+        try:
+            ldata = bb.parse.handle(lconf, ldata, include=True)
+        except BaseException as exc:
+            raise LayerError(exc)
+        ldata.expandVarref('LAYERDIR')
+
+        collections = (ldata.getVar('BBFILE_COLLECTIONS', True) or '').split()
+        if not collections:
+            name = os.path.basename(layer_path)
+            l = Layer(layer_path, lconf, name, 0, None, set())
+            layers.append(l)
+
+        for name in collections:
+            pattern = ldata.getVar('BBFILE_PATTERN_%s' % name, True)
+            priority = ldata.getVar('BBFILE_PRIORITY_%s' % name, True) or 0
+            depends = ldata.getVar('LAYERDEPENDS_%s' % name, True) or ''
+
+            l = Layer(layer_path, lconf, name, int(priority), pattern, set(depends.split()))
+            layers.append(l)
+
+        if layers:
+            return layers
+
+
+def resolve_dependencies(layers_by_name):
+    missing_dependencies = defaultdict(set)
+
+    for layer in layers_by_name.values():
+        missing_layer_deps = set()
+        new_deps = set()
+
+        for depname in layer.depends:
+            dep = layers_by_name.get(depname)
+            if not dep:
+                missing_layer_deps.add(depname)
+            else:
+                new_deps.add(dep)
+
+        layer.depends = new_deps
+        layer.missingdeps = missing_layer_deps
+        if missing_layer_deps:
+            missing_dependencies[layer] = missing_layer_deps
+
+    return missing_dependencies
+
+
+def get_configured_layers(all_layers, optional_layer_names, missing_deps, machine):
+    optional = set()
+    configured_layers = set()
+    machine_layers = set()
+    for layer in all_layers:
+        if os.path.exists(os.path.join(layer.path, 'conf', 'machine',
+                                       '{0}.conf'.format(machine))):
+            machine_layers.add(layer)
+            if layer.name in optional_layer_names:
+                optional_layer_names.remove(layer.name)
+            configured_layers.add(layer)
+            for dep in layer.depends:
+                configured_layers.add(dep)
+        elif layer.name in optional_layer_names:
+            optional.add(layer)
+            configured_layers.add(layer)
+
+    if not machine_layers:
+        raise Exception("No layer found for machine '{0}'".format(machine))
+
+    for layer in list(optional):
+        if not layer.missingdeps:
+            for dep in layer.depends:
+                if dep not in configured_layers:
+                    break
+            else:
+                continue
+
+        configured_layers.remove(layer)
+        optional.remove(layer)
+
+    for layer in list(configured_layers):
+        if layer in missing_deps:
+            raise Exception("Missing layer dependencies for '{0}': {1}".format(layer.name, ', '.join(missing_deps[layer])))
+
+    return configured_layers, optional
+
+
+def print_layers(cmdline_opts):
+    opts = process_arguments(cmdline_opts)
+
+    setup_command_import('bitbake')
+    try:
+        import bb
+    except ImportError as exc:
+        sys.exit("Unable to import 'bb' python package: %s" % exc)
+
+    import bb.parse
+    import bb.data
+
+    data = bb.data.init()
+    bb.parse.init_parser(data)
+
+    all_layers = set()
+    with status('Locating layers and parsing layer.conf files'):
+        layer_paths = set()
+        for pattern in opts.globs:
+            paths = glob.glob(pattern)
+            for path in paths:
+                layerconf_path = os.path.join(path, 'conf', 'layer.conf')
+                if os.path.exists(layerconf_path):
+                    layer_paths.add(os.path.realpath(path))
+
+        for path in opts.paths:
+            for subpath in find(path):
+                if subpath.endswith('/conf/layer.conf'):
+                    layer_paths.add(os.path.realpath(subpath))
+
+        for layer_path in layer_paths:
+            try:
+                layers = Layer.from_layerpath(layer_path, data)
+            except LayerError as exc:
+                sys.exit(str(exc))
+            else:
+                all_layers |= set(layers)
+
+    for layer in all_layers:
+        if not layer.pattern:
+            sys.stderr.write("Warning: layer '%s' does not define BBFILE_PATTERN\n" % layer.name)
+        priority_override = priority_overrides.get(layer.name)
+        if priority_override is not None:
+            layer.priority = priority_override
+
+    with status('Resolving layer dependencies'):
+        layers_by_name = dict((l.name, l) for l in all_layers)
+        missing_deps = resolve_dependencies(layers_by_name)
+
+    with status("Determining layers to include for MACHINE '{0}'".format(opts.machine)):
+        try:
+            configured_layers, optional = get_configured_layers(all_layers, opts.optional_layers, missing_deps, opts.machine)
+        except Exception as exc:
+            sys.exit('ERROR: {0}'.format(exc))
+
+        for base_layer_name in opts.layers:
+            try:
+                base_layer = layers_by_name[base_layer_name]
+            except KeyError:
+                sys.exit("Unable to locate layer path for base layer '{0}'".format(base_layer_name))
+            configured_layers.add(base_layer)
+
+    for layer in optional:
+        sys.stderr.write("Layer '{0}' was detected, including in configuration\n".format(layer.name))
+
+    for layer in sorted(configured_layers, key=lambda l: l.priority, reverse=True):
+        print(layer.path)
+
+
+if __name__ == '__main__':
+    signal.signal(signal.SIGTERM, sigterm_exception)
+    try:
+        sys.exit(print_layers(sys.argv[1:]) or 0)
+    except KeyboardInterrupt:
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        os.kill(os.getpid(), signal.SIGINT)
+    except Terminate:
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        os.kill(os.getpid(), signal.SIGTERM)
