@@ -103,12 +103,6 @@ To push upstream next
     - tar
     - wireless-tools
 
-    - cml1 class: fix menuconfig terminal type issue. The fundamental issue
-      here is an ncurses-native relocation issue. The ncurses library is
-      looking at the compiled-in search path for the terminfo database, and
-      that path no longer exists, when using cached binaries (sstate). Export
-      TERMINFO pointing at the current sysroot, so the attempt to run mconf is
-      able to find the correct terminfo db.
     - `package_{ipk,rpm}`: avoid matching a pattern against `TARGET_OS`
       regarding the locale installation. It's not necessary, as the uclibc
       .conf files already handle this.
