@@ -34,5 +34,6 @@ else
     OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" $layerdir/scripts/setup-mel-builddir "$@" && \
         [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ] && \
         . $BUILDDIR/setup-environment
+    unset OPTIONALLAYERS
     unset layerdir
 fi
