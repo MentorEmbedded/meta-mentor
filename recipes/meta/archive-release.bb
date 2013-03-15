@@ -152,7 +152,9 @@ do_prepare_release () {
     mkdir -p deploy
 
     if echo "${RELEASE_ARTIFACTS}" | grep -w layers; then
+        >deploy/${MACHINE}-layers.txt
         bb_layers | cut -d" " -f1 | sort -u | while read path; do
+            basename $path >>deploy/${MACHINE}-layers.txt
             git_tar $path
         done
     fi
