@@ -9,8 +9,9 @@ sstate_write_isolated () {
     if [ -n "${ISOLATED_SSTATE_DIR}" ]; then
         isolated_dest=$(echo ${SSTATE_PKG} | sed 's,^${SSTATE_DIR}/,${ISOLATED_SSTATE_DIR}/,')
         mkdir -p $(dirname $isolated_dest)
-        rm -f $isolated_dest
+        rm -f $isolated_dest $isolated_dest.siginfo
         ln -s ${SSTATE_PKG} $isolated_dest
+        ln -s ${SSTATE_PKG}.siginfo $isolated_dest.siginfo
     fi
 }
 
