@@ -1,6 +1,5 @@
 SSTATE_MIRRORS ?= ""
 SSTATE_MIRROR_SITES ?= ""
-SSTATE_MIRROR_SITES += "file://${SSTATE_DIR}"
 SSTATE_MIRROR_DISTROS ?= ""
 
 # Yield unique elements of an iterable
@@ -30,6 +29,11 @@ python sstate_reuse_setup() {
 
         # Support flattened mirror
         mirrors.append('file://.* %s' % site)
+
+    # Fall back in structure to our compatible distros
+    for distro in distros:
+        mirrors.append('file://${NATIVELSBSTRING} file://${SSTATE_DIR}/%s' % distro)
+
     d.setVar('SSTATE_MIRRORS', "\\n".join(iter_uniq(filter(None, mirrors))))
 }
 addhandler sstate_reuse_setup
