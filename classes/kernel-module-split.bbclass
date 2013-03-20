@@ -27,6 +27,7 @@ do_install_append() {
 PACKAGESPLITFUNCS_prepend = "split_kernel_module_packages "
 
 KERNEL_MODULES_META_PACKAGE ?= "kernel-modules"
+KERNEL_MODULES_KERNEL_DEPENDENCY ?= "kernel-${KERNEL_VERSION}"
 
 python split_kernel_module_packages () {
     import re
@@ -170,7 +171,7 @@ python split_kernel_module_packages () {
     postinst = d.getVar('pkg_postinst_modules', True)
     postrm = d.getVar('pkg_postrm_modules', True)
 
-    modules = do_split_packages(d, root='/lib/modules', file_regex=module_regex, output_pattern=module_pattern, description='%s kernel module', postinst=postinst, postrm=postrm, recursive=True, hook=frob_metadata, extra_depends='kernel-%s' % (d.getVar("KERNEL_VERSION", True)))
+    modules = do_split_packages(d, root='/lib/modules', file_regex=module_regex, output_pattern=module_pattern, description='%s kernel module', postinst=postinst, postrm=postrm, recursive=True, hook=frob_metadata, extra_depends=d.getVar('KERNEL_MODULES_KERNEL_DEPENDENCY', True))
     if modules:
         metapkg = d.getVar('KERNEL_MODULES_META_PACKAGE', True)
         d.appendVar('RDEPENDS_' + metapkg, ' '+' '.join(modules))
