@@ -113,6 +113,7 @@ class Layer(object):
         self.name = name
         self.priority = priority
         self.depends = depends
+        self.missingdeps = set()
         self.pattern = pattern
 
     def __repr__(self):
@@ -171,8 +172,8 @@ def resolve_dependencies(layers_by_name):
                 new_deps.add(dep)
 
         layer.depends = new_deps
-        layer.missingdeps = missing_layer_deps
         if missing_layer_deps:
+            layer.missingdeps |= missing_layer_deps
             missing_dependencies[layer] = missing_layer_deps
 
     return missing_dependencies
