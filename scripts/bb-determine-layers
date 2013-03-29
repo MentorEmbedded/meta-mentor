@@ -263,7 +263,11 @@ def print_layers(cmdline_opts):
             layer.priority = priority_override
 
     with status('Resolving layer dependencies'):
-        layers_by_name = dict((l.name, l) for l in all_layers)
+        layers_by_name = {}
+        for l in all_layers:
+            if l.name in layers_by_name:
+                sys.exit("Error: multiple layer paths with the same name ('{0}')".format(l.name))
+            layers_by_name[l.name] = l
         missing_deps = resolve_dependencies(layers_by_name)
 
     with status("Determining layers to include for MACHINE '{0}'".format(opts.machine)):
