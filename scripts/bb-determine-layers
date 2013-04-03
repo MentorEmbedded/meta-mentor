@@ -10,7 +10,7 @@ from collections import defaultdict
 
 
 glob_default = './*/:./*/*/:{scriptdir}/../../*/:{scriptdir}/../../*/*/'
-layers_default = 'sourcery mentor toolchain-layer openembedded-layer core yocto networking intel'
+layers_default = 'sourcery mentor toolchain-layer openembedded-layer core yocto networking'
 priority_overrides = {
     'openembedded-layer': 1,
 }
@@ -113,6 +113,7 @@ class Layer(object):
         self.name = name
         self.priority = priority
         self.depends = depends
+        self.missingdeps = set()
         self.pattern = pattern
 
     def __repr__(self):
@@ -171,8 +172,8 @@ def resolve_dependencies(layers_by_name):
                 new_deps.add(dep)
 
         layer.depends = new_deps
-        layer.missingdeps = missing_layer_deps
         if missing_layer_deps:
+            layer.missingdeps |= missing_layer_deps
             missing_dependencies[layer] = missing_layer_deps
 
     return missing_dependencies
@@ -262,7 +263,11 @@ def print_layers(cmdline_opts):
             layer.priority = priority_override
 
     with status('Resolving layer dependencies'):
-        layers_by_name = dict((l.name, l) for l in all_layers)
+        layers_by_name = {}
+        for l in all_layers:
+            if l.name in layers_by_name:
+                sys.exit("Error: multiple layer paths with the same name ('{0}')".format(l.name))
+            layers_by_name[l.name] = l
         missing_deps = resolve_dependencies(layers_by_name)
 
     with status("Determining layers to include for MACHINE '{0}'".format(opts.machine)):

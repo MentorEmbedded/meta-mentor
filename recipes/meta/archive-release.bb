@@ -13,6 +13,7 @@ TEMPLATECONF ?= "${FILE_DIRNAME}/../../conf"
 
 # Add a default in case the user doesn't inherit copyleft_compliance
 COPYLEFT_SOURCES_DIR ?= "${DL_DIR}"
+COPYLEFT_SOURCES_BASE_DIR ?= "${COPYLEFT_SOURCES_DIR}"
 
 DUMP_HEADREVS_DB ?= ""
 DEPLOY_DIR_RELEASE ?= "${DEPLOY_DIR}/release-artifacts"
@@ -152,7 +153,9 @@ do_prepare_release () {
     mkdir -p deploy
 
     if echo "${RELEASE_ARTIFACTS}" | grep -w layers; then
+        >deploy/${MACHINE}-layers.txt
         bb_layers | cut -d" " -f1 | sort -u | while read path; do
+            basename $path >>deploy/${MACHINE}-layers.txt
             git_tar $path
         done
     fi
@@ -174,18 +177,39 @@ do_prepare_release () {
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -w downloads; then
-        mkdir -p downloads
-        find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
-            src=`readlink $source` || continue
-            if echo $src | grep -q "^${DL_DIR}/"; then
-                ln -sf $source downloads/
-                touch downloads/$(basename $source).done
-            fi
-        done
-        for file in ${RELEASE_EXCLUDED_SOURCES}; do
-            rm -f downloads/$file
-        done
-        release_tar -cjhf deploy/${MACHINE}-sources.tar.bz2 downloads/
+        if [ "${COPYLEFT_SOURCES_BASE_DIR}" != "${COPYLEFT_SOURCES_DIR}" ]; then
+            for dir in ${COPYLEFT_SOURCES_BASE_DIR}/*; do
+                name=$(basename $dir)
+                mkdir -p downloads/$name
+                find -L $dir -type f -maxdepth 2 | while read source; do
+                    src=`readlink $source` || continue
+                    if echo $src | grep -q "^${DL_DIR}/"; then
+                        ln -sf $source downloads/$name/
+                        touch downloads/$name/$(basename $source).done
+                    fi
+                done
+                cd downloads/$name
+                for file in ${RELEASE_EXCLUDED_SOURCES}; do
+                    rm -f "$file"
+                done
+                cd - >/dev/null
+                release_tar "--transform=s,^downloads/$name,downloads," -cjhf deploy/$name-downloads.tar.bz2 downloads/$name
+            done
+        else
+            find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
+                src=`readlink $source` || continue
+                if echo $src | grep -q "^${DL_DIR}/"; then
+                    ln -sf $source downloads/
+                    touch downloads/$(basename $source).done
+                fi
+            done
+            cd downloads
+            for file in ${RELEASE_EXCLUDED_SOURCES}; do
+                rm -f "$file"
+            done
+            cd - >/dev/null
+            release_tar -cjhf deploy/${MACHINE}-downloads.tar.bz2 downloads/
+        fi
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -w sstate; then

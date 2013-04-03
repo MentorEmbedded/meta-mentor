@@ -116,21 +116,24 @@ mel_setup () {
     if [ -n "$MACHINE" ]; then
         if [ -e $MELDIR/$MACHINE/binary ]; then
             # User specified machine and we have the binary content for this BSP
-            run_builddir -t $MELDIR/$MACHINE/conf || return 1
+            run_builddir -t $MELDIR/$MACHINE/conf $MACHINE || return 1
         else
             # User specified machine, without the binary content -- search
             run_builddir $MACHINE || return 1
         fi
     else
-        if ! [ -e $BUILDDIR/conf/local.conf -a -e $BUILDDIR/conf/bblayers.conf ]; then
+        if [ -e $BUILDDIR/conf/local.conf -a -e $BUILDDIR/conf/bblayers.conf ]; then
+            run_builddir || return 1
+        else
             binary_dirs="`echo $MELDIR/*/binary`" 2>/dev/null
             if [ "`echo $binary_dirs | wc -w`" -gt 1 ]; then
                 mel_prompt_machine `echo $binary_dirs | sed -e's,$MELDIR/,,g; s,/binary,,g'`
-                run_builddir -t $MELDIR/$MACHINE/conf | return 1
+                run_builddir -t $MELDIR/$MACHINE/conf $MACHINE || return 1
             else
                 if [ -e "$binary_dirs" ]; then
                     # Found single installed BSP, using its templates
-                    run_builddir -t $(dirname $binary_dirs)/conf || return 1
+                    MACHINE=`echo $binary_dirs | sed -e"s,$MELDIR/,,g; s,/binary,,g"`
+                    run_builddir -t $(dirname $binary_dirs)/conf $MACHINE || return 1
                 else
                     echo >&2 "Error: no installed bsp, must specify MACHINE"
                     echo >&2
@@ -146,8 +149,8 @@ mel_setup () {
                     return 1
                 fi
             fi
-            unset binary_dirs
         fi
+        unset binary_dirs
     fi
 
     echo "PATH=\"$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:\$PATH\"; cd $BUILDDIR" > $BUILDDIR/setup-environment
@@ -192,6 +195,7 @@ else
     layerdir=$(mel_abspath $layerdir)
     export OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
     mel_setup "$@"
+    sed -i -e "s/^DISTRO.*/DISTRO = 'mel'/" conf/local.conf
 
     unset OPTIONALLAYERS
     unset MACHINE BUILDDIR MELDIR force_overwrite layerdir
