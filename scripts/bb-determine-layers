@@ -256,8 +256,6 @@ def print_layers(cmdline_opts):
                 all_layers |= set(layers)
 
     for layer in all_layers:
-        if not layer.pattern:
-            sys.stderr.write("Warning: layer '%s' does not define BBFILE_PATTERN\n" % layer.name)
         priority_override = priority_overrides.get(layer.name)
         if priority_override is not None:
             layer.priority = priority_override
