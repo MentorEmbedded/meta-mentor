@@ -1,4 +1,8 @@
-PR .= ".2"
+PR .= ".3"
+
+DEPENDS := "${@oe_filter_out('nautilus', DEPENDS, d)}"
+PACKAGECONFIG ??= "nautilus"
+PACKAGECONFIG[nautilus] = "--enable-nautilus-extension,--disable-nautilus-extension,nautilus"
 
 do_configure_prepend() {
 	sed -i -e "s: help : :g" ${S}/Makefile.am
