@@ -105,36 +105,36 @@ Index: git/net/core/net-traces.c
  #include <trace/events/napi.h>
  #include <trace/events/udp.h>
 +#include <trace/events/sock.h>
- 
+
  EXPORT_TRACEPOINT_SYMBOL_GPL(kfree_skb);
- 
+
 Index: git/net/core/sock.c
 ===================================================================
 --- git.orig/net/core/sock.c
 +++ git/net/core/sock.c
 @@ -128,6 +128,8 @@
- 
+
  #include <linux/filter.h>
- 
+
 +#include <trace/events/sock.h>
 +
  #ifdef CONFIG_INET
  #include <net/tcp.h>
  #endif
 @@ -292,6 +294,7 @@ int sock_queue_rcv_skb(struct sock *sk,
- 	if (atomic_read(&sk->sk_rmem_alloc) + skb->truesize >=
- 	    (unsigned)sk->sk_rcvbuf) {
- 		atomic_inc(&sk->sk_drops);
+	if (atomic_read(&sk->sk_rmem_alloc) + skb->truesize >=
+	    (unsigned)sk->sk_rcvbuf) {
+		atomic_inc(&sk->sk_drops);
 +		trace_sock_rcvqueue_full(sk, skb);
- 		return -ENOMEM;
- 	}
- 
+		return -ENOMEM;
+	}
+
 @@ -1737,6 +1740,8 @@ suppress_allocation:
- 			return 1;
- 	}
- 
+			return 1;
+	}
+
 +	trace_sock_exceed_buf_limit(sk, prot, allocated);
 +
- 	/* Alas. Undo changes. */
- 	sk->sk_forward_alloc -= amt * SK_MEM_QUANTUM;
- 	atomic_long_sub(amt, prot->memory_allocated);
+	/* Alas. Undo changes. */
+	sk->sk_forward_alloc -= amt * SK_MEM_QUANTUM;
+	atomic_long_sub(amt, prot->memory_allocated);
