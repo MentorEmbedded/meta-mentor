@@ -2,7 +2,7 @@ PR = "${INC_PR}.3"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}_${PV}:"
 
-SRC_URI_append := "file://commit-4ff16c2_imx_backport.patch \
+SRC_URI_append := " file://commit-4ff16c2_imx_backport.patch \
 		   file://arm-tracehook/0001-ARM-add-support-for-the-generic-syscall.h-interface.patch \
 		   file://arm-tracehook/0002-ARM-add-TRACEHOOK-support.patch \
 		   file://arm-tracehook/0003-ARM-support-syscall-tracing.patch \
