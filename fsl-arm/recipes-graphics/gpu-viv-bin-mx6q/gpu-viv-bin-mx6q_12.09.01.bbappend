@@ -1,4 +1,7 @@
-PR .= ".1"
+PR .= ".2"
+
+USE_X11 = "${@base_contains("DISTRO_FEATURES", "x11", "yes", "no", d)}"
+USE_DFB = "${@base_contains("DISTRO_FEATURES", "directfb", "yes", "no", d)}"
 
 do_install_append () {
     if [ "${USE_X11}" = "yes" ]; then
