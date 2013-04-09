@@ -195,7 +195,9 @@ else
     layerdir=$(mel_abspath $layerdir)
     export OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
     mel_setup "$@"
-    sed -i -e "s/^DISTRO.*/DISTRO = 'mel'/" conf/local.conf
+    if [ -e $BUILDDIR/conf/local.conf ]; then
+        sed -i -e "s/^DISTRO.*/DISTRO = 'mel'/" $BUILDDIR/conf/local.conf
+    fi
 
     unset OPTIONALLAYERS
     unset MACHINE BUILDDIR MELDIR force_overwrite layerdir
