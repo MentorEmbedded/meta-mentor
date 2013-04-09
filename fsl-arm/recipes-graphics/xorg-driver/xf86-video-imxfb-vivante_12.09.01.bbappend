@@ -1,3 +1,3 @@
 PR .= ".1"
 
-LDFLAGS := "${@oe_filter_out('-l', LDFLAGS, d)}"
+LDFLAGS := "${@LDFLAGS.replace('-lGAL-x11', '-lGAL')}"
