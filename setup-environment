@@ -8,7 +8,7 @@
 
 mel_usage () {
     cat >&2 <<END
-Usage: $0 [OPTIONS...] [MACHINE]"
+Usage: $0 [OPTIONS...] [MACHINE]
 
 When operating from a MEL install, this script will use the template config
 files from the installed BSP. If multiple BSPs are installed, you must specify
@@ -76,7 +76,7 @@ mel_setup () {
     BUILDDIR=
     MELDIR=
     force_overwrite=
-    while getopts b:o:f opt; do
+    while getopts b:o:fh opt; do
         case "$opt" in
             b)
                 BUILDDIR="$(mel_abspath $OPTARG)"
