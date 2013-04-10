@@ -81,18 +81,19 @@ USER_FEATURES += "~3g"
 #SOURCE_MIRROR_URL = "file:///cache/downloads"
 #SOURCE_MIRROR_URL = "http://myserver/sources"
 
-# which is the MEL install directory. If you do not have write access to the
-# MEL install, a sane option for this is ${TOPDIR}/downloads.
-DL_DIR ?= "${MELDIR}/downloads"
+# Our download directory / cache
+DL_DIR ?= "${TOPDIR}/downloads"
+
+# Continue to pull downloads from the MEL install
+MIRRORS =+ ".*://.*/.* file://${MELDIR}/downloads/ \n "
 
 # BitBake has the capability to accelerate builds based on previously built
 # output. This is done using "shared state" files which can be thought of as
 # cache objects and this variable determines where those files are placed.
-#
-# The default is a cached-binaries directory under MELDIR which is the MEL
-# install directory. If you do not have write access to the MEL install,
-# a sane option for this is ${TOPDIR}/cached-binaries.
-SSTATE_DIR ?= "${MELDIR}/cached-binaries"
+SSTATE_DIR ?= "${TOPDIR}/cached-binaries"
+
+# Continue to pull cached binaries from the MEL install
+SSTATE_MIRROR_SITES += "file://${MELDIR}/cached-binaries"
 
 # Where to place the build output and temporary artifacts
 #
