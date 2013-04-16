@@ -938,11 +938,10 @@ python populate_packages () {
     for pkg in packages.split():
         if d.getVar('LICENSE_EXCLUSION-' + pkg, True):
             bb.warn("%s has an incompatible license. Excluding from packaging." % pkg)
+        if pkg in package_list:
+            bb.error("%s is listed in PACKAGES multiple times, this leads to packaging errors." % pkg)
         else:
-            if pkg in package_list:
-                bb.error("%s is listed in PACKAGES multiple times, this leads to packaging errors." % pkg)
-            else:
-                package_list.append(pkg)
+            package_list.append(pkg)
     d.setVar('PACKAGES', ' '.join(package_list))
     pkgdest = d.getVar('PKGDEST', True)
     subprocess.call('rm -rf %s' % pkgdest, shell=True)
@@ -986,6 +985,9 @@ python populate_packages () {
             if file in seen:
                 continue
             seen.append(file)
+
+            if d.getVar('LICENSE_EXCLUSION-' + pkg, True):
+                continue
 
             def mkdir(src, dest, p):
                 src = os.path.join(src, p)
