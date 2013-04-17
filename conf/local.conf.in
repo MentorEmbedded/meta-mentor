@@ -60,6 +60,11 @@ MACHINE ??= "qemux86"
 
 EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-lttng"
 
+# Uncomment this to enable inclusion of gdbserver in the codebench-debug
+# packagegroup / image feature even when GPLv3 is in INCOMPATIBLE_LICENSE, or
+# using a distro which sets it that way (atp).
+#ALLOW_GPLV3_GDBSERVER = "1"
+
 # User features lets you manipulate the distro features. To add a distro
 # feature, simply add it to USER_FEATURES. To remove, prefix it with ~.
 #
