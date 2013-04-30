@@ -1,3 +1,4 @@
+
 license_create_manifest() {
 	mkdir -p ${LICENSE_DIRECTORY}/${IMAGE_NAME}
 	# Get list of installed packages
@@ -34,11 +35,10 @@ license_create_manifest() {
 		printf "LICENSE:" >> ${LICENSE_MANIFEST}
 		for lic in ${pkged_lic}; do
 			# to reference a license file trim trailing + symbol
-			if [ -e "${LICENSE_DIRECTORY}/${pkged_pn}/generic_${lic%+}" ]; then
-				printf " ${lic}" >> ${LICENSE_MANIFEST}
-			else
-				echo "WARNING: The license listed ${lic} was not in the licenses collected for ${pkged_pn}"
+			if ! [ -e "${LICENSE_DIRECTORY}/${pkged_pn}/generic_${lic%+}" ]; then
+				bbwarn "The license listed ${lic} was not in the licenses collected for ${pkged_pn}"
 			fi
+                        printf " ${lic}" >> ${LICENSE_MANIFEST}
 		done
 		printf "\n\n" >> ${LICENSE_MANIFEST}
 	done
