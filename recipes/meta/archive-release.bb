@@ -39,7 +39,7 @@ DEPLOY_IMAGES = "\
     ${@' '.join('${RELEASE_IMAGE}-${MACHINE}.%s' % ext for ext in IMAGE_EXTENSIONS.split())} \
     ${RELEASE_IMAGE}-${MACHINE}.license_manifest \
     ${RELEASE_IMAGE}-${MACHINE}.license_manifest.csv \
-    ${KERNEL_IMAGETYPE}-${MACHINE}* \
+    ${KERNEL_IMAGETYPE}*${MACHINE}* \
 "
 DEPLOY_IMAGES[doc] = "List of files from DEPLOY_DIR_IMAGE which will be archived"
 
