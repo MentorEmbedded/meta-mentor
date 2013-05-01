@@ -30,7 +30,7 @@ FILESEXTRAPATHS_prepend := "${COREBASE}/meta/recipes-devtools/binutils/binutils:
 
 S = "${WORKDIR}/${BP}"
 
-DEPENDS += "flex bison zlib texinfo-native"
+DEPENDS += "flex bison zlib"
 
 EXTRA_OECONF += "--with-sysroot=/ \
                 --enable-install-libbfd \
@@ -41,6 +41,13 @@ EXTRA_OECONF_virtclass-native = "--enable-target=all --enable-64-bit-bfd --enabl
 
 CFLAGS_append_nios2 += "-Wno-error"
 TARGET_CC_ARCH_append_nios2 += "${LDFLAGS}"
+
+do_patch[postfuncs] += "no_docs"
+do_patch[vardeps] += "no_docs"
+
+no_docs () {
+    sed -i 's/^SUBDIRS =.*/SUBDIRS =/' ${S}/bfd/Makefile.in ${S}/libiberty/Makefile.in
+}
 
 do_compile () {
 	oe_runmake maybe-all-bfd maybe-all-libiberty
