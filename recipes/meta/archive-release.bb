@@ -26,6 +26,9 @@ RELEASE_USE_TAGS[doc] = "Use git tags rather than just # of commits for layer ar
 RELEASE_USE_TAGS[type] = "boolean"
 RELEASE_EXCLUDED_SOURCES ?= ""
 RELEASE_EXCLUDED_SOURCES[doc] = "Patterns of files in COPYLEFT_SOURCES_DIR to exclude"
+BINARY_ARTIFACTS_COMPRESSION ?= ""
+BINARY_ARTIFACTS_COMPRESSION[doc] = "Compression type for images, downloads and sstate artifacts.\
+ Available: '.bz2' and '.gz'. No compression if empty"
 
 # If we have an isolated set of shared state archives, use that, so as to
 # avoid archiving sstates which were unused.
@@ -64,7 +67,20 @@ python () {
 }
 
 release_tar () {
-    tar --absolute-names "$@" "--transform=s,^${MELDIR}/,," --exclude=.svn \
+    if [ -z ${BINARY_ARTIFACTS_COMPRESSION} ]
+    then
+        COMPRESSION=""
+    elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".bz2" ]
+    then
+        COMPRESSION="-j"
+    elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".gz" ]
+    then
+        COMPRESSION="-z"
+    else
+        bbfatal "Invalid binary artifacts compression type ${BINARY_ARTIFACTS_COMPRESSION}"
+    fi
+
+    tar --absolute-names ${COMPRESSION} "$@" "--transform=s,^${MELDIR}/,," --exclude=.svn \
         --exclude=.git --exclude=\*.pyc --exclude=\*.pyo --exclude=.gitignore \
         -v --show-stored-names
 }
@@ -193,7 +209,8 @@ do_prepare_release () {
                     rm -f "$file"
                 done
                 cd - >/dev/null
-                release_tar "--transform=s,^downloads/$name,downloads," -cjhf deploy/$name-downloads.tar.bz2 downloads/$name
+                release_tar "--transform=s,^downloads/$name,downloads," -chf \
+                        deploy/$name-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/$name
             done
         else
             find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
@@ -208,7 +225,7 @@ do_prepare_release () {
                 rm -f "$file"
             done
             cd - >/dev/null
-            release_tar -cjhf deploy/${MACHINE}-downloads.tar.bz2 downloads/
+            release_tar -chf deploy/${MACHINE}-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/
         fi
     fi
 
@@ -220,7 +237,7 @@ do_prepare_release () {
             fi
         done
         release_tar "--transform=s,^${SSTATE_DIR},cached-binaries," --exclude=\*.done \
-                -cjhf deploy/${MACHINE}-sstate.tar.bz2 ${SSTATE_DIR}
+                -chf deploy/${MACHINE}-sstate.tar${BINARY_ARTIFACTS_COMPRESSION} ${SSTATE_DIR}
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -w templates; then
@@ -260,7 +277,13 @@ do_prepare_release () {
         } >>include
         release_tar --files-from=include -rhf deploy/${MACHINE}.tar
 
-        bzip2 deploy/${MACHINE}.tar
+        if [ ${BINARY_ARTIFACTS_COMPRESSION} = ".bz2" ]
+        then
+            bzip2 deploy/${MACHINE}.tar
+        elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".gz" ]
+        then
+            gzip deploy/${MACHINE}.tar
+        fi
     fi
 
     echo ${DISTRO_VERSION} >deploy/distro-version
