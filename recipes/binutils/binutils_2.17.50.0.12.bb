@@ -1,6 +1,7 @@
 require recipes-devtools/binutils/binutils.inc
 
 DEFAULT_PREFERENCE = "-1"
+PR = "r1"
 
 LICENSE = "GPLv2 & LGPLv2"
 LIC_FILES_CHKSUM = "\
@@ -28,6 +29,8 @@ EXTRA_OECONF += "\
     --enable-install-libbfd \
     --enable-shared \
 "
+# FIXME: hack way to get it obeying LDFLAGS for GNU_HASH warnings
+TARGET_CC_ARCH += "${LDFLAGS}"
 
 do_configure () {
 	# Fix for issues when system's texinfo version >= 4.10
