@@ -1,4 +1,4 @@
-PR .= ".2"
+PR .= ".3"
 
 USE_X11 = "${@base_contains("DISTRO_FEATURES", "x11", "yes", "no", d)}"
 USE_DFB = "${@base_contains("DISTRO_FEATURES", "directfb", "yes", "no", d)}"
@@ -22,6 +22,8 @@ do_install_append () {
     # and avoid rework in other packages, when possible
     rm ${D}${libdir}/libEGL.so ${D}${libdir}/libGAL.so \
        ${D}${libdir}/libVIVANTE.so
+
+    rm -r ${D}${includedir}/GL
 
     renamed=
     for backend in x11 fb dfb; do
