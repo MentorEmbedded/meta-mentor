@@ -108,6 +108,7 @@ python do_prepare_copyleft_sources () {
 }
 
 addtask prepare_copyleft_sources after do_fetch before do_build
+do_prepare_copyleft_sources[dirs] = "${WORKDIR}"
 do_build[recrdeptask] += 'do_prepare_copyleft_sources'
 
 addtask prepare_copyleft_sources_all after do_prepare_copyleft_sources
