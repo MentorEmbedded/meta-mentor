@@ -10,5 +10,5 @@ do_install_prepend () {
 }
 
 do_install_append () {
-	rm -f ${D}${bindir}/wispr
+	${@base_contains('PACKAGECONFIG', 'wispr', '', 'rm -f ${D}${bindir}/wispr', d)}
 }
