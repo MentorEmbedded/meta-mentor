@@ -1,6 +1,8 @@
-PRINC := "${@int(PRINC) + 1}"
+PRINC := "${@int(PRINC) + 2}"
 
-PYTHON_SITEPACKAGES_DIR = "/usr/lib/python2.7/dist-packages"
+inherit python-dir pythonnative
 
-EXTRA_OECONF += "--enable-python \
-                "
+PACKAGECONFIG ??= "python"
+PACKAGECONFIG[python] = "--enable-python,--disable-python,python-native python,python-core"
+
+FILES_python-avahi += "${PYTHON_SITEPACKAGES_DIR}/avahi_discover"
