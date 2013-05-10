@@ -1,4 +1,3 @@
-
 license_create_manifest() {
 	mkdir -p ${LICENSE_DIRECTORY}/${IMAGE_NAME}
 	# Get list of installed packages
@@ -9,7 +8,6 @@ license_create_manifest() {
 	if [ -f ${LICENSE_MANIFEST} ]; then
 		rm ${LICENSE_MANIFEST}
 	fi
-	# list of installed packages is broken for deb
 	touch ${LICENSE_MANIFEST}
 	for pkg in ${INSTALLED_PKGS}; do
 		# not the best way to do this but licenses are not arch dependant iirc
