@@ -1,0 +1,87 @@
+---
+ ipu/Makefile         |    2 +-
+ pxp/Makefile         |    2 +-
+ rng/Makefile         |    2 +-
+ sahara2/Makefile     |    2 +-
+ screenlayer/Makefile |    2 +-
+ sim/Makefile         |    2 +-
+ vpu/Makefile         |    2 +-
+ 7 files changed, 7 insertions(+), 7 deletions(-)
+
+--- imx-lib-12.09.01.orig/ipu/Makefile
++++ imx-lib-12.09.01/ipu/Makefile
+@@ -28,7 +28,7 @@ all install:
+ endif
+ 
+ $(LIBNAME).so.$(SONAMEVERSION): $(OBJS)
+-	$(CC) -shared -nostartfiles -Wl,-soname,$@ -o $@ $^ -lpthread
++	$(CC) -shared -nostartfiles -Wl,-soname,$@ -o $@ $^ -lpthread $(LDFLAGS)
+ 
+ $(LIBNAME).so: $(LIBNAME).so.$(SONAMEVERSION)
+ 	ln -s $< $@
+--- imx-lib-12.09.01.orig/pxp/Makefile
++++ imx-lib-12.09.01/pxp/Makefile
+@@ -28,7 +28,7 @@ endif
+ 	$(CC) -D$(PLATFORM) $(INCLUDE) -Wall -O2 -fPIC -c $^ -o $@
+ 
+ $(LIBNAME).so.$(SONAMEVERSION): $(OBJ)
+-	$(CC) -shared -nostartfiles -Wl,-soname,$@ $^ -o $@
++	$(CC) -shared -nostartfiles -Wl,-soname,$@ $^ -o $@ $(LDFLAGS)
+ 
+ $(LIBNAME).so: $(LIBNAME).so.$(SONAMEVERSION)
+ 	ln -s $< $@
+--- imx-lib-12.09.01.orig/rng/Makefile
++++ imx-lib-12.09.01/rng/Makefile
+@@ -31,7 +31,7 @@ $(LIBNAME).a: $(OBJS)
+ 	$(AR) $@ $^
+ 
+ $(LIBNAME).so.$(SONAMEVERSION): $(OBJS)
+-	$(CC) -shared -nostartfiles -Wl,-soname,$@ -o $@ $^
++	$(CC) -shared -nostartfiles -Wl,-soname,$@ -o $@ $^ $(LDFLAGS)
+ 
+ $(LIBNAME).so: $(LIBNAME).so.$(SONAMEVERSION)
+ 	ln -s $< $@
+--- imx-lib-12.09.01.orig/sahara2/Makefile
++++ imx-lib-12.09.01/sahara2/Makefile
+@@ -50,7 +50,7 @@ $(LIBNAME).a: $(OBJS)
+ 	$(AR) $@ $^
+ 
+ $(LIBNAME).so.$(SONAMEVERSION): $(OBJS)
+-	$(CC) -shared -nostartfiles -Wl,-soname,$@ -o $@ $^
++	$(CC) -shared -nostartfiles -Wl,-soname,$@ -o $@ $^ $(LDFLAGS)
+ 
+ $(LIBNAME).so: $(LIBNAME).so.$(SONAMEVERSION)
+ 	ln -s $< $@
+--- imx-lib-12.09.01.orig/screenlayer/Makefile
++++ imx-lib-12.09.01/screenlayer/Makefile
+@@ -24,7 +24,7 @@ all install:
+ endif
+ 
+ $(LIBNAME).so.$(SONAMEVERSION): $(OBJS)
+-	$(CC) -shared -nostartfiles -Wl,-soname,$@ -o $@ $^ -L../ipu -lipu
++	$(CC) -shared -nostartfiles -Wl,-soname,$@ -o $@ $^ -L../ipu -lipu $(LDFLAGS)
+ 
+ $(LIBNAME).so: $(LIBNAME).so.$(SONAMEVERSION)
+ 	ln -s $< $@
+--- imx-lib-12.09.01.orig/sim/Makefile
++++ imx-lib-12.09.01/sim/Makefile
+@@ -21,7 +21,7 @@ install:
+ 	cp iso7816-3.h $(DEST_DIR)/usr/include
+ 
+ $(LIBNAME).so.$(SONAMEVERSION): $(OBJS)
+-	$(CC) -shared -nostartfiles -Wl,-soname,$@ -o $@ $^ -lpthread
++	$(CC) -shared -nostartfiles -Wl,-soname,$@ -o $@ $^ -lpthread $(LDFLAGS)
+ 
+ $(LIBNAME).so: $(LIBNAME).so.$(SONAMEVERSION)
+ 	ln -s $< $@
+--- imx-lib-12.09.01.orig/vpu/Makefile
++++ imx-lib-12.09.01/vpu/Makefile
+@@ -36,7 +36,7 @@ endif
+ 	$(CC) -D$(PLATFORM) -Wall -O2 -fPIC -c $^ -o $@
+ 
+ $(LIBNAME).so.$(SONAMEVERSION): $(OBJ)
+-	$(CC) -shared -nostartfiles -Wl,-soname,$@ $^ -o $@
++	$(CC) -shared -nostartfiles -Wl,-soname,$@ $^ -o $@ $(LDFLAGS)
+ 
+ $(LIBNAME).so: $(LIBNAME).so.$(SONAMEVERSION)
+ 	ln -s $< $@

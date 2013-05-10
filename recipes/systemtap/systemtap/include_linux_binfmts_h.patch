@@ -1,0 +1,29 @@
+>From e1fbb1aa8c7ea64ea03b30bf4c42117fc9d4741f Mon Sep 17 00:00:00 2001
+Message-Id: <e1fbb1aa8c7ea64ea03b30bf4c42117fc9d4741f.1343328283.git.Torsten.Polle@gmx.de>
+From: Torsten Polle <Torsten.Polle@gmx.de>
+Date: Thu, 26 Jul 2012 20:40:12 +0200
+Subject: [PATCH] Added include path to be able to compile for ARM.
+
+Compiling a script against a 3.4 ARM kerne with uprobes support results in a
+compile error because struct linux_binprm is not defined. Including
+linux/binfmts.h fixes the issue.
+
+Signed-off-by: Torsten Polle <Torsten.Polle@gmx.de>
+---
+ runtime/stp_utrace.h |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/runtime/stp_utrace.h b/runtime/stp_utrace.h
+index 2e11ceb..399af5b 100644
+--- a/runtime/stp_utrace.h
++++ b/runtime/stp_utrace.h
+@@ -4,6 +4,7 @@
+ #include <linux/list.h>
+ #include <linux/kref.h>
+ #include <linux/sched.h>
++#include <linux/binfmts.h>
+
+ /*
+  * Event bits passed to utrace_set_events().
+--
+1.7.4.1
