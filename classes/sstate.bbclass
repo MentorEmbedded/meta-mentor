@@ -480,6 +480,7 @@ def sstate_package(ss, d):
 
 def pstaging_fetch(sstatefetch, sstatepkg, d):
     import bb.fetch2
+    import logging
 
     # Only try and fetch if the user has configured a mirror
     mirrors = d.getVar('SSTATE_MIRRORS', True)
@@ -503,6 +504,8 @@ def pstaging_fetch(sstatefetch, sstatepkg, d):
     for srcuri in ['file://{0}'.format(sstatefetch),
                    'file://{0}.siginfo'.format(sstatefetch)]:
         localdata.setVar('SRC_URI', srcuri)
+        oldlevel = bb.fetch2.logger.level
+        bb.fetch2.logger.setLevel(logging.CRITICAL)
         try:
             fetcher = bb.fetch2.Fetch([srcuri], localdata, cache=False)
             fetcher.download()
@@ -515,6 +518,8 @@ def pstaging_fetch(sstatefetch, sstatepkg, d):
 
         except bb.fetch2.BBFetchException:
             break
+        finally:
+            bb.fetch2.logger.setLevel(oldlevel)
 
 def sstate_setscene(d):
     shared_state = sstate_state_fromvars(d)
