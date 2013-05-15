@@ -16,8 +16,9 @@ python adjust_packagegroup_gdbserver () {
         if not d.getVar('ALLOW_GPLV3_GDBSERVER', True):
             # Remove installation of gdbserver from codebench-debug
             pkggroup = d.getVar('PACKAGE_GROUP_codebench-debug', True).split()
-            pkggroup.remove('gdbserver')
-            d.setVar('PACKAGE_GROUP_codebench-debug', ' '.join(pkggroup))
+            if 'gdbserver' in pkggroup:
+                pkggroup.remove('gdbserver')
+                d.setVar('PACKAGE_GROUP_codebench-debug', ' '.join(pkggroup))
 }
 addhandler adjust_packagegroup_gdbserver
 
