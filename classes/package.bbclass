@@ -937,7 +937,7 @@ python populate_packages () {
 
     for pkg in packages.split():
         if d.getVar('LICENSE_EXCLUSION-' + pkg, True):
-            bb.warn("%s has an incompatible license. Excluding from packaging." % pkg)
+            bb.note("%s has an incompatible license. Excluding from packaging." % pkg)
         if pkg in package_list:
             bb.error("%s is listed in PACKAGES multiple times, this leads to packaging errors." % pkg)
         else:
