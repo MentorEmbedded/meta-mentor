@@ -54,6 +54,10 @@ MACHINE ??= "qemux86"
 #  "print-server"    - add tools for a print server (samba, swat)
 #  "router"          - add tools for a router/accesspoint (ipsec-tools, iproute2, iptables, etc)
 #
+#  "read-only-rootfs" - enables creation of a Read-Only root file system
+#                       (removes first-time config at start-up, mounts root r/o, 
+#                        and relocates dynamically created data to a tmpfs)
+#
 # There are other options that can be used here, see
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
 # details.
@@ -139,8 +143,17 @@ SSTATE_DIR ?= "${MELDIR}/cached-binaries"
 #   - 'image-prelink' in order to prelink the filesystem image
 #   - 'image-swab' to perform host system intrusion detection
 # NOTE: if listing mklibs & prelink both, then make sure mklibs is before prelink
-# NOTE: mklibs also needs to be explicitly enabled for a given image, see local.conf.extended
+# NOTE: mklibs also needs to be explicitly enabled for a given image, see next section below
 USER_CLASSES ?= "image-mklibs image-prelink"
+
+# mklibs library size optimization is more useful to smaller images,
+# and less useful for bigger images. Also mklibs library optimization
+# can break the ABI compatibility, so should not be applied to the
+# images which are to be extended or upgraded later.
+#This enabled mklibs library size optimization just for the specified image.
+#MKLIBS_OPTIMIZED_IMAGES ?= "core-image-minimal"
+#This enable mklibs library size optimization will be for all the images.
+#MKLIBS_OPTIMIZED_IMAGES ?= "all"
 
 # Interactive shell configuration
 #
@@ -186,3 +199,22 @@ USER_CLASSES ?= "image-mklibs image-prelink"
 # track the version of this file when it was generated. This can safely be ignored if
 # this doesn't mean anything to you.
 CONF_VERSION = "1"
+
+# Uncomment the following lines to enable building and adding of the bad, ugly, and 
+# otherwise risky gstreamer plugins
+#CORE_IMAGE_EXTRA_INSTALL += " packagegroup-multimedia-risky"
+#LICENSE_FLAGS_WHITELIST += " commercial_gst-ffmpeg commercial_gst-plugin-asf "
+#LICENSE_FLAGS_WHITELIST += " commercial_gst-plugins-ugly commercial_gst-plugins-bad"
+#LICENSE_FLAGS_WHITELIST += " commercial_mpeg2dec commercial_lame commercial_gst-fluendo-mp3 
+#LICENSE_FLAGS_WHITELIST += " commercial_gst-fluendo-mpegdemux commercial_gst-openmax "
+#LICENSE_FLAGS_WHITELIST += " commercial_gst-openmax commercial_libomxil"
+
+# Uncomment this line to disable network access during the build.  This can be used to
+# simulate a build in an environment without network access.
+#BB_NO_NETWORK = "1"
+
+# When building for mx6q, uncomment the following line to accept the EULA-protected
+# FSL proprietary components.  If any FSL proprietary components are required for the
+# build, the build will fail if this is not set.
+#ACCEPT_FSL_EULA = "1"
+
