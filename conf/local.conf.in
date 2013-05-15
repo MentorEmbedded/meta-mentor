@@ -55,7 +55,7 @@ MACHINE ??= "qemux86"
 #  "router"          - add tools for a router/accesspoint (ipsec-tools, iproute2, iptables, etc)
 #
 #  "read-only-rootfs" - enables creation of a Read-Only root file system
-#                       (removes first-time config at start-up, mounts root r/o, 
+#                       (removes first-time config at start-up, mounts root r/o,
 #                        and relocates dynamically created data to a tmpfs)
 #
 # There are other options that can be used here, see
@@ -200,12 +200,12 @@ USER_CLASSES ?= "image-mklibs image-prelink"
 # this doesn't mean anything to you.
 CONF_VERSION = "1"
 
-# Uncomment the following lines to enable building and adding of the bad, ugly, and 
+# Uncomment the following lines to enable building and adding of the bad, ugly, and
 # otherwise risky gstreamer plugins
 #CORE_IMAGE_EXTRA_INSTALL += " packagegroup-multimedia-risky"
 #LICENSE_FLAGS_WHITELIST += " commercial_gst-ffmpeg commercial_gst-plugin-asf "
 #LICENSE_FLAGS_WHITELIST += " commercial_gst-plugins-ugly commercial_gst-plugins-bad"
-#LICENSE_FLAGS_WHITELIST += " commercial_mpeg2dec commercial_lame commercial_gst-fluendo-mp3 
+#LICENSE_FLAGS_WHITELIST += " commercial_mpeg2dec commercial_lame commercial_gst-fluendo-mp3
 #LICENSE_FLAGS_WHITELIST += " commercial_gst-fluendo-mpegdemux commercial_gst-openmax "
 #LICENSE_FLAGS_WHITELIST += " commercial_gst-openmax commercial_libomxil"
 
