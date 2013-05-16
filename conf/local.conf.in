@@ -218,3 +218,26 @@ CONF_VERSION = "1"
 # build, the build will fail if this is not set.
 #ACCEPT_FSL_EULA = "1"
 
+# To build U-Boot from a different github repository, uncomment the
+# appropriate lines below and adjust as needed.
+#UBOOT_VERSION_pn-u-boot-sabre-aiquad = "2013.01"
+#UBOOT_VERSION_pn-u-boot-sabre-aisolo = "2013.01"
+#UBOOT_VERSION_pn-u-boot-sabre-armadillo = "2013.01"
+#UBOOT_VERSION_pn-u-boot-sabre-lite = "2013.01"
+#UBOOT_VERSION_pn-u-boot-sabre-sd = "2013.01"
+#SRC_URI_pn-u-boot-sabre-aiquad = "git://github.com/MentorEmbedded/u-boot-meibp.git;branch=staging-2013.01;protocol=ssh;user=git"
+#SRC_URI_pn-u-boot-sabre-aisolo = "git://github.com/MentorEmbedded/u-boot-meibp.git;branch=staging-2013.01;protocol=ssh;user=git"
+#SRC_URI_pn-u-boot-sabre-armadillo = "git://github.com/MentorEmbedded/u-boot-meibp.git;branch=staging-2013.01;protocol=ssh;user=git"
+#SRC_URI_pn-u-boot-sabre-lite = "git://github.com/MentorEmbedded/u-boot-meibp.git;branch=staging-2013.01;protocol=ssh;user=git"
+#SRC_URI_pn-u-boot-sabre-sd = "git://github.com/MentorEmbedded/u-boot-meibp.git;branch=staging-2013.01;protocol=ssh;user=git"
+#SRCREV_pn-u-boot-sabre-aiquad = "${AUTOREV}"
+#SRCREV_pn-u-boot-sabre-aisolo = "${AUTOREV}"
+#SRCREV_pn-u-boot-sabre-armadillo = "${AUTOREV}"
+#SRCREV_pn-u-boot-sabre-lite = "${AUTOREV}"
+#SRCREV_pn-u-boot-sabre-sd = "${AUTOREV}"
+
+# To build The linux-imx kernel from a different github repository,
+# uncomment the appropriate lines below and adjust as needed.
+#KVERSION="3.5.7.12"
+#SRC_URI_pn-linux-imx = "git://github.com/MentorEmbedded/linux-meibp.git;branch=staging-35;protocol=ssh;user=git"
+#SRCREV_pn-linux-imx = "${AUTOREV}"
