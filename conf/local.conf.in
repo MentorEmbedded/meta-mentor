@@ -203,10 +203,10 @@ CONF_VERSION = "1"
 # Uncomment the following lines to enable building and adding of the bad, ugly, and
 # otherwise risky gstreamer plugins
 #CORE_IMAGE_EXTRA_INSTALL += " packagegroup-multimedia-risky"
-#LICENSE_FLAGS_WHITELIST += " commercial_gst-ffmpeg commercial_gst-plugin-asf "
+#LICENSE_FLAGS_WHITELIST += " commercial_gst-ffmpeg commercial_gst-plugin-asf"
 #LICENSE_FLAGS_WHITELIST += " commercial_gst-plugins-ugly commercial_gst-plugins-bad"
-#LICENSE_FLAGS_WHITELIST += " commercial_mpeg2dec commercial_lame commercial_gst-fluendo-mp3
-#LICENSE_FLAGS_WHITELIST += " commercial_gst-fluendo-mpegdemux commercial_gst-openmax "
+#LICENSE_FLAGS_WHITELIST += " commercial_mpeg2dec commercial_lame commercial_gst-fluendo-mp3"
+#LICENSE_FLAGS_WHITELIST += " commercial_gst-fluendo-mpegdemux"
 #LICENSE_FLAGS_WHITELIST += " commercial_gst-openmax commercial_libomxil"
 
 # Uncomment this line to disable network access during the build.  This can be used to
