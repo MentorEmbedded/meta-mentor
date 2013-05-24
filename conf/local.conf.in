@@ -58,6 +58,9 @@ MACHINE ??= "qemux86"
 #                       (removes first-time config at start-up, mounts root r/o,
 #                        and relocates dynamically created data to a tmpfs)
 #
+#  "extra-qa-packages" - enables additional packages to be included in the target image when
+#                        the meta-mentor-qa-private is included.
+#
 # There are other options that can be used here, see
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
 # details.
