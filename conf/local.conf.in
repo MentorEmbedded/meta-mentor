@@ -70,6 +70,9 @@ EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-pr
 # Disable 3g by default, as most won't need it.
 USER_FEATURES += "~3g"
 
+# Disable near field communication support by default
+USER_FEATURES += "~nfc"
+
 # How many tasks bitbake should run in parallel
 #BB_NUMBER_THREADS = "4"
 
