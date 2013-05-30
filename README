@@ -43,8 +43,7 @@ Distro bits
     - psplash: mel splash image
     - core-image-base: added package-management
     - e2fsprogs: killed e2fsprogs compat dep on blkid/badblocks
-    - mel-release: used to archive up content for release
-    - nfs-utils and packagegroup-core-nfs: prefer rpcbind, not portmap
+    - archive-release: used to archive up content for release
     - other packagegroups
 
     - cml1-merge class: old crude implementation of defconfig file snippets,
@@ -142,6 +141,7 @@ Changes pending upstream push
         - disable build of kernel samples for pandaboard
     - newt - splits out python module into a separate recipe. allows one to
       include libnewt in an image without sucking python into the build
+    - nfs-utils: add PACKAGECONFIG for tcp wrappers support
     - packagegroup-base: include dosfstools in packagegroup-base-vfat
     - packagegroup-core-qt: define `LIC_FILES_CHKSUM` for MIT
     - packagegroup-core-ssh-openssh: define `LIC_FILES_CHKSUM` for MIT
@@ -156,6 +156,7 @@ Changes pending upstream push
         - obey our target paths (base_sbindir, mandir)
     - quota: obey PACKAGECONFIG for tcp wrappers support
     - rpcbind: add PACKAGECONFIG for tcp wrappers support
+    - systemd: add PACKAGECONFIG for tcp wrappers support
     - samba
         - disable avahi support (build determinism issue)
         - without acl support (build determinism issue)
