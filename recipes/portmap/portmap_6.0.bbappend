@@ -1,3 +1,5 @@
+DEPENDS := "${@oe_filter_out('tcp-wrappers', DEPENDS, d)}"
+
 CPPFLAGS := "${@oe_filter_out('-D', CPPFLAGS, d)}"
 CFLAGS := "${@oe_filter_out('-[Wf]', CFLAGS, d)}"
 
