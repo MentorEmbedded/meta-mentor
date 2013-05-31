@@ -1,4 +1,4 @@
-INHERIT += "sstate-reuse"
+INHERIT += "sstate-mirror-sites"
 
 # We know RHEL 5 is the oldest distro we support, and that binaries built
 # there will run on any other host we support
