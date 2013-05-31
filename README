@@ -193,14 +193,22 @@ Disabled parallel make / install
     - lttng2-ust
     - openssh
 
-Remanant PRINC bumps
+Remanant PR/PRINC bumps
 ====================
 
 These can be dropped as soon as the recipe PV is bumped, but are kept around
 for now to avoid the package versions going backwards.
 
+    - blktrace
+    - gdbm
+    - hostap
+    - imx-lib
+    - irda-utils
     - netbase
     - packagegroup-core-device-devel
+    - perl
+    - python
+    - setserial
     - wireless-tools
 
 Misc
