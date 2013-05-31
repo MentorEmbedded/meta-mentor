@@ -168,23 +168,6 @@ Changes pending upstream push
       lets LICENSE reflect source licensing while the package licenses reflect
       what's shipped
 
-Fix GNU_HASH warnings / obey LDFLAGS
-====================================
-
-These should either go upstream, *if* they care, otherwise they should go to
-meta-sourcery. Upstream doesn't see the GNU_HASH warnings, as internally built
-toolchains default to the right gnu hash bits, but arguably these are still
-bugs, as software builds should obey metadata variables like LDFLAGS.
-
-    - imx-lib
-    - blktrace
-    - hostap
-    - gdbm
-    - setserial
-    - irda-utils
-    - python
-    - perl
-
 Tracing
 =======
 
