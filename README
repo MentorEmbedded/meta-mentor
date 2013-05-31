@@ -78,14 +78,6 @@ Distro bits
       isolated sstate directory, so we can distinguish between the contents of
       SSTATE_DIR and the sstate archives actually used for the build. This is
       needed by our release process.
-    - package_early_expand class: work around self referential variable bug
-      with SUMMARY and DESCRIPTION. Multiple packaging classes add a package
-      name override, then getVar('SUMMARY', True). Yet the default values of
-      SUMMARY_${PN}-dbg and friends refer to '${SUMMARY}'. So first
-      SUMMARY_${PN}-dbg replaces SUMMARY, then SUMMARY is referring to itself.
-      This class forces early expansion of the SUMMARY and DESCRIPTION
-      variables to work around the issue. A proper fix would likely be to stop
-      using package name OVERRIDES in the packaging classes.
 
 Added recipes
 =============
@@ -106,7 +98,6 @@ Added recipes
     - pyparted: this is currently unused by us, should be pushed to meta-oe
     - udev 164: old udev for machines on old kernels
 
-
 Changes pending upstream push
 =============================
 
@@ -122,8 +113,6 @@ Changes pending upstream push
             - ensures that license excluded files don't get accidentally
               packaged. this fix is on upstream master, but should get pulled
               into dylan also
-        - package_early_expand.bbclass - this shouldn't go upstream as is, but
-          this fix does need to go upstream in some form
     - avahi-ui:
         - use PACKAGECONFIG for python module support, inherit python classes.
           without these bits, it will happy mess with the build machine's
