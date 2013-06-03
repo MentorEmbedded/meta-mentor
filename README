@@ -129,7 +129,6 @@ Changes pending upstream push
         - disable build of kernel samples for pandaboard
     - newt - splits out python module into a separate recipe. allows one to
       include libnewt in an image without sucking python into the build
-    - nfs-utils: add PACKAGECONFIG for tcp wrappers support
     - packagegroup-base: include dosfstools in packagegroup-base-vfat
     - packagegroup-core-qt: define `LIC_FILES_CHKSUM` for MIT
     - packagegroup-core-ssh-openssh: define `LIC_FILES_CHKSUM` for MIT
@@ -140,11 +139,7 @@ Changes pending upstream push
           patched for lttng 0.x
     - perf
     - portmap:
-        - obey PACKAGECONFIG for tcp wrappers support
         - obey our target paths (base_sbindir, mandir)
-    - quota: obey PACKAGECONFIG for tcp wrappers support
-    - rpcbind: add PACKAGECONFIG for tcp wrappers support
-    - systemd: add PACKAGECONFIG for tcp wrappers support
     - samba
         - disable avahi support (build determinism issue)
         - without acl support (build determinism issue)
