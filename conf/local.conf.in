@@ -60,6 +60,7 @@ MACHINE ??= "qemux86"
 #
 #  "extra-qa-packages" - enables additional packages to be included in the target image when
 #                        the meta-mentor-qa-private is included.
+#  "extra-qa-kernel-configs" - enables additional kernel config options used by QA.
 #
 # There are other options that can be used here, see
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
