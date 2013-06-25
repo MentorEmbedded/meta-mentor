@@ -22,7 +22,8 @@ LTTNG2_OPTIONS_ENABLE = '\
     kretprobes \
 '
 
-KERNEL_DEFCONFIG ?= "${WORKDIR}/defconfig"
+DEFCONFIG ?= "${WORKDIR}/defconfig"
+KERNEL_DEFCONFIG ?= "${DEFCONFIG}"
 
 enable_lttng2 () {
     if [ ! -e ${KERNEL_DEFCONFIG} ] || ! echo "${KERNEL_DEFCONFIG}" | grep -q "^${WORKDIR}/"; then

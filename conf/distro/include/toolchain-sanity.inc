@@ -21,12 +21,16 @@ python toolchain_kernel_fixup () {
 
         # Work around kernel build error due to unused-but-set-variable + Werror
         version = d.getVar('CSL_VER_GCC', False)
+        num_version = [int(element) for element in version.split('.')]
         match = re.match('^([0-9]+\.[0-9]+)', version)
         if match:
             version = match.group(1)
-            if [int(element) for element in version.split('.')] >= [4, 6]:
-                d.setVar('KERNEL_CC_append', ' -Wno-error=unused-but-set-variable')
-                d.setVar('CC_append', ' -Wno-error=unused-but-set-variable')
+            if num_version >= [4, 6]:
+                d.appendVar('TARGET_CC_ARCH', ' -Wno-error=unused-but-set-variable')
+                d.appendVar('TARGET_CC_KERNEL_ARCH', ' -Wno-error=unused-but-set-variable')
+            if num_version >= [4, 7]:
+                d.appendVar('TARGET_CC_ARCH', ' -Wno-error=maybe-uninitialized')
+                d.appendVar('TARGET_CC_KERNEL_ARCH', ' -Wno-error=maybe-uninitialized')
 }
 addhandler toolchain_kernel_fixup
 

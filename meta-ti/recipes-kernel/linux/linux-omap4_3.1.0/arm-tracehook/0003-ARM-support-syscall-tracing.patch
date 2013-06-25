@@ -27,27 +27,27 @@ Index: git/arch/arm/Kconfig
 --- git.orig/arch/arm/Kconfig	2012-09-25 15:42:06.000000000 -0500
 +++ git/arch/arm/Kconfig	2012-09-25 15:42:45.906283322 -0500
 @@ -13,6 +13,7 @@
- 	select HAVE_OPROFILE if (HAVE_PERF_EVENTS)
- 	select HAVE_ARCH_KGDB
- 	select HAVE_ARCH_TRACEHOOK
+	select HAVE_OPROFILE if (HAVE_PERF_EVENTS)
+	select HAVE_ARCH_KGDB
+	select HAVE_ARCH_TRACEHOOK
 +	select HAVE_SYSCALL_TRACEPOINTS
- 	select HAVE_KPROBES if !XIP_KERNEL
- 	select HAVE_KRETPROBES if (HAVE_KPROBES)
- 	select HAVE_FUNCTION_TRACER if (!XIP_KERNEL)
+	select HAVE_KPROBES if !XIP_KERNEL
+	select HAVE_KRETPROBES if (HAVE_KPROBES)
+	select HAVE_FUNCTION_TRACER if (!XIP_KERNEL)
 Index: git/arch/arm/include/asm/syscall.h
 ===================================================================
 --- git.orig/arch/arm/include/asm/syscall.h	2012-09-25 15:42:06.000000000 -0500
 +++ git/arch/arm/include/asm/syscall.h	2012-09-25 15:42:31.918753200 -0500
 @@ -9,6 +9,10 @@
- 
+
  #include <linux/err.h>
- 
+
 +#include <asm/unistd.h>
 +
 +#define NR_syscalls (__NR_syscalls)
 +
  extern const unsigned long sys_call_table[];
- 
+
  static inline int syscall_get_nr(struct task_struct *task,
 Index: git/arch/arm/include/asm/thread_info.h
 ===================================================================
@@ -58,7 +58,7 @@ Index: git/arch/arm/include/asm/thread_info.h
  #define TIF_RESTORE_SIGMASK	20
  #define TIF_SECCOMP		21
 +#define TIF_SYSCALL_TRACEPOINT	22
- 
+
  #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
  #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
 @@ -155,6 +156,7 @@
@@ -66,7 +66,7 @@ Index: git/arch/arm/include/asm/thread_info.h
  #define _TIF_RESTORE_SIGMASK	(1 << TIF_RESTORE_SIGMASK)
  #define _TIF_SECCOMP		(1 << TIF_SECCOMP)
 +#define _TIF_SYSCALL_TRACEPOINT	(1 << TIF_SYSCALL_TRACEPOINT)
- 
+
  /*
   * Change these and you break ASM code in entry-common.S
 Index: git/arch/arm/include/asm/unistd.h
@@ -75,7 +75,7 @@ Index: git/arch/arm/include/asm/unistd.h
 +++ git/arch/arm/include/asm/unistd.h	2012-09-25 15:42:31.954774113 -0500
 @@ -404,6 +404,14 @@
  #define __NR_setns			(__NR_SYSCALL_BASE+375)
- 
+
  /*
 + * This may need to be greater than __NR_last_syscall+1 in order to
 + * account for the padding in the syscall table
@@ -95,7 +95,7 @@ Index: git/arch/arm/kernel/entry-common.S
 @@ -79,6 +79,11 @@
  ENDPROC(ret_to_user_from_irq)
  ENDPROC(ret_to_user)
- 
+
 +.macro test_syscall_tracing reg
 +       tst     \reg, #_TIF_SYSCALL_TRACE
 +       tsteq   \reg, #_TIF_SYSCALL_TRACEPOINT
@@ -105,16 +105,16 @@ Index: git/arch/arm/kernel/entry-common.S
   * This is how we return from a fork.
   */
 @@ -87,7 +92,7 @@
- 	get_thread_info tsk
- 	ldr	r1, [tsk, #TI_FLAGS]		@ check for syscall tracing
- 	mov	why, #1
+	get_thread_info tsk
+	ldr	r1, [tsk, #TI_FLAGS]		@ check for syscall tracing
+	mov	why, #1
 -	tst	r1, #_TIF_SYSCALL_TRACE		@ are we tracing syscalls?
 +	test_syscall_tracing r1
- 	beq	ret_slow_syscall
- 	mov	r1, sp
- 	mov	r0, #1				@ trace exit [IP = 1]
+	beq	ret_slow_syscall
+	mov	r1, sp
+	mov	r0, #1				@ trace exit [IP = 1]
 @@ -98,6 +103,13 @@
- 	.equ NR_syscalls,0
+	.equ NR_syscalls,0
  #define CALL(x) .equ NR_syscalls,NR_syscalls+1
  #include "calls.S"
 +
@@ -126,16 +126,16 @@ Index: git/arch/arm/kernel/entry-common.S
 +
  #undef CALL
  #define CALL(x) .long x
- 
+
 @@ -443,7 +455,7 @@
  1:
  #endif
- 
+
 -	tst	r10, #_TIF_SYSCALL_TRACE		@ are we tracing syscalls?
 +	test_syscall_tracing r10
- 	bne	__sys_trace
- 
- 	cmp	scno, #NR_syscalls		@ check upper syscall limit
+	bne	__sys_trace
+
+	cmp	scno, #NR_syscalls		@ check upper syscall limit
 Index: git/arch/arm/kernel/ptrace.c
 ===================================================================
 --- git.orig/arch/arm/kernel/ptrace.c	2012-09-25 15:42:06.000000000 -0500
@@ -143,7 +143,7 @@ Index: git/arch/arm/kernel/ptrace.c
 @@ -28,6 +28,9 @@
  #include <asm/system.h>
  #include <asm/traps.h>
- 
+
 +#define CREATE_TRACE_POINTS
 +#include <trace/events/syscalls.h>
 +
@@ -152,18 +152,18 @@ Index: git/arch/arm/kernel/ptrace.c
  /*
 @@ -906,7 +909,8 @@
  {
- 	unsigned long ip;
- 
+	unsigned long ip;
+
 -	if (!test_thread_flag(TIF_SYSCALL_TRACE))
 +	if (!test_thread_flag(TIF_SYSCALL_TRACE) &&
 +	    !test_thread_flag(TIF_SYSCALL_TRACEPOINT))
- 		return scno;
- 
- 	/*
+		return scno;
+
+	/*
 @@ -918,10 +922,19 @@
- 
- 	current_thread_info()->syscall = scno;
- 
+
+	current_thread_info()->syscall = scno;
+
 -	if (why)
 -		tracehook_report_syscall_exit(regs, 0);
 -	else if (tracehook_report_syscall_entry(regs))
@@ -181,6 +181,5 @@ Index: git/arch/arm/kernel/ptrace.c
 +		else
 +			trace_sys_enter(regs, scno);
 +	}
- 
- 	regs->ARM_ip = ip;
- 
+
+	regs->ARM_ip = ip;

@@ -13,6 +13,7 @@ TEMPLATECONF ?= "${FILE_DIRNAME}/../../conf"
 
 # Add a default in case the user doesn't inherit copyleft_compliance
 COPYLEFT_SOURCES_DIR ?= "${DL_DIR}"
+COPYLEFT_SOURCES_BASE_DIR ?= "${COPYLEFT_SOURCES_DIR}"
 
 DUMP_HEADREVS_DB ?= ""
 DEPLOY_DIR_RELEASE ?= "${DEPLOY_DIR}/release-artifacts"
@@ -25,6 +26,9 @@ RELEASE_USE_TAGS[doc] = "Use git tags rather than just # of commits for layer ar
 RELEASE_USE_TAGS[type] = "boolean"
 RELEASE_EXCLUDED_SOURCES ?= ""
 RELEASE_EXCLUDED_SOURCES[doc] = "Patterns of files in COPYLEFT_SOURCES_DIR to exclude"
+BINARY_ARTIFACTS_COMPRESSION ?= ""
+BINARY_ARTIFACTS_COMPRESSION[doc] = "Compression type for images, downloads and sstate artifacts.\
+ Available: '.bz2' and '.gz'. No compression if empty"
 
 # If we have an isolated set of shared state archives, use that, so as to
 # avoid archiving sstates which were unused.
@@ -38,7 +42,7 @@ DEPLOY_IMAGES = "\
     ${@' '.join('${RELEASE_IMAGE}-${MACHINE}.%s' % ext for ext in IMAGE_EXTENSIONS.split())} \
     ${RELEASE_IMAGE}-${MACHINE}.license_manifest \
     ${RELEASE_IMAGE}-${MACHINE}.license_manifest.csv \
-    ${KERNEL_IMAGETYPE}-${MACHINE}* \
+    ${KERNEL_IMAGETYPE}*${MACHINE}* \
 "
 DEPLOY_IMAGES[doc] = "List of files from DEPLOY_DIR_IMAGE which will be archived"
 
@@ -63,7 +67,20 @@ python () {
 }
 
 release_tar () {
-    tar --absolute-names "$@" "--transform=s,^${MELDIR}/,," --exclude=.svn \
+    if [ -z ${BINARY_ARTIFACTS_COMPRESSION} ]
+    then
+        COMPRESSION=""
+    elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".bz2" ]
+    then
+        COMPRESSION="-j"
+    elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".gz" ]
+    then
+        COMPRESSION="-z"
+    else
+        bbfatal "Invalid binary artifacts compression type ${BINARY_ARTIFACTS_COMPRESSION}"
+    fi
+
+    tar --absolute-names ${COMPRESSION} "$@" "--transform=s,^${MELDIR}/,," --exclude=.svn \
         --exclude=.git --exclude=\*.pyc --exclude=\*.pyo --exclude=.gitignore \
         -v --show-stored-names
 }
@@ -176,18 +193,40 @@ do_prepare_release () {
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -w downloads; then
-        mkdir -p downloads
-        find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
-            src=`readlink $source` || continue
-            if echo $src | grep -q "^${DL_DIR}/"; then
-                ln -sf $source downloads/
-                touch downloads/$(basename $source).done
-            fi
-        done
-        for file in ${RELEASE_EXCLUDED_SOURCES}; do
-            rm -f downloads/$file
-        done
-        release_tar -cjhf deploy/${MACHINE}-sources.tar.bz2 downloads/
+        if [ "${COPYLEFT_SOURCES_BASE_DIR}" != "${COPYLEFT_SOURCES_DIR}" ]; then
+            for dir in ${COPYLEFT_SOURCES_BASE_DIR}/*; do
+                name=$(basename $dir)
+                mkdir -p downloads/$name
+                find -L $dir -type f -maxdepth 2 | while read source; do
+                    src=`readlink $source` || continue
+                    if echo $src | grep -q "^${DL_DIR}/"; then
+                        ln -sf $source downloads/$name/
+                        touch downloads/$name/$(basename $source).done
+                    fi
+                done
+                cd downloads/$name
+                for file in ${RELEASE_EXCLUDED_SOURCES}; do
+                    rm -f "$file"
+                done
+                cd - >/dev/null
+                release_tar "--transform=s,^downloads/$name,downloads," -chf \
+                        deploy/$name-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/$name
+            done
+        else
+            find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
+                src=`readlink $source` || continue
+                if echo $src | grep -q "^${DL_DIR}/"; then
+                    ln -sf $source downloads/
+                    touch downloads/$(basename $source).done
+                fi
+            done
+            cd downloads
+            for file in ${RELEASE_EXCLUDED_SOURCES}; do
+                rm -f "$file"
+            done
+            cd - >/dev/null
+            release_tar -chf deploy/${MACHINE}-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/
+        fi
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -w sstate; then
@@ -198,7 +237,7 @@ do_prepare_release () {
             fi
         done
         release_tar "--transform=s,^${SSTATE_DIR},cached-binaries," --exclude=\*.done \
-                -cjhf deploy/${MACHINE}-sstate.tar.bz2 ${SSTATE_DIR}
+                -chf deploy/${MACHINE}-sstate.tar${BINARY_ARTIFACTS_COMPRESSION} ${SSTATE_DIR}
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -w templates; then
@@ -207,8 +246,10 @@ do_prepare_release () {
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -w images; then
-        echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >include
-        echo ${BUILDHISTORY_DIR} >>include
+        if [ -e "${BUILDHISTORY_DIR}" ]; then
+            echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >include
+            echo ${BUILDHISTORY_DIR} >>include
+        fi
 
         if echo "${RELEASE_ARTIFACTS}" | grep -w templates; then
             echo "--transform=s,${S}/,${MACHINE}/conf/," >>include
@@ -236,7 +277,13 @@ do_prepare_release () {
         } >>include
         release_tar --files-from=include -rhf deploy/${MACHINE}.tar
 
-        bzip2 deploy/${MACHINE}.tar
+        if [ ${BINARY_ARTIFACTS_COMPRESSION} = ".bz2" ]
+        then
+            bzip2 deploy/${MACHINE}.tar
+        elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".gz" ]
+        then
+            gzip deploy/${MACHINE}.tar
+        fi
     fi
 
     echo ${DISTRO_VERSION} >deploy/distro-version

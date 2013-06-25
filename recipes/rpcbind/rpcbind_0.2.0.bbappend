@@ -1,1 +1,1 @@
-PACKAGECONFIG[tcpwrappers] = "--enable-libwrap,--disable-libwrap,tcp-wrappers"
+PACKAGECONFIG[tcp-wrappers] = "--enable-libwrap,--disable-libwrap,tcp-wrappers"

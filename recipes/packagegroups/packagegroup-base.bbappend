@@ -1,4 +1,3 @@
-PRINC := "${@int(PRINC) + 2}"
+PRINC := "${@int(PRINC) + 3}"
 
-# We prefer rpcbind over portmap
-RDEPENDS_packagegroup-base-nfs_mel = "rpcbind"
+RDEPENDS_packagegroup-base-vfat += "dosfstools"

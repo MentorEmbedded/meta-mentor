@@ -23,7 +23,7 @@ MACHINE ??= "qemux86"
 # The CORE_IMAGE_EXTRA_INSTALL variable allows extra individual packages to be
 # added to any of the "core" images (e.g. core-image-base,
 # core-image-minimal).
-#CORE_IMAGE_EXTRA_INSTALL = "nano psplash"
+CORE_IMAGE_EXTRA_INSTALL = "oprofile"
 
 # The EXTRA_IMAGE_FEATURES variable allows groups of packages to be added to
 # the generated images. Some of these options are added to certain image types
@@ -56,6 +56,11 @@ MACHINE ??= "qemux86"
 
 EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-profile"
 
+# Uncomment this to enable inclusion of gdbserver in the codebench-debug
+# packagegroup / image feature even when GPLv3 is in INCOMPATIBLE_LICENSE, or
+# using a distro which sets it that way (atp).
+#ALLOW_GPLV3_GDBSERVER = "1"
+
 # User features lets you manipulate the distro features. To add a distro
 # feature, simply add it to USER_FEATURES. To remove, prefix it with ~.
 #
@@ -64,6 +69,9 @@ EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-pr
 #
 # Disable 3g by default, as most won't need it.
 USER_FEATURES += "~3g"
+
+# Disable near field communication support by default
+USER_FEATURES += "~nfc"
 
 # How many tasks bitbake should run in parallel
 #BB_NUMBER_THREADS = "4"
@@ -81,18 +89,19 @@ USER_FEATURES += "~3g"
 #SOURCE_MIRROR_URL = "file:///cache/downloads"
 #SOURCE_MIRROR_URL = "http://myserver/sources"
 
-# which is the MEL install directory. If you do not have write access to the
-# MEL install, a sane option for this is ${TOPDIR}/downloads.
-DL_DIR ?= "${MELDIR}/downloads"
+# Our download directory / cache
+DL_DIR ?= "${TOPDIR}/downloads"
+
+# Continue to pull downloads from the MEL install
+PREMIRRORS =+ ".*://.*/.* file://${MELDIR}/downloads/ \n "
 
 # BitBake has the capability to accelerate builds based on previously built
 # output. This is done using "shared state" files which can be thought of as
 # cache objects and this variable determines where those files are placed.
-#
-# The default is a cached-binaries directory under MELDIR which is the MEL
-# install directory. If you do not have write access to the MEL install,
-# a sane option for this is ${TOPDIR}/cached-binaries.
-SSTATE_DIR ?= "${MELDIR}/cached-binaries"
+SSTATE_DIR ?= "${TOPDIR}/cached-binaries"
+
+# Continue to pull cached binaries from the MEL install
+SSTATE_MIRROR_SITES += "file://${MELDIR}/cached-binaries"
 
 # Where to place the build output and temporary artifacts
 #

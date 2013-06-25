@@ -3,7 +3,7 @@ require recipes-extended/chkconfig/chkconfig_1.3.58.bb
 SUMMARY = "${SUMMARY_chkconfig-alternatives}"
 DESCRIPTION = "${DESCRIPTION_chkconfig-alternatives}"
 DEPENDS = "virtual/libintl"
-DEPENDS_virtclass-native = ""
+DEPENDS_class-native = ""
 USE_NLS = "no"
 PROVIDES = "${PN} virtual/update-alternatives"
 LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263"
