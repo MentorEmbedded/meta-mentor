@@ -176,7 +176,6 @@ for now to avoid the package versions going backwards.
     - hostap
     - imx-lib
     - irda-utils
-    - netbase
     - packagegroup-core-device-devel
     - perl
     - python
