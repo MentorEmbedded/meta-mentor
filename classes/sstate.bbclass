@@ -32,6 +32,7 @@ SSTATE_MANMACH ?= "${SSTATE_PKGARCH}"
 
 SSTATEPREINSTFUNCS ?= ""
 SSTATEPOSTINSTFUNCS ?= ""
+EXTRA_STAGING_FIXMES ?= ""
 
 # Specify dirs in which the shell function is executed and don't use ${B}
 # as default dirs to avoid possible race about ${B} with other task.
@@ -198,7 +199,7 @@ def sstate_install(ss, d):
     # Run the actual file install
     for state in ss['dirs']:
         if os.path.exists(state[1]):
-            oe.path.copytree(state[1], state[2])
+            oe.path.copyhardlinktree(state[1], state[2])
 
     for postinst in (d.getVar('SSTATEPOSTINSTFUNCS', True) or '').split():
         bb.build.exec_func(postinst, d)
@@ -256,10 +257,15 @@ def sstate_installpkg(ss, d):
         else:
             sstate_sed_cmd = "sed -i -e 's:FIXMESTAGINGDIRHOST:%s:g'" % (staging_host)
 
+        extra_staging_fixmes = d.getVar('EXTRA_STAGING_FIXMES', True) or ''
+        for fixmevar in extra_staging_fixmes.split():
+            fixme_path = d.getVar(fixmevar, True)
+            sstate_sed_cmd += " -e 's:FIXME_%s:%s:g'" % (fixmevar, fixme_path)
+
         # Add sstateinst to each filename in fixmepath, use xargs to efficiently call sed
         sstate_hardcode_cmd = "sed -e 's:^:%s:g' %s | xargs %s" % (sstateinst, fixmefn, sstate_sed_cmd)
 
-        print "Replacing fixme paths in sstate package: %s" % (sstate_hardcode_cmd)
+        bb.note("Replacing fixme paths in sstate package: %s" % (sstate_hardcode_cmd))
         subprocess.call(sstate_hardcode_cmd, shell=True)
 
         # Need to remove this or we'd copy it into the target directory and may 
@@ -390,6 +396,11 @@ def sstate_hardcode_path(d):
         sstate_grep_cmd = "grep -l -e '%s'" % (staging_host)
         sstate_sed_cmd = "sed -i -e 's:%s:FIXMESTAGINGDIRHOST:g'" % (staging_host)
 
+    extra_staging_fixmes = d.getVar('EXTRA_STAGING_FIXMES', True) or ''
+    for fixmevar in extra_staging_fixmes.split():
+        fixme_path = d.getVar(fixmevar, True)
+        sstate_sed_cmd += " -e 's:%s:FIXME_%s:g'" % (fixme_path, fixmevar)
+
     fixmefn =  sstate_builddir + "fixmepath"
 
     sstate_scan_cmd = d.getVar('SSTATE_SCAN_CMD', True)
@@ -406,14 +417,14 @@ def sstate_hardcode_path(d):
     # This has the side effect of making sure the vfs cache is hot
     sstate_hardcode_cmd = "%s | xargs %s | %s | xargs %s %s" % (sstate_scan_cmd, sstate_grep_cmd, sstate_filelist_cmd, xargs_no_empty_run_cmd, sstate_sed_cmd)
 
-    print "Removing hardcoded paths from sstate package: '%s'" % (sstate_hardcode_cmd)
+    bb.note("Removing hardcoded paths from sstate package: '%s'" % (sstate_hardcode_cmd))
     subprocess.call(sstate_hardcode_cmd, shell=True)
 
         # If the fixmefn is empty, remove it..
     if os.stat(fixmefn).st_size == 0:
         os.remove(fixmefn)
     else:
-        print "Replacing absolute paths in fixmepath file: '%s'" % (sstate_filelist_relative_cmd)
+        bb.note("Replacing absolute paths in fixmepath file: '%s'" % (sstate_filelist_relative_cmd))
         subprocess.call(sstate_filelist_relative_cmd, shell=True)
 
 def sstate_package(ss, d):
@@ -537,7 +548,11 @@ python sstate_task_postfunc () {
     sstate_install(shared_state, d)
     for intercept in shared_state['interceptfuncs']:
         bb.build.exec_func(intercept, d)
+    omask = os.umask(002)
+    if omask != 002:
+       bb.note("Using umask 002 (not %0o) for sstate packaging" % omask)
     sstate_package(shared_state, d)
+    os.umask(omask)
 }
   
 
@@ -701,7 +716,7 @@ def setscene_depvalid(task, taskdependees, notneeded, d):
 
         # This is due to the [depends] in useradd.bbclass complicating matters
         # The logic *is* reversed here due to the way hard setscene dependencies are injected
-        if taskdependees[task][1] == 'do_package' and taskdependees[dep][0].endswith(('shadow-native', 'shadow-sysroot', 'base-passwd')) and taskdependees[dep][1] == 'do_populate_sysroot':
+        if taskdependees[task][1] == 'do_package' and taskdependees[dep][0].endswith(('shadow-native', 'shadow-sysroot', 'base-passwd', 'pseudo-native')) and taskdependees[dep][1] == 'do_populate_sysroot':
             continue
 
         # Safe fallthrough default
