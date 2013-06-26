@@ -104,14 +104,6 @@ Changes pending upstream push
         - license-fixup.bbclass - this should go into license.bbclass. alters
           the manifest generation to always emit the licenses, even if they
           have no generic license files in DEPLOY_DIR/license
-        - package.bbclass
-            - makes license exclusion a note rather than a warning, as it's
-              doing what the configuration told it to do, not deviating from
-              it, which makes it appropriate for debug logs, but not for
-              warnings on the console
-            - ensures that license excluded files don't get accidentally
-              packaged. this fix is on upstream master, but should get pulled
-              into dylan also
     - avahi-ui:
         - use PACKAGECONFIG for python module support, inherit python classes.
           without these bits, it will happy mess with the build machine's
