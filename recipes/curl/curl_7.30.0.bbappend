@@ -1,5 +1,3 @@
-PR .= ".1"
-
 PACKAGECONFIG ?= "gnutls"
 PACKAGECONFIG_class-native ?= "openssl"
 PACKAGECONFIG_class-nativesdk ?= ""
