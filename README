@@ -109,9 +109,6 @@ Changes pending upstream push
           without these bits, it will happy mess with the build machine's
           python
         - package avahi_discover in PYTHON_SITEPACKAGES_DIR
-    - connman - add PACKAGECONFIG to control WISPr support. enabling wispr
-      support requires TLS, so this helps if one wants to reduce dependency on
-      gnutls, or if one just doesn't care about WISPr
     - curl: allow selection of openssl vs gnutls
     - gconf: inherit gettext
     - gnome-disk-utility
