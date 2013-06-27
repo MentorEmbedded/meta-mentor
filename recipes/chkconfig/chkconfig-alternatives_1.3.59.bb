@@ -48,4 +48,4 @@ do_install_append_linuxstdbase() {
 	rm -rf ${D}${libdir}/lsb
 }
 
-BBCLASSEXTEND += "native"
+BBCLASSEXTEND += "native nativesdk"
