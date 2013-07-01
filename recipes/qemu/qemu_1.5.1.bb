@@ -1,6 +1,6 @@
 require recipes-devtools/qemu/qemu.inc
 
-FILESPATH =. "${COREBASE}/recipes-devtools/qemu/files:"
+FILESPATH =. "${COREBASE}/meta/recipes-devtools/qemu/files:"
 
 LIC_FILES_CHKSUM = "file://COPYING;md5=441c28d2cf86e15a37fa47e15a72fbac \
                     file://COPYING.LIB;endline=24;md5=c04def7ae38850e7d3ef548588159913"
