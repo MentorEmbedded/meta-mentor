@@ -36,8 +36,6 @@ do_install () {
     install -d ${D}${mandir}/man8
     install -m 0644 sbin/update-ca-certificates.8 ${D}${mandir}/man8/
 
-    sed -i -e 's,/etc/,${sysconfdir}/,; s,/usr/share/,${datadir}/,; s,/usr/local,${prefix}/local,' ${D}${sbindir}/update-ca-certificates ${D}${mandir}/man8/update-ca-certificates.8
-
     install -d ${D}${sysconfdir}
     {
         echo "# Lines starting with # will be ignored"
@@ -46,6 +44,14 @@ do_install () {
         find ${D}${datadir}/ca-certificates -type f -name '*.crt' | \
             sed 's,^${D}${datadir}/ca-certificates/,,'
     } >${D}${sysconfdir}/ca-certificates.conf
+}
+
+do_install_class-target () {
+    sed -i -e 's,/etc/,${sysconfdir}/,' \
+           -e 's,/usr/share/,${datadir}/,' \
+           -e 's,/usr/local,${prefix}/local,' \
+        ${D}${sbindir}/update-ca-certificates \
+        ${D}${mandir}/man8/update-ca-certificates.8
 }
 
 pkg_postinst_${PN} () {
