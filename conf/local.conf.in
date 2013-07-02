@@ -128,7 +128,7 @@ SSTATE_MIRROR_SITES += "file://${MELDIR}/cached-binaries"
 # you can build the SDK packages for architectures other than the machine you are
 # running the build on (i.e. building i686 packages on an x86_64 host._
 # Supported values are i686 and x86_64
-#SDKMACHINE ?= "i686"
+SDKMACHINE ?= "i686"
 
 # The following is a list of additional classes to use when building which
 # enable extra features. Some available options which can be included in this variable
