@@ -14,7 +14,7 @@ LIC_FILES_CHKSUM = "\
     file://bfd/COPYING;md5=77a30f8e524e777bf2078eb691ef3dd6 \
 "
 SRC_URI = "\
-    ${KERNELORG_MIRROR}/pub/linux/devel/binutils/binutils-${PV}.tar.bz2 \
+    ${KERNELORG_MIRROR}/linux/devel/binutils/binutils-${PV}.tar.bz2 \
     file://binutils-2.16.91.0.6-objcopy-rename-errorcode.patch \
     file://110-arm-eabi-conf.patch \
 "
