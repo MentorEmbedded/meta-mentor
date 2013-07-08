@@ -5,19 +5,19 @@ Subject: [PATCH] Update ARM syscalls instrumentation to version 3.5.6
 
 Signed-off-by: Andrew Gabbasov <andrew_gabbasov@mentor.com>
 ---
- .../syscalls/2.6.38/arm-32-syscalls-2.6.38         |  285 ---
- .../syscalls/3.5.6/arm-32-syscalls-3.5.6           |  295 +++
- .../headers/arm-32-syscalls-2.6.38_integers.h      | 1145 ----------
- .../arm-32-syscalls-2.6.38_integers_override.h     |   68 -
- .../headers/arm-32-syscalls-2.6.38_pointers.h      | 2184 -------------------
- .../arm-32-syscalls-2.6.38_pointers_override.h     |   39 -
- .../headers/arm-32-syscalls-3.5.6_integers.h       | 1169 ++++++++++
- .../arm-32-syscalls-3.5.6_integers_override.h      |   70 +
- .../headers/arm-32-syscalls-3.5.6_pointers.h       | 2280 ++++++++++++++++++++
- .../arm-32-syscalls-3.5.6_pointers_override.h      |   39 +
- .../syscalls/headers/syscalls_integers.h           |    2 +-
- .../syscalls/headers/syscalls_pointers.h           |    2 +-
- 12 files changed, 3855 insertions(+), 3723 deletions(-)
+ instrumentation/syscalls/2.6.38/arm-32-syscalls-2.6.38                      |  285 -
+ instrumentation/syscalls/3.5.6/arm-32-syscalls-3.5.6                        |  295 +
+ instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers.h          | 1145 -----
+ instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers_override.h |   52 
+ instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers.h          | 2184 ---------
+ instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers_override.h |   39 
+ instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_integers.h           | 1169 +++++
+ instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_integers_override.h  |   70 
+ instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers.h           | 2280 ++++++++++
+ instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers_override.h  |   39 
+ instrumentation/syscalls/headers/syscalls_integers.h                        |    2 
+ instrumentation/syscalls/headers/syscalls_pointers.h                        |    2 
+ 12 files changed, 3855 insertions(+), 3707 deletions(-)
  delete mode 100644 instrumentation/syscalls/2.6.38/arm-32-syscalls-2.6.38
  create mode 100644 instrumentation/syscalls/3.5.6/arm-32-syscalls-3.5.6
  delete mode 100644 instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers.h
@@ -29,10 +29,7 @@ Signed-off-by: Andrew Gabbasov <andrew_gabbasov@mentor.com>
  create mode 100644 instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers.h
  create mode 100644 instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers_override.h
 
-diff --git a/instrumentation/syscalls/2.6.38/arm-32-syscalls-2.6.38 b/instrumentation/syscalls/2.6.38/arm-32-syscalls-2.6.38
-deleted file mode 100644
-index 89194e2..0000000
---- a/instrumentation/syscalls/2.6.38/arm-32-syscalls-2.6.38
+--- git.orig/instrumentation/syscalls/2.6.38/arm-32-syscalls-2.6.38
 +++ /dev/null
 @@ -1,285 +0,0 @@
 -syscall sys_restart_syscall nr 0 nbargs 0 types: () args: ()
@@ -320,11 +317,8 @@ index 89194e2..0000000
 -syscall sys_recvmmsg nr 365 nbargs 5 types: (int, struct mmsghdr *, unsigned int, unsigned int, struct timespec *) args: (fd, mmsg, vlen, flags, timeout)
 -syscall sys_accept4 nr 366 nbargs 4 types: (int, struct sockaddr *, int *, int) args: (fd, upeer_sockaddr, upeer_addrlen, flags)
 -syscall sys_prlimit64 nr 369 nbargs 4 types: (pid_t, unsigned int, const struct rlimit64 *, struct rlimit64 *) args: (pid, resource, new_rlim, old_rlim)
-diff --git a/instrumentation/syscalls/3.5.6/arm-32-syscalls-3.5.6 b/instrumentation/syscalls/3.5.6/arm-32-syscalls-3.5.6
-new file mode 100644
-index 0000000..0f02e0f
 --- /dev/null
-+++ b/instrumentation/syscalls/3.5.6/arm-32-syscalls-3.5.6
++++ git/instrumentation/syscalls/3.5.6/arm-32-syscalls-3.5.6
 @@ -0,0 +1,295 @@
 +syscall sys_restart_syscall nr 0 nbargs 0 types: () args: ()
 +syscall sys_exit nr 1 nbargs 1 types: (int) args: (error_code)
@@ -621,10 +615,7 @@ index 0000000..0f02e0f
 +syscall sys_setns nr 375 nbargs 2 types: (int, int) args: (fd, nstype)
 +syscall sys_process_vm_readv nr 376 nbargs 6 types: (pid_t, const struct iovec *, unsigned long, const struct iovec *, unsigned long, unsigned long) args: (pid, lvec, liovcnt, rvec, riovcnt, flags)
 +syscall sys_process_vm_writev nr 377 nbargs 6 types: (pid_t, const struct iovec *, unsigned long, const struct iovec *, unsigned long, unsigned long) args: (pid, lvec, liovcnt, rvec, riovcnt, flags)
-diff --git a/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers.h b/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers.h
-deleted file mode 100644
-index 9419331..0000000
---- a/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers.h
+--- git.orig/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers.h
 +++ /dev/null
 @@ -1,1145 +0,0 @@
 -/* THIS FILE IS AUTO-GENERATED. DO NOT EDIT */
@@ -1772,84 +1763,7 @@ index 9419331..0000000
 -#endif
 -
 -#endif /* CREATE_SYSCALL_TABLE */
-diff --git a/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers_override.h b/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers_override.h
-deleted file mode 100644
-index c23f2d3..0000000
---- a/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers_override.h
-+++ /dev/null
-@@ -1,68 +0,0 @@
--
--
--#define OVERRIDE_TABLE_32_sys_arm_fadvise64_64
--#define OVERRIDE_TABLE_32_sys_sync_file_range2
--#define OVERRIDE_TABLE_32_sys_set_tls
--
--#ifndef CREATE_SYSCALL_TABLE
--
--SC_TRACE_EVENT(sys_arm_fadvise64_64,
--	TP_PROTO(int fd, int advice, loff_t offset, loff_t len),
--	TP_ARGS(fd, advice, offset, len),
--	TP_STRUCT__entry(
--		__field_hex(int, fd)
--		__field_hex(int, advice)
--		__field_hex(loff_t, offset)
--		__field_hex(loff_t, len)),
--	TP_fast_assign(
--		tp_assign(fd, fd)
--		tp_assign(advice, advice)
--		tp_assign(offset, offset)
--		tp_assign(len, len)),
--	TP_printk()
--)
--
--SC_TRACE_EVENT(sys_sync_file_range2,
--	TP_PROTO(int fd, loff_t offset, loff_t nbytes, unsigned int flags),
--	TP_ARGS(fd, offset, nbytes, flags),
--	TP_STRUCT__entry(
--		__field_hex(int, fd)
--		__field_hex(loff_t, offset)
--		__field_hex(loff_t, nbytes)
--		__field_hex(unsigned int, flags)),
--	TP_fast_assign(
--		tp_assign(fd, fd)
--		tp_assign(offset, offset)
--		tp_assign(nbytes, nbytes)
--		tp_assign(flags, flags)),
--	TP_printk()
--)
--
--SC_TRACE_EVENT(sys_set_tls,
--	TP_PROTO(unsigned int tid, unsigned long tls),
--	TP_ARGS(tid, tls),
--	TP_STRUCT__entry(
--		__field(unsigned int, tid)
--		__field_hex(unsigned int, tls)),
--	TP_fast_assign(
--		tp_assign(tid, tid)
--		tp_assign(tls, tls)),
--	TP_printk()
--)
--
--#else	/* CREATE_SYSCALL_TABLE */
--
--#define OVVERRIDE_TABLE_32_sys_mmap
--TRACE_SYSCALL_TABLE(sys_mmap, sys_mmap, 90, 6) 
--
--#define OVERRIDE_TABLE_32_sys_arm_fadvise64_64
--TRACE_SYSCALL_TABLE(sys_arm_fadvise64_64, sys_arm_fadvise64_64, 270, 4)
--#define OVERRIDE_TABLE_32_sys_sync_file_range2
--TRACE_SYSCALL_TABLE(sys_sync_file_range2, sys_sync_file_range2, 341, 4)
--#define OVERRIDE_TABLE_32_sys_set_tls
--TRACE_SYSCALL_TABLE(sys_set_tls, sys_set_tls, 0xf0005, 2)
--
--
--#endif /* CREATE_SYSCALL_TABLE */
--
--
-diff --git a/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers.h b/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers.h
-deleted file mode 100644
-index fc3d8a1..0000000
---- a/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers.h
+--- git.orig/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers.h
 +++ /dev/null
 @@ -1,2184 +0,0 @@
 -/* THIS FILE IS AUTO-GENERATED. DO NOT EDIT */
@@ -4036,10 +3950,7 @@ index fc3d8a1..0000000
 -#endif
 -
 -#endif /* CREATE_SYSCALL_TABLE */
-diff --git a/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers_override.h b/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers_override.h
-deleted file mode 100644
-index 65131bb..0000000
---- a/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers_override.h
+--- git.orig/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_pointers_override.h
 +++ /dev/null
 @@ -1,39 +0,0 @@
 -
@@ -4081,11 +3992,8 @@ index 65131bb..0000000
 -#endif /* CREATE_SYSCALL_TABLE */
 -
 -
-diff --git a/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_integers.h b/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_integers.h
-new file mode 100644
-index 0000000..4123feb
 --- /dev/null
-+++ b/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_integers.h
++++ git/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_integers.h
 @@ -0,0 +1,1169 @@
 +/* THIS FILE IS AUTO-GENERATED. DO NOT EDIT */
 +#ifndef CREATE_SYSCALL_TABLE
@@ -5256,11 +5164,8 @@ index 0000000..4123feb
 +#endif
 +
 +#endif /* CREATE_SYSCALL_TABLE */
-diff --git a/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_integers_override.h b/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_integers_override.h
-new file mode 100644
-index 0000000..cc4a10e
 --- /dev/null
-+++ b/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_integers_override.h
++++ git/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_integers_override.h
 @@ -0,0 +1,70 @@
 +
 +
@@ -5332,11 +5237,8 @@ index 0000000..cc4a10e
 +#endif /* CREATE_SYSCALL_TABLE */
 +
 +
-diff --git a/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers.h b/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers.h
-new file mode 100644
-index 0000000..f6b5086
 --- /dev/null
-+++ b/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers.h
++++ git/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers.h
 @@ -0,0 +1,2280 @@
 +/* THIS FILE IS AUTO-GENERATED. DO NOT EDIT */
 +#ifndef CREATE_SYSCALL_TABLE
@@ -7618,11 +7520,8 @@ index 0000000..f6b5086
 +#endif
 +
 +#endif /* CREATE_SYSCALL_TABLE */
-diff --git a/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers_override.h b/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers_override.h
-new file mode 100644
-index 0000000..65131bb
 --- /dev/null
-+++ b/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers_override.h
++++ git/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers_override.h
 @@ -0,0 +1,39 @@
 +
 +#define OVERRIDE_TABLE_32_sys_mmap2
@@ -7663,10 +7562,8 @@ index 0000000..65131bb
 +#endif /* CREATE_SYSCALL_TABLE */
 +
 +
-diff --git a/instrumentation/syscalls/headers/syscalls_integers.h b/instrumentation/syscalls/headers/syscalls_integers.h
-index 002130a..d1c3ef3 100644
---- a/instrumentation/syscalls/headers/syscalls_integers.h
-+++ b/instrumentation/syscalls/headers/syscalls_integers.h
+--- git.orig/instrumentation/syscalls/headers/syscalls_integers.h
++++ git/instrumentation/syscalls/headers/syscalls_integers.h
 @@ -7,5 +7,5 @@
  #endif
  
@@ -7674,10 +7571,8 @@ index 002130a..d1c3ef3 100644
 -#include "arm-32-syscalls-2.6.38_integers.h"
 +#include "arm-32-syscalls-3.5.6_integers.h"
  #endif
-diff --git a/instrumentation/syscalls/headers/syscalls_pointers.h b/instrumentation/syscalls/headers/syscalls_pointers.h
-index 11b4979..2be417e 100644
---- a/instrumentation/syscalls/headers/syscalls_pointers.h
-+++ b/instrumentation/syscalls/headers/syscalls_pointers.h
+--- git.orig/instrumentation/syscalls/headers/syscalls_pointers.h
++++ git/instrumentation/syscalls/headers/syscalls_pointers.h
 @@ -7,5 +7,5 @@
  #endif
  
@@ -7685,6 +7580,58 @@ index 11b4979..2be417e 100644
 -#include "arm-32-syscalls-2.6.38_pointers.h"
 +#include "arm-32-syscalls-3.5.6_pointers.h"
  #endif
--- 
-1.7.10.4
-
+--- git.orig/instrumentation/syscalls/headers/arm-32-syscalls-2.6.38_integers_override.h
++++ /dev/null
+@@ -1,52 +0,0 @@
+-
+-
+-#define OVERRIDE_TABLE_32_sys_arm_fadvise64_64
+-#define OVERRIDE_TABLE_32_sys_sync_file_range2
+-
+-#ifndef CREATE_SYSCALL_TABLE
+-
+-SC_TRACE_EVENT(sys_arm_fadvise64_64,
+-	TP_PROTO(int fd, int advice, loff_t offset, loff_t len),
+-	TP_ARGS(fd, advice, offset, len),
+-	TP_STRUCT__entry(
+-		__field_hex(int, fd)
+-		__field_hex(int, advice)
+-		__field_hex(loff_t, offset)
+-		__field_hex(loff_t, len)),
+-	TP_fast_assign(
+-		tp_assign(fd, fd)
+-		tp_assign(advice, advice)
+-		tp_assign(offset, offset)
+-		tp_assign(len, len)),
+-	TP_printk()
+-)
+-
+-SC_TRACE_EVENT(sys_sync_file_range2,
+-	TP_PROTO(int fd, loff_t offset, loff_t nbytes, unsigned int flags),
+-	TP_ARGS(fd, offset, nbytes, flags),
+-	TP_STRUCT__entry(
+-		__field_hex(int, fd)
+-		__field_hex(loff_t, offset)
+-		__field_hex(loff_t, nbytes)
+-		__field_hex(unsigned int, flags)),
+-	TP_fast_assign(
+-		tp_assign(fd, fd)
+-		tp_assign(offset, offset)
+-		tp_assign(nbytes, nbytes)
+-		tp_assign(flags, flags)),
+-	TP_printk()
+-)
+-
+-#else	/* CREATE_SYSCALL_TABLE */
+-
+-#define OVVERRIDE_TABLE_32_sys_mmap
+-TRACE_SYSCALL_TABLE(sys_mmap, sys_mmap, 90, 6)
+-
+-#define OVERRIDE_TABLE_32_sys_arm_fadvise64_64
+-TRACE_SYSCALL_TABLE(sys_arm_fadvise64_64, sys_arm_fadvise64_64, 270, 4)
+-#define OVERRIDE_TABLE_32_sys_sync_file_range2
+-TRACE_SYSCALL_TABLE(sys_sync_file_range2, sys_sync_file_range2, 341, 4)
+-
+-#endif /* CREATE_SYSCALL_TABLE */
+-
+-
