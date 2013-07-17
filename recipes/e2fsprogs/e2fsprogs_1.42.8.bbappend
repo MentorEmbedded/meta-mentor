@@ -1,5 +1,3 @@
-PRINC := "${@int(PRINC) + 2}"
-
 # The e2fsprogs recipe has the main package depending upon blkid and badblocks
 # for compatibility, but we know we aren't bitten by that compatibility issue,
 # so we drop that dependency.
