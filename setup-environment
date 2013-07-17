@@ -109,7 +109,11 @@ mel_setup () {
         MELDIR=$(dirname $layerdir)
     fi
 
-    PATH="$layerdir/scripts:$MELDIR/poky/scripts:$MELDIR/poky/bitbake/bin:$PATH"
+    OEROOT=$MELDIR/poky
+    . $MELDIR/poky/scripts/oe-buildenv-internal $BUILDDIR
+    unset OEROOT
+
+    PATH="$layerdir/scripts:$PATH"
     PATH="$(printf "$PATH" | awk -v RS=: -v ORS=: '!arr[$0]++' | sed 's/::/:/g; s/:$//; s/^://')"
 
     MACHINE=$1
@@ -201,7 +205,7 @@ else
     fi
 
     unset OPTIONALLAYERS EXTRAMELLAYERS
-    unset MACHINE BUILDDIR MELDIR force_overwrite layerdir
+    unset MACHINE MELDIR force_overwrite layerdir
     unset -f mel_setup mel_usage mel_prompt_machine mel_list_all_machines mel_abspath
     unset -f run_builddir
 fi
