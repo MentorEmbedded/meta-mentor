@@ -194,12 +194,13 @@ else
     fi
     layerdir=$(mel_abspath $layerdir)
     export OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
+    export EXTRAMELLAYERS="${EXTRAMELLAYERS:-openembedded-layer networking toolchain-layer sourcery}"
     mel_setup "$@"
     if [ -e $BUILDDIR/conf/local.conf ]; then
         sed -i -e "s/^DISTRO.*/DISTRO = 'mel'/" $BUILDDIR/conf/local.conf
     fi
 
-    unset OPTIONALLAYERS
+    unset OPTIONALLAYERS EXTRAMELLAYERS
     unset MACHINE BUILDDIR MELDIR force_overwrite layerdir
     unset -f mel_setup mel_usage mel_prompt_machine mel_list_all_machines mel_abspath
     unset -f run_builddir

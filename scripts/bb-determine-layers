@@ -10,7 +10,7 @@ from collections import defaultdict
 
 
 glob_default = './*/:./*/*/:{scriptdir}/../../*/:{scriptdir}/../../*/*/'
-layers_default = 'sourcery mentor toolchain-layer openembedded-layer core yocto networking'
+layers_default = 'core yocto mentor'
 priority_overrides = {
     'openembedded-layer': 1,
 }
