@@ -33,10 +33,10 @@ When sending a series, please use poky/meta/scripts/create-pull-request (aka
 oe-core/scripts/create-pull-request).
 
 Content Review
---------------
+==============
 
 Distro bits
-===========
+-----------
 
     - base-files: issue files
     - netbase: adjusted default interfaces file
@@ -79,7 +79,7 @@ Distro bits
       needed by our release process.
 
 Added recipes
-=============
+-------------
 
     - archive-release: this creates tarballs of the individual layers,
       downloads, shared state, images, etc for release or for inclusion in
@@ -98,7 +98,7 @@ Added recipes
     - udev 164: old udev for machines on old kernels
 
 Changes pending upstream push
-=============================
+-----------------------------
 
     - classes
         - license-fixup.bbclass - this should go into license.bbclass. alters
@@ -141,7 +141,7 @@ Changes pending upstream push
       what's shipped
 
 Tracing
-=======
+-------
 
 All of these should be moved into meta-tracing:
 
@@ -153,12 +153,12 @@ All of these should be moved into meta-tracing:
       additional probes
 
 DSO Link Change
-===============
+---------------
 
     - shared-mime-info
 
 Disabled parallel make / install
-================================
+--------------------------------
 
     - gettext
     - libtool
@@ -166,7 +166,7 @@ Disabled parallel make / install
     - openssh
 
 Remanant PR/PRINC bumps
-====================
+-----------------------
 
 These can be dropped as soon as the recipe PV is bumped, but are kept around
 for now to avoid the package versions going backwards.
@@ -183,7 +183,7 @@ for now to avoid the package versions going backwards.
     - wireless-tools
 
 Misc
-====
+----
 
     - busybox: dep on meta-oe's fbset-modes if CONFIG_FBSET=y
     - binutils-libs, oprofile: add and use more minimal binutils recipe for
