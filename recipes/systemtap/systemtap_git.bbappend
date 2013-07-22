@@ -5,3 +5,5 @@ SRC_URI += " file://include_linux_binfmts_h.patch"
 FILESPATH = "${@base_set_filespath([ "${FILE_DIRNAME}/${PF}", "${FILE_DIRNAME}/${P}", "${FILE_DIRNAME}/${PN}", "${FILE_DIRNAME}/${BP}", "${FILE_DIRNAME}/${BPN}", "${FILE_DIRNAME}/files", "${FILE_DIRNAME}" ], d)}"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/systemtap:"
+
+LDFLAGS += "-lpthread"
