@@ -242,6 +242,6 @@ CONF_VERSION = "1"
 
 # To build The linux-imx kernel from a different github repository,
 # uncomment the appropriate lines below and adjust as needed.
-#KVERSION="3.5.7.12"
+#KVERSION="3.5"
 #SRC_URI_pn-linux-imx = "git://github.com/MentorEmbedded/linux-meibp.git;branch=staging-35;protocol=ssh;user=git"
 #SRCREV_pn-linux-imx = "${AUTOREV}"
