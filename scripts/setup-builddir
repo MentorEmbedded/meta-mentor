@@ -169,6 +169,6 @@ echo '"' >> $BUILDDIR/conf/bblayers.conf
 
 if [ ! -e $BUILDDIR/conf/site.conf -a -e $TEMPLATEDIR/site.conf ]; then
     echo "You had no site.conf file, but one exists in the template directory."
-    echo "This file has been copied into your build directory."
-    cp $TEMPLATEDIR/site.conf $BUILDDIR/conf/site.conf
+    echo "This file has been symlinked into your build directory."
+    ln -sf $TEMPLATEDIR/site.conf $BUILDDIR/conf/site.conf
 fi
