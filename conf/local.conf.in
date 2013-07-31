@@ -26,7 +26,7 @@ MACHINE ??= "qemux86"
 # The CORE_IMAGE_EXTRA_INSTALL variable allows extra individual packages to be
 # added to any of the "core" images (e.g. core-image-base,
 # core-image-minimal).
-#CORE_IMAGE_EXTRA_INSTALL = "nano psplash"
+#CORE_IMAGE_EXTRA_INSTALL = "nano psplash gdb"
 
 # The EXTRA_IMAGE_FEATURES variable allows groups of packages to be added to
 # the generated images. Some of these options are added to certain image types
@@ -71,7 +71,10 @@ EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-lt
 # Uncomment this to enable inclusion of gdbserver in the codebench-debug
 # packagegroup / image feature even when GPLv3 is in INCOMPATIBLE_LICENSE, or
 # using a distro which sets it that way (atp).
-#ALLOW_GPLV3_GDBSERVER = "1"
+#ALLOW_GPLV3_DEBUG_TOOLS = "1"
+
+# Uncomment this to enable separate archive containing debug symbols and tools
+#SEPARATE_ARCHIVE_DEBUG = "1"
 
 # User features lets you manipulate the distro features. To add a distro
 # feature, simply add it to USER_FEATURES. To remove, prefix it with ~.
