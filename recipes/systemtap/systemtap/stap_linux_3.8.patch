@@ -1,0 +1,70 @@
+diff -Naur old/tapset/linux/i386/syscalls.stp new/tapset/linux/i386/syscalls.stp
+--- old/tapset/linux/i386/syscalls.stp	2013-08-05 12:41:12.000000000 +1100
++++ new/tapset/linux/i386/syscalls.stp	2013-08-05 15:15:19.000000000 +1100
+@@ -143,6 +143,10 @@
+ 		uoss_uaddr = @choose_defined($uoss, $regs->cx)
+ 		regs = $regs
+ 	}
++	else if (@defined($uss) && @defined($uoss)) {
++		uss_uaddr = $uss
++		uoss_uaddr = $uoss
++	}
+ 	else if (@defined($bx)) {	# kernels < "2.6.30"
+ 		uss_uaddr = $bx
+ 		# Make sure the register value didn't get sign extended.
+diff -Naur old/tapset/linux/syscalls.stp new/tapset/linux/syscalls.stp
+--- old/tapset/linux/syscalls.stp	2013-08-05 12:41:12.000000000 +1100
++++ new/tapset/linux/syscalls.stp	2013-08-05 15:18:15.000000000 +1100
+@@ -1023,7 +1023,6 @@
+ # fork _______________________________________________________
+ # long do_fork(unsigned long clone_flags,
+ #	unsigned long stack_start,
+-#	struct pt_regs *regs,
+ #	unsigned long stack_size,
+ #	int __user *parent_tidptr,
+ #	int __user *child_tidptr)
+@@ -1036,7 +1035,7 @@
+ 	parent_tid_uaddr = $parent_tidptr
+ 	child_tid_uaddr = $child_tidptr
+ 
+-	if (!__is_user_regs(regs)) {
++	if (!(clone_flags & 0x800000)) {
+ 		name = "fork_kernel_thread"
+ 		argstr = __fork_flags(clone_flags)
+ 	} else if (clone_flags & 17)
+@@ -2351,7 +2350,7 @@
+ #            unsigned long offset_high,
+ #            unsigned long offset_low,
+ #            loff_t __user * result,
+-#            unsigned int origin)
++#            unsigned int whence)
+ probe syscall.llseek = kernel.function("sys_llseek").call ?
+ {
+ 	name = "llseek"
+@@ -2360,7 +2359,7 @@
+ 	offset_low = $offset_low
+ 	result_uaddr = $result
+ 	whence = $origin
+-	whence_str = _seek_whence_str($origin)
++	whence_str = _seek_whence_str($whence)
+ 	argstr = sprintf("%d, 0x%x, 0x%x, %p, %s", $fd, $offset_high,
+ 		$offset_low, $result, whence_str)
+ }
+@@ -2412,7 +2411,7 @@
+ }
+ 
+ # lseek ______________________________________________________
+-# off_t sys_lseek(unsigned int fd, off_t offset, unsigned int origin)
++# off_t sys_lseek(unsigned int fd, off_t offset, unsigned int whence)
+ probe syscall.lseek = kernel.function("sys_lseek").call
+ {
+ 	name = "lseek"
+@@ -2420,7 +2419,7 @@
+ #	offset = __int32($offset)
+ 	offset = $offset
+ 	whence = $origin
+-	whence_str = _seek_whence_str($origin)
++	whence_str = _seek_whence_str($whence)
+ 	argstr = sprintf("%d, %d, %s", $fd, offset, whence_str)
+ }
+ probe syscall.lseek.return = kernel.function("sys_lseek").return
