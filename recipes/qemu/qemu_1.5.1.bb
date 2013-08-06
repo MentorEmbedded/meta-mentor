@@ -1,5 +1,7 @@
 require recipes-devtools/qemu/qemu.inc
 
+DEPENDS += "gnutls"
+
 FILESPATH =. "${COREBASE}/meta/recipes-devtools/qemu/files:"
 
 LIC_FILES_CHKSUM = "file://COPYING;md5=441c28d2cf86e15a37fa47e15a72fbac \
