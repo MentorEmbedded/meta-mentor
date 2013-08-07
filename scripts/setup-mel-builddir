@@ -208,6 +208,10 @@ setup_builddir () {
         fi
     fi
 
+    if [ -z "$MACHINE" ]; then
+        MACHINE=$(sed -n 's/^MACHINE ?*= "\([^"]*\)"/\1/p' $BUILDDIR/conf/local.conf)
+    fi
+
     if [ -n "$MACHINE" ]; then
         PATH="$OEROOT/scripts:$OEROOT/bitbake/bin:$PATH" configure_for_machine "$BUILDDIR/conf"
     fi
