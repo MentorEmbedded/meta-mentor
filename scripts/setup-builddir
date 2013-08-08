@@ -157,7 +157,7 @@ sed -i -n '/^BBLAYERS/{ :start; /\\$/{n; b start}; d; }; p' $BUILDDIR/conf/bblay
 
 echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
 layersfile=$(mktemp setup-builddir.XXXXXX)
-$(dirname $0)/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -o "$OPTIONALLAYERS" $MACHINE >$layersfile
+$(dirname $0)/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" $MACHINE >$layersfile
 if [ $? -ne 0 ]; then
     rm -f $layersfile
     echo >&2 "Error in execution of bb-determine-layers, aborting"

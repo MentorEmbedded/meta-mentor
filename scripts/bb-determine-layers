@@ -10,7 +10,7 @@ from collections import defaultdict
 
 
 glob_default = './*/:./*/*/:{scriptdir}/../../*/:{scriptdir}/../../*/*/'
-layers_default = 'sourcery mentor toolchain-layer openembedded-layer core yocto networking'
+layers_default = 'core yocto mentor'
 priority_overrides = {
     'openembedded-layer': 1,
 }
@@ -179,7 +179,7 @@ def resolve_dependencies(layers_by_name):
     return missing_dependencies
 
 
-def get_configured_layers(all_layers, optional_layer_names, missing_deps, machine):
+def get_configured_layers(all_layers, base_layer_names, optional_layer_names, missing_deps, machine):
     optional = set()
     configured_layers = set()
     machine_layers = set()
@@ -192,6 +192,8 @@ def get_configured_layers(all_layers, optional_layer_names, missing_deps, machin
             configured_layers.add(layer)
             for dep in layer.depends:
                 configured_layers.add(dep)
+        elif layer.name in base_layer_names:
+            configured_layers.add(layer)
         elif layer.name in optional_layer_names:
             optional.add(layer)
             configured_layers.add(layer)
@@ -199,16 +201,26 @@ def get_configured_layers(all_layers, optional_layer_names, missing_deps, machin
     if not machine_layers:
         raise Exception("No layer found for machine '{0}'".format(machine))
 
+    for base_layer_name in base_layer_names:
+        for layer in configured_layers:
+            if layer.name == base_layer_name:
+                break
+        else:
+            raise Exception("Unable to locate base layer '{0}".format(base_layer_name))
+
     for layer in list(optional):
         if not layer.missingdeps:
+            # Add available dependencies of optional layers
             for dep in layer.depends:
                 if dep not in configured_layers:
-                    break
-            else:
-                continue
+                    configured_layers.add(dep)
+                    optional.add(dep)
+            continue
 
+        # Don't include optional layers with missing dependencies
         configured_layers.remove(layer)
         optional.remove(layer)
+
 
     for layer in list(configured_layers):
         if layer in missing_deps:
@@ -256,8 +268,6 @@ def print_layers(cmdline_opts):
                 all_layers |= set(layers)
 
     for layer in all_layers:
-        if not layer.pattern:
-            sys.stderr.write("Warning: layer '%s' does not define BBFILE_PATTERN\n" % layer.name)
         priority_override = priority_overrides.get(layer.name)
         if priority_override is not None:
             layer.priority = priority_override
@@ -272,16 +282,9 @@ def print_layers(cmdline_opts):
 
     with status("Determining layers to include for MACHINE '{0}'".format(opts.machine)):
         try:
-            configured_layers, optional = get_configured_layers(all_layers, opts.optional_layers, missing_deps, opts.machine)
+            configured_layers, optional = get_configured_layers(all_layers, opts.layers, opts.optional_layers, missing_deps, opts.machine)
         except Exception as exc:
             sys.exit('ERROR: {0}'.format(exc))
-
-        for base_layer_name in opts.layers:
-            try:
-                base_layer = layers_by_name[base_layer_name]
-            except KeyError:
-                sys.exit("Unable to locate layer path for base layer '{0}'".format(base_layer_name))
-            configured_layers.add(base_layer)
 
     for layer in optional:
         sys.stderr.write("Layer '{0}' was detected, including in configuration\n".format(layer.name))
