@@ -66,7 +66,7 @@ MACHINE ??= "qemux86"
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
 # details.
 
-EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-lttng"
+EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-lttng read-only-rootfs"
 
 # Uncomment this to enable inclusion of gdbserver in the codebench-debug
 # packagegroup / image feature even when GPLv3 is in INCOMPATIBLE_LICENSE, or
@@ -220,7 +220,7 @@ CONF_VERSION = "1"
 # When building for mx6q, uncomment the following line to accept the EULA-protected
 # FSL proprietary components.  If any FSL proprietary components are required for the
 # build, the build will fail if this is not set.
-#ACCEPT_FSL_EULA = "1"
+ACCEPT_FSL_EULA = "1"
 
 # To build U-Boot from a different github repository, uncomment the
 # appropriate lines below and adjust as needed.
