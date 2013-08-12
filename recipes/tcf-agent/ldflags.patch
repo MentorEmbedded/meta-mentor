@@ -1,0 +1,32 @@
+diff -rub git.orig/Makefile git/Makefile
+--- git.orig/Makefile	2013-06-02 12:56:42.024683644 -0700
++++ git/Makefile	2013-06-02 12:57:41.272683017 -0700
+@@ -29,17 +29,17 @@
+ 	$(RANLIB)
+ 
+ $(BINDIR)/agent$(EXTEXE): $(BINDIR)/main/main$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB)
+-	$(CC) $(CFLAGS) -o $@ $(BINDIR)/main/main$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB) $(LIBS)
++	$(CC) $(CFLAGS) -o $@ $(BINDIR)/main/main$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB) $(LIBS) $(LDFLAGS)
+ 
+ $(BINDIR)/client$(EXTEXE): $(BINDIR)/main/main_client$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB)
+-	$(CC) $(CFLAGS) -o $@ $(BINDIR)/main/main_client$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB) $(LIBS)
++	$(CC) $(CFLAGS) -o $@ $(BINDIR)/main/main_client$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB) $(LIBS) $(LDFLAGS)
+ 
+ $(BINDIR)/tcflua$(EXTEXE): $(BINDIR)/main/main_lua$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB)
+-	$(CC) $(CFLAGS) $(EXPORT_DYNAMIC) -o $@ $(BINDIR)/main/main_lua$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB) $(LUALIBS)
++	$(CC) $(CFLAGS) $(EXPORT_DYNAMIC) -o $@ $(BINDIR)/main/main_lua$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB) $(LUALIBS) $(LDFLAGS)
+ 
+ $(BINDIR)/tcfreg$(EXTEXE): $(BINDIR)/main/main_reg$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB)
+-	$(CC) $(CFLAGS) -o $@ $(BINDIR)/main/main_reg$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB) $(LIBS)
++	$(CC) $(CFLAGS) -o $@ $(BINDIR)/main/main_reg$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB) $(LIBS) $(LDFLAGS)
+ 
+ $(BINDIR)/valueadd$(EXTEXE): $(BINDIR)/main/main_va$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB)
+-	$(CC) $(CFLAGS) -o $@ $(BINDIR)/main/main_va$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB) $(LIBS)
++	$(CC) $(CFLAGS) -o $@ $(BINDIR)/main/main_va$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB) $(LIBS) $(LDFLAGS)
+ 
+$(BINDIR)/tcflog$(EXTEXE): $(BINDIR)/main/main_log$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB)
+-	$(CC) $(CFLAGS) -o $@ $(BINDIR)/main/main_log$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB) $(LIBS)
++	$(CC) $(CFLAGS) -o $@ $(BINDIR)/main/main_log$(EXTOBJ) $(BINDIR)/libtcf$(EXTLIB) $(LIBS) $(LDFLAGS)
+ 
+ $(BINDIR)/%$(EXTOBJ): %.c $(HFILES) Makefile Makefile.inc
+ 	@$(call MKDIR,$(dir $@))
