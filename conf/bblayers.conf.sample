@@ -2,7 +2,8 @@
 # changes incompatibly
 LCONF_VERSION = "6"
 
-BBPATH = "${TOPDIR}"
+TOPDIR := "${@os.path.dirname(os.path.dirname(FILE))}"
+BBPATH = "${TOPDIR}:${HOME}/.oe"
 BBFILES ?= ""
 
 BBLAYERS ?= " \
