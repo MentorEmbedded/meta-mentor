@@ -46,9 +46,8 @@ Distro bits
 - archive-release: used to archive up content for release
 - other packagegroups
 
-- cml1-merge class: old crude implementation of defconfig file snippets,
-  ala *.cfg in kernel-yocto, but also useful in regular kernels, since the
-  kernel-yocto bits aren't generally useful (yet)
+- cml1-config class: consistent handling of defconfig -> .config with
+  merge_configs.sh ala busybox & linux-yocto for fragments support
 - user_features class: easier user manipulation of DISTRO_FEATURES from
   local.conf
 - buildstats-summary class: using buildstats, show a summary at the end of
