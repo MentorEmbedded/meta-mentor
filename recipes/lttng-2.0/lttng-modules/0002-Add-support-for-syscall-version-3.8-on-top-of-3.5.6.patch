@@ -1,0 +1,64 @@
+--- git/instrumentation/syscalls/3.5.6/arm-32-syscalls-3.5.6.orig	2013-08-21 18:18:38.972580722 +0500
++++ git/instrumentation/syscalls/3.5.6/arm-32-syscalls-3.5.6	2013-08-21 17:58:22.428333000 +0500
+@@ -293,3 +293,7 @@ syscall sys_sendmmsg nr 374 nbargs 4 typ
+ syscall sys_setns nr 375 nbargs 2 types: (int, int) args: (fd, nstype)
+ syscall sys_process_vm_readv nr 376 nbargs 6 types: (pid_t, const struct iovec *, unsigned long, const struct iovec *, unsigned long, unsigned long) args: (pid, lvec, liovcnt, rvec, riovcnt, flags)
+ syscall sys_process_vm_writev nr 377 nbargs 6 types: (pid_t, const struct iovec *, unsigned long, const struct iovec *, unsigned long, unsigned long) args: (pid, lvec, liovcnt, rvec, riovcnt, flags)
++syscall sys_sigaltstack nr 378 nbargs 2 types: (const struct sigaltstack *,	struct sigaltstack *) args: (uss, uoss)
++syscall sys_fork nr 379 nbargs 0 types: () args: ()
++syscall sys_vfork nr 380 nbargs 0 types: () args: ()
++syscall sys_finit_module nr 381 nbargs 3 types: (int, const char *, int) args: (fd, uargs, flags)
+--- git/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers.h.orig	2013-08-21 18:18:38.980580110 +0500
++++ git/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_pointers.h	2013-08-21 18:11:29.492334000 +0500
+@@ -1701,6 +1701,24 @@ SC_TRACE_EVENT(sys_process_vm_writev,
+ 	TP_printk()
+ )
+ #endif
++#ifndef OVERRIDE_32_sys_sigaltstack
++SC_TRACE_EVENT(sys_sigaltstack,
++	TP_PROTO(const struct sigaltstack * uss,	struct sigaltstack * uoss),
++	TP_ARGS(uss, uoss),
++	TP_STRUCT__entry(__field_hex(const struct sigaltstack *, uss) __field_hex(const struct sigaltstack *, uoss)),
++	TP_fast_assign(tp_assign(uss, uss) tp_assign(uoss, uoss)),
++	TP_printk()
++)
++#endif
++#ifndef OVERRIDE_32_sys_finit_module
++SC_TRACE_EVENT(sys_finit_module,
++	TP_PROTO(int fd, const char * uargs, int flags),
++	TP_ARGS(fd, uargs, flags),
++	TP_STRUCT__entry(__field(int, fd) __field_hex(const char *, uargs) __field(int, flags)),
++	TP_fast_assign(tp_assign(fd, fd) tp_assign(uargs, uargs) tp_assign(flags, flags)),
++	TP_printk()
++)
++#endif
+ 
+ #endif /*  _TRACE_SYSCALLS_POINTERS_H */
+ 
+@@ -2276,5 +2295,11 @@ TRACE_SYSCALL_TABLE(sys_process_vm_readv
+ #ifndef OVERRIDE_TABLE_32_sys_process_vm_writev
+ TRACE_SYSCALL_TABLE(sys_process_vm_writev, sys_process_vm_writev, 377, 6)
+ #endif
++#ifndef OVERRIDE_TABLE_32_sys_sigaltstack
++TRACE_SYSCALL_TABLE(sys_sigaltstack, sys_sigaltstack, 378, 2)
++#endif
++#ifndef OVERRIDE_TABLE_32_sys_finit_module
++TRACE_SYSCALL_TABLE(sys_finit_module, sys_finit_module, 381, 3)
++#endif
+ 
+ #endif /* CREATE_SYSCALL_TABLE */
+--- git/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_integers.h.orig	2013-08-21 18:18:38.976580928 +0500
++++ git/instrumentation/syscalls/headers/arm-32-syscalls-3.5.6_integers.h	2013-08-21 18:06:24.852580000 +0500
+@@ -74,6 +74,12 @@ SC_DEFINE_EVENT_NOARGS(syscalls_noargs, 
+ #ifndef OVERRIDE_32_sys_inotify_init
+ SC_DEFINE_EVENT_NOARGS(syscalls_noargs, sys_inotify_init)
+ #endif
++#ifndef OVERRIDE_32_sys_fork
++SC_DEFINE_EVENT_NOARGS(syscalls_noargs, sys_fork)
++#endif
++#ifndef OVERRIDE_32_sys_vfork
++SC_DEFINE_EVENT_NOARGS(syscalls_noargs, sys_vfork)
++#endif
+ #ifndef OVERRIDE_32_sys_exit
+ SC_TRACE_EVENT(sys_exit,
+ 	TP_PROTO(int error_code),
