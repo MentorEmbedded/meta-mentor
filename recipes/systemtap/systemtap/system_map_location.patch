@@ -1,12 +1,13 @@
-diff -Naur old/session.cxx new/session.cxx
---- old/session.cxx	2013-08-02 20:15:05.000000000 +1100
-+++ new/session.cxx	2013-08-02 20:38:41.000000000 +1100
-@@ -1571,7 +1571,7 @@
-       string error1 = _F("Checking \"%s\" failed with error: %s\nEnsure kernel development headers & makefiles are installed",
-                          system_map_path.c_str(), strerror(errno));
+Index: git/session.cxx
+===================================================================
+--- git.orig/session.cxx
++++ git/session.cxx
+@@ -1634,7 +1634,7 @@ systemtap_session::parse_kernel_function
+	clog << _F("Kernel symbol table %s unavailable, (%s)",
+		   system_map_path.c_str(), strerror(errno)) << endl;
  
 -      string system_map_path2 = "/boot/System.map-" + kernel_release;
 +      string system_map_path2 = kernel_build_tree + "/System.map-" + kernel_release;
- 
        system_map.clear();
        system_map.open(system_map_path2.c_str(), ifstream::in);
+       if (! system_map.is_open())
