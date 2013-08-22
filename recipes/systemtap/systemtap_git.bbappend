@@ -1,6 +1,5 @@
 PRINC := "${@int(PRINC) + 4}"
 SRC_URI += "file://system_map_location.patch \
-            ${@base_contains('KVERSION', '3.8', 'file://stap_linux_3.8.patch', '', d)} \
 "
 
 # Revert FILESPATH back to the default value, so FILESEXTRAPATHS is obeyed
