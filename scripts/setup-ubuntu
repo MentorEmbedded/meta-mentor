@@ -17,8 +17,8 @@ PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo t
 # These are needed for the qemu-native build
 PKGS="$PKGS libgl1-mesa-dev libglu1-mesa-dev libsdl1.2-dev"
 
-# Install 32-bit compatibility libraries for gdb
-[ "$(uname -m)" = "x86_64" ] && PKGS="$PKGS libncurses5:i386"
+# Install 32-bit compatibility libraries
+[ "$(uname -m)" = "x86_64" ] && PKGS="$PKGS libncurses5:i386 libc6-dev-i386"
 
 echo "Installing packages required to build Mentor Embedded Linux"
 
