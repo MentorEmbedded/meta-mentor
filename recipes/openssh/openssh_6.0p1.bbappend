@@ -1,4 +1,4 @@
-PRINC := "${@int(PRINC) + 1}"
+PRINC := "${@int(PRINC) + 2}"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}:"
 PARALLEL_MAKEINST = ""
@@ -12,3 +12,5 @@ do_debug_sed() {
                -e 's/^#PermitRootLogin.*/PermitRootLogin yes/' ${WORKDIR}/sshd_config
     fi
 }
+
+DEPENDS += "libbsd"
