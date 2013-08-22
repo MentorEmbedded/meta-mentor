@@ -46,7 +46,7 @@ do_install () {
     } >${D}${sysconfdir}/ca-certificates.conf
 }
 
-do_install_class-target () {
+do_install_append_class-target () {
     sed -i -e 's,/etc/,${sysconfdir}/,' \
            -e 's,/usr/share/,${datadir}/,' \
            -e 's,/usr/local,${prefix}/local,' \
