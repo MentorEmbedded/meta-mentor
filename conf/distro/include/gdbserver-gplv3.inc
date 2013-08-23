@@ -32,5 +32,9 @@ check_for_gdbserver () {
         if [ -n "$gdb_gplv3" ]; then
             bbfatal "Detected GPLv3 gdbserver package in license manifest, aborting. To allow this to be included, define ALLOW_GPLv3_DEBUG_TOOLS=1"
         fi
+        gdb_gplv3="$(sed -n '/^PACKAGE NAME: gdb$/{ n; n; n; /LICENSE: GPLv3/p }')"
+        if [ -n "$gdb_gplv3" ]; then
+            bbfatal "Detected GPLv3 gdb package in license manifest, aborting. To allow this to be included, define ALLOW_GPLv3_DEBUG_TOOLS=1"
+        fi
     fi
 }
