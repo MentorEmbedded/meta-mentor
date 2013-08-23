@@ -3,7 +3,7 @@
 # but don't allow it to be installed into an image in that case unless the
 # user explicitly allows it via ALLOW_GPLV3_GDBSERVER.
 
-ALLOW_GPLV3_GDBSERVER ?= ""
+ALLOW_GPLV3_DEBUG_TOOLS ?= ""
 INCOMPATIBLE_LICENSE_pn-external-sourcery-toolchain = ""
 ROOTFS_POSTPROCESS_COMMAND_append = "check_for_gdbserver;"
 
@@ -13,21 +13,28 @@ python adjust_packagegroup_gdbserver () {
     d = e.data
 
     if 'GPLv3' in (d.getVar('INCOMPATIBLE_LICENSE', True) or ''):
-        if not d.getVar('ALLOW_GPLV3_GDBSERVER', True):
+        if not d.getVar('ALLOW_GPLV3_DEBUG_TOOLS', True):
             # Remove installation of gdbserver from codebench-debug
             pkggroup = d.getVar('PACKAGE_GROUP_codebench-debug', True).split()
             if 'gdbserver' in pkggroup:
                 pkggroup.remove('gdbserver')
                 d.setVar('PACKAGE_GROUP_codebench-debug', ' '.join(pkggroup))
+        else:
+            # Also allow installation of gdb
+            d.setVar('INCOMPATIBLE_LICENSE_pn-gdb', '')
 }
 addhandler adjust_packagegroup_gdbserver
 
 check_for_gdbserver () {
     if echo '${INCOMPATIBLE_LICENSE}' | grep -q 'GPLv3' && \
-       [ -z "${ALLOW_GPLV3_GDBSERVER}" ]; then
+       [ -z "${ALLOW_GPLV3_DEBUG_TOOLS}" ]; then
         gdb_gplv3="$(sed -n '/^PACKAGE NAME: gdbserver$/{ n; n; n; /LICENSE: GPLv3/p }')"
         if [ -n "$gdb_gplv3" ]; then
-            bbfatal "Detected GPLv3 gdbserver package in license manifest, aborting. To allow this to be included, define ALLOW_GPLv3_GDBSERVER=1"
+            bbfatal "Detected GPLv3 gdbserver package in license manifest, aborting. To allow this to be included, define ALLOW_GPLv3_DEBUG_TOOLS=1"
+        fi
+        gdb_gplv3="$(sed -n '/^PACKAGE NAME: gdb$/{ n; n; n; /LICENSE: GPLv3/p }')"
+        if [ -n "$gdb_gplv3" ]; then
+            bbfatal "Detected GPLv3 gdb package in license manifest, aborting. To allow this to be included, define ALLOW_GPLv3_DEBUG_TOOLS=1"
         fi
     fi
 }
