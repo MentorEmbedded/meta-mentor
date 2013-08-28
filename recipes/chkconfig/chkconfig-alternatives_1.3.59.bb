@@ -1,7 +1,7 @@
 require recipes-extended/chkconfig/chkconfig_1.3.58.bb
 
-SUMMARY = "${SUMMARY_chkconfig-alternatives}"
-DESCRIPTION = "${DESCRIPTION_chkconfig-alternatives}"
+SUMMARY = "${SUMMARY_${PN}-alternatives}"
+DESCRIPTION = "${DESCRIPTION_${PN}-alternatives}"
 DEPENDS = "virtual/libintl"
 DEPENDS_class-native = ""
 USE_NLS = "no"
@@ -47,5 +47,10 @@ do_install () {
 do_install_append_linuxstdbase() {
 	rm -rf ${D}${libdir}/lsb
 }
+
+RPROVIDES_${PN} = "${RPROVIDES_${PN}-alternatives}"
+RCONFLICTS_${PN} = "${RCONFLICTS_${PN}-alternatives}"
+FILES_${PN}-alternatives = ""
+FILES_${PN}-alternatives-doc = ""
 
 BBCLASSEXTEND += "native nativesdk"
