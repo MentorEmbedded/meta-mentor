@@ -43,7 +43,7 @@ prompt_choice () {
     prompt_options="$(mktemp prompt-choice.XXXXXX)"
     cat >>"$prompt_options"
 
-    prompt_count="$(wc -l "$prompt_options")"
+    prompt_count="$(wc -l <"$prompt_options")"
     case $prompt_count in
         0)
             # No choices provided
