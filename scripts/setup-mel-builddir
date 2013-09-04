@@ -40,11 +40,6 @@ prompt_choice () {
     prompt_message="$1"
     prompt_default="$2"
 
-    if [ ! -t 0 ] || [ ! -t 2 ]; then
-        # We only prompt when running on a tty
-        return 2
-    fi
-
     prompt_options="$(mktemp prompt-choice.XXXXXX)"
     cat >>"$prompt_options"
 
@@ -62,6 +57,11 @@ prompt_choice () {
             return 0
             ;;
     esac
+
+    if [ ! -t 0 ] || [ ! -t 2 ]; then
+        # We only prompt when running on a tty
+        return 2
+    fi
 
     while [ -z "$prompt_value" ]; do
         prompt_num=0
