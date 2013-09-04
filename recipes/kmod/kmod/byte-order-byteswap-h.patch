@@ -1,0 +1,29 @@
+Upstream-Status: Pending
+
+--- git.orig/libkmod/libkmod-signature.c
++++ git/libkmod/libkmod-signature.c
+@@ -23,6 +23,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <stdio.h>
++#include <byteswap.h>
+ 
+ #include "libkmod-private.h"
+ 
+@@ -95,6 +96,16 @@ struct module_signature {
+ 	uint32_t sig_len;    /* Length of signature data (big endian) */
+ };
+ 
++#if __BYTE_ORDER == __LITTLE_ENDIAN
++# ifndef be32toh
++#  define be32toh(x) bswap_32(x)
++# endif
++#else
++# ifndef be32toh
++#  define be32toh(x) (x)
++# endif
++#endif
++
+ #define SIG_MAGIC "~Module signature appended~\n"
+ 
+ bool kmod_module_signature_info(const struct kmod_file *file, struct kmod_signature_info *sig_info)
