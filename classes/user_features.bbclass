@@ -19,15 +19,16 @@ python process_user_features () {
     if not user_features:
         return
 
-    distro_features = l.getVar('DISTRO_FEATURES', True).split()
+    to_remove, to_add = set(), set()
     for feature in user_features:
         if feature.startswith('~'):
-            feature = feature[1:]
-            if feature in distro_features:
-                distro_features.remove(feature)
+            to_remove.add(feature[1:])
         else:
-            if feature not in distro_features:
-                distro_features.append(feature)
+            to_add.add(feature)
+
+    distro_features = l.getVar('DISTRO_FEATURES', True).split()
+    distro_features = filter(lambda f: f not in to_remove, distro_features)
+    distro_features.extend(to_add)
     e.data.setVar('DISTRO_FEATURES', ' '.join(distro_features))
 }
 addhandler process_user_features
