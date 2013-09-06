@@ -32,8 +32,9 @@ BINARY_ARTIFACTS_COMPRESSION[doc] = "Compression type for images, downloads and 
 
 # If we have an isolated set of shared state archives, use that, so as to
 # avoid archiving sstates which were unused.
-SSTATE_DIR := "${@ISOLATED_SSTATE_DIR \
-                 if oe.utils.inherits(d, 'isolated-sstate-dir') else SSTATE_DIR}"
+ARCHIVE_SSTATE_DIR = "${@ISOLATED_SSTATE_DIR \
+                         if oe.utils.inherits(d, 'isolated-sstate-dir') \
+                            else SSTATE_DIR}"
 
 # Kernel images and filesystems are handled separately, as they produce
 # timestamped filenames, and we only want the current ones (symlinked ones).
@@ -80,7 +81,7 @@ release_tar () {
         bbfatal "Invalid binary artifacts compression type ${BINARY_ARTIFACTS_COMPRESSION}"
     fi
 
-    tar --absolute-names ${COMPRESSION} "$@" "--transform=s,^${MELDIR}/,," --exclude=.svn \
+    tar --absolute-names $COMPRESSION "$@" "--transform=s,^${MELDIR}/,," --exclude=.svn \
         --exclude=.git --exclude=\*.pyc --exclude=\*.pyo --exclude=.gitignore \
         -v --show-stored-names
 }
@@ -232,13 +233,13 @@ do_prepare_release () {
 
     if echo "${RELEASE_ARTIFACTS}" | grep -w sstate; then
         # Kill dead links
-        find ${SSTATE_DIR} -type l | while read fn; do
+        find ${ARCHIVE_SSTATE_DIR} -type l | while read fn; do
             if [ ! -e "$fn" ]; then
                 rm -f "$fn"
             fi
         done
-        release_tar "--transform=s,^${SSTATE_DIR},cached-binaries," --exclude=\*.done \
-                -chf deploy/${MACHINE}-sstate.tar${BINARY_ARTIFACTS_COMPRESSION} ${SSTATE_DIR}
+        release_tar "--transform=s,^${ARCHIVE_SSTATE_DIR},cached-binaries," --exclude=\*.done \
+                -chf deploy/${MACHINE}-sstate.tar${BINARY_ARTIFACTS_COMPRESSION} ${ARCHIVE_SSTATE_DIR}
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -w templates; then
