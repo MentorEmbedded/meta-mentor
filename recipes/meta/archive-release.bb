@@ -194,16 +194,15 @@ do_prepare_release () {
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw downloads; then
-        DL_DIR="${@os.path.normpath(DL_DIR)}"
         if [ "${COPYLEFT_SOURCES_BASE_DIR}" != "${COPYLEFT_SOURCES_DIR}" ]; then
             for dir in ${COPYLEFT_SOURCES_BASE_DIR}/*; do
                 name=$(basename $dir)
                 mkdir -p downloads/$name
                 find -L $dir -type f -maxdepth 2 | while read source; do
-                    src=`readlink $source` || continue
-                    if echo $src | grep -q "^$DL_DIR/"; then
-                        ln -sf $source downloads/$name/
-                        touch downloads/$name/$(basename $source).done
+                    source_name="$(basename "$source")"
+                    if [ -e "${DL_DIR}/$source_name" ]; then
+                        ln -sf "${DL_DIR}/$source_name" "downloads/$name/$source_name"
+                        touch "downloads/$name/$source_name.done"
                     fi
                 done
                 cd downloads/$name
@@ -216,10 +215,10 @@ do_prepare_release () {
             done
         else
             find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
-                src=`readlink $source` || continue
-                if echo $src | grep -q "^$DL_DIR/"; then
-                    ln -sf $source downloads/
-                    touch downloads/$(basename $source).done
+                source_name="$(basename "$source")"
+                if [ -e "${DL_DIR}/$source_name" ]; then
+                    ln -sf "${DL_DIR}/$source_name" "downloads/$source_name"
+                    touch "downloads/$source_name.done"
                 fi
             done
             cd downloads
