@@ -68,14 +68,13 @@ python () {
 }
 
 release_tar () {
-    if [ -z ${BINARY_ARTIFACTS_COMPRESSION} ]
-    then
+    if [ -z ${BINARY_ARTIFACTS_COMPRESSION} ]; then
         COMPRESSION=""
-    elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".bz2" ]
-    then
+    elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".bz2" ]; then
         COMPRESSION="-j"
-    elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".gz" ]
-    then
+    elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".xz" ]; then
+        COMPRESSION="-J"
+    elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".gz" ]; then
         COMPRESSION="-z"
     else
         bbfatal "Invalid binary artifacts compression type ${BINARY_ARTIFACTS_COMPRESSION}"
@@ -170,7 +169,7 @@ prepare_templates () {
 do_prepare_release () {
     mkdir -p deploy
 
-    if echo "${RELEASE_ARTIFACTS}" | grep -w layers; then
+    if echo "${RELEASE_ARTIFACTS}" | grep -qw layers; then
         >deploy/${MACHINE}-layers.txt
         bb_layers | cut -d" " -f1 | sort -u | while read path; do
             basename $path >>deploy/${MACHINE}-layers.txt
@@ -178,7 +177,7 @@ do_prepare_release () {
         done
     fi
 
-    if echo "${RELEASE_ARTIFACTS}" | grep -w bitbake; then
+    if echo "${RELEASE_ARTIFACTS}" | grep -qw bitbake; then
         found_bitbake=0
         bb_layers | while read path _; do
             case "$bitbake_dir" in
@@ -231,7 +230,7 @@ do_prepare_release () {
         fi
     fi
 
-    if echo "${RELEASE_ARTIFACTS}" | grep -w sstate; then
+    if echo "${RELEASE_ARTIFACTS}" | grep -qw sstate; then
         # Kill dead links
         find ${ARCHIVE_SSTATE_DIR} -type l | while read fn; do
             if [ ! -e "$fn" ]; then
@@ -242,18 +241,18 @@ do_prepare_release () {
                 -chf deploy/${MACHINE}-sstate.tar${BINARY_ARTIFACTS_COMPRESSION} ${ARCHIVE_SSTATE_DIR}
     fi
 
-    if echo "${RELEASE_ARTIFACTS}" | grep -w templates; then
+    if echo "${RELEASE_ARTIFACTS}" | grep -qw templates; then
         prepare_templates
         cp bblayers.conf.sample local.conf.sample conf-notes.txt deploy/
     fi
 
-    if echo "${RELEASE_ARTIFACTS}" | grep -w images; then
+    if echo "${RELEASE_ARTIFACTS}" | grep -qw images; then
         if [ -e "${BUILDHISTORY_DIR}" ]; then
             echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >include
             echo ${BUILDHISTORY_DIR} >>include
         fi
 
-        if echo "${RELEASE_ARTIFACTS}" | grep -w templates; then
+        if echo "${RELEASE_ARTIFACTS}" | grep -qw templates; then
             echo "--transform=s,${S}/,${MACHINE}/conf/," >>include
             echo "${S}/local.conf.sample" >>include
             echo "${S}/bblayers.conf.sample" >>include
