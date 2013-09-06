@@ -96,7 +96,7 @@ git_tar () {
         else
             version=$(git --git-dir=$repo/.git rev-list HEAD | wc -l)
         fi
-        release_tar $repo "$@" "--transform=s,^$repo,$name," -cjf deploy/${name}_$version.tar.bz2
+        git --git-dir=$repo/.git archive --format=tar --prefix="$name/" HEAD | bzip2 >deploy/${name}_${version}.tar.bz2
     else
         release_tar $repo "$@" "--transform=s,^$repo,$name," -cjf deploy/$name.tar.bz2
     fi
