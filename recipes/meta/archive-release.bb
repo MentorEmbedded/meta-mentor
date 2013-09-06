@@ -193,7 +193,8 @@ do_prepare_release () {
         fi
     fi
 
-    if echo "${RELEASE_ARTIFACTS}" | grep -w downloads; then
+    if echo "${RELEASE_ARTIFACTS}" | grep -qw downloads; then
+        DL_DIR="${@os.path.normpath(DL_DIR)}"
         if [ "${COPYLEFT_SOURCES_BASE_DIR}" != "${COPYLEFT_SOURCES_DIR}" ]; then
             for dir in ${COPYLEFT_SOURCES_BASE_DIR}/*; do
                 name=$(basename $dir)
