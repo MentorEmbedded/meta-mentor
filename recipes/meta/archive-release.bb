@@ -201,7 +201,7 @@ do_prepare_release () {
                 mkdir -p downloads/$name
                 find -L $dir -type f -maxdepth 2 | while read source; do
                     src=`readlink $source` || continue
-                    if echo $src | grep -q "^${DL_DIR}/"; then
+                    if echo $src | grep -q "^$DL_DIR/"; then
                         ln -sf $source downloads/$name/
                         touch downloads/$name/$(basename $source).done
                     fi
@@ -217,7 +217,7 @@ do_prepare_release () {
         else
             find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
                 src=`readlink $source` || continue
-                if echo $src | grep -q "^${DL_DIR}/"; then
+                if echo $src | grep -q "^$DL_DIR/"; then
                     ln -sf $source downloads/
                     touch downloads/$(basename $source).done
                 fi
