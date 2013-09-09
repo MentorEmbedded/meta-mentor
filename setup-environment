@@ -1,5 +1,5 @@
 if [ -z "$ZSH_NAME" ] && [ "x$0" = "x./setup-environment" ]; then
-    echo "Error: This script needs to be sourced. Please run as '. ./setup-environment'"
+    echo >&2 "Error: This script needs to be sourced. Please run as '. ./setup-environment'"
 else
     if [ -n "$BASH_SOURCE" ]; then
         layerdir="`dirname $BASH_SOURCE`"
