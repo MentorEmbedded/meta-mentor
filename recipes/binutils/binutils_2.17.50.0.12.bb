@@ -22,7 +22,7 @@ SRC_URI = "\
 SRC_URI[md5sum] = "6f3e83399b965d70008860f697c50ec2"
 SRC_URI[sha256sum] = "7360808266f72aed6fda41735242fb9f1b6dd3307cd6e283a646932438eaa929"
 
-DEPENDS += "texinfo-native"
+DEPENDS += "flex texinfo-native"
 
 EXTRA_OECONF += "\
     --with-sysroot=/ \
