@@ -58,9 +58,12 @@ MACHINE ??= "qemux86"
 #                       (removes first-time config at start-up, mounts root r/o,
 #                        and relocates dynamically created data to a tmpfs)
 #
-#  "extra-qa-packages" - enables additional packages to be included in the target image when
-#                        the meta-mentor-qa-private is included.
-#  "extra-qa-kernel-configs" - enables additional kernel config options used by QA.
+#  The following options are valid when the meta-mentor-qa-private layer is included:
+#  "extra-qa-packages"               - enables additional packages to be included in the target image.
+#  "extra-qa-kernel-configs"         - enables additional kernel config options used by QA.
+#  "extra-qa-kernel-configs-modules" - changes some additional config options to modules for QA.
+#  "gcov-kernel-configs"             - enables GCOV kernel config options used by QA.
+#  "audio-kernel-configs"            - enables additionale audio kernel config options used by QA.
 #
 # There are other options that can be used here, see
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
