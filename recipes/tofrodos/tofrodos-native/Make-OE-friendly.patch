@@ -1,0 +1,32 @@
+Upstream-Status: Inappropriate [open-embedded]
+
+Signed-off-by: Muhammad Shakeel <muhammad_shakeel@mentor.com>
+
+--- src/Makefile	2012-09-30 22:15:32.000000000 +0500
++++ src/Makefile	2013-09-17 13:18:53.073698834 +0500
+@@ -30,7 +30,7 @@
+ RM = rm -f
+ 
+ # flags
+-CFLAGS = $(DEFINES) $(TFLAG) $(CDEBUG) -c -Wall
++CCFLAGS = $(DEFINES) $(TFLAG) $(CDEBUG) -c -Wall
+ GZIPFLAGS = -9
+ INSTALLBINFLAGS = -m 755
+ INSTALLDATAFLAGS = -m 644
+@@ -58,7 +58,7 @@
+ 
+ # implicit rules
+ .c.o:
+-	$(CC) $(CFLAGS) $<
++	$(CC) $(CCFLAGS) $(CFLAGS) $<
+ 
+ # user visible rules
+ all: $(FROMDOS) $(TODOS)
+@@ -69,7 +69,7 @@
+ clobber: clean
+ 	$(RM) $(FROMDOS) $(TODOS)
+ 
+-install: installman
++install:
+ 	$(INSTALL) $(INSTALLBINFLAGS) $(FROMDOS) $(BINDIR)
+ 	($(CD) $(BINDIR) ; $(LN) $(LNFLAGS) fromdos todos)
