@@ -18,9 +18,4 @@ addhandler add_build_march
 
 # We don't want our BUILD_MARCH getting into the signatures for our target
 # recipe tasks, otherwise they end up bound to the host.
-python add_build_march_exclude () {
-    if 'class-target' in e.data.getVar('OVERRIDES', True).split(':'):
-        e.data.appendVarFlag("BUILD_CFLAGS", "vardepsexclude", " BUILD_MARCH")
-}
-add_build_march_exclude[eventmask] = "bb.event.RecipeParsed"
-addhandler add_build_march_exclude
+BUILD_CFLAGS[vardepsexclude] += "${@'BUILD_MARCH' if 'class-target' in OVERRIDES.split(':') else ''}"
