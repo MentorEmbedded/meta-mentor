@@ -5,7 +5,7 @@
 
 ALLOW_GPLV3_GDBSERVER ?= ""
 INCOMPATIBLE_LICENSE_pn-external-sourcery-toolchain = ""
-ROOTFS_POSTPROCESS_COMMAND_append = "check_for_gdbserver;"
+ROOTFS_POSTPROCESS_COMMAND_append = " check_for_gdbserver;"
 
 python adjust_packagegroup_gdbserver () {
     if not isinstance(e, bb.event.ConfigParsed):
