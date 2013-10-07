@@ -10,6 +10,13 @@ else
     fi
     layerdir=`readlink -f "$layerdir"`
 
+    if [ -f conf/local.conf -o -f conf/bblayers.conf ]; then
+        # Assuming we're already in the build dir
+        BUILDDIR=$PWD
+    else
+        BUILDDIR=$PWD/build
+    fi
+
     for i in $(seq $#); do
         arg="$(eval printf "%s" "\$$i")"
         case "$arg" in
@@ -21,15 +28,6 @@ else
                 ;;
         esac
     done
-
-    if [ -z "$BUILDDIR" ]; then
-        if [ -f conf/local.conf -o -f conf/bblayers.conf ]; then
-            # Assuming we're already in the build dir
-            BUILDDIR=$PWD
-        else
-            BUILDDIR=$PWD/build
-        fi
-    fi
 
     OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" $layerdir/scripts/setup-mel-builddir "$@" && \
         [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ] && \
