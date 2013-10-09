@@ -29,9 +29,43 @@ else
         esac
     done
 
+    OPTIONALLAYERS="$OPTIONALLAYERS"
+
+    # Customer directory layers handling (e.g. adit-custom, conti-custom, etc.)
+    if [ -e "$layerdir/../customer.conf" ] ; then
+        for CUSTOMER in $(cat $layerdir/../customer.conf) ; do
+            if [ -d "$CUSTOMER-custom" ] ; then
+                if [ -e "$CUSTOMER-custom/custom.conf" ] ; then
+                    CUSTOMERLAYERS=`cat $CUSTOMER-custom/custom.conf | sed -e '/^[ 	]*#/d'`
+                    CUSTOMERLAYERS=`echo $CUSTOMERLAYERS | sed -e 's/\n//g'`
+                    OPTIONALLAYERS="$OPTIONALLAYERS $CUSTOMERLAYERS"
+                    unset CUSTOMERLAYERS
+                fi
+            fi
+        done
+        unset CUSTOMER
+    fi
+
+    # Hotfix layers handling
+    if [ -e "$layerdir/../hotfixes/hotfix.conf" ] ; then
+        HOTFIXES=`cat $layerdir/../hotfixes/hotfix.conf | sed -e '/^[ 	]*#/d'`
+        HOTFIXES=`echo $HOTFIXES | sed -e 's/\n//g'`
+        OPTIONALLAYERS="$OPTIONALLAYERS $HOTFIXES"
+        unset HOTFIXES
+    fi
+
+    # Extra layers handling
+    if [ -e "$layerdir/../xlayers.conf" ] ; then
+        EXTRALAYERS=`cat $layerdir/../xlayers.conf | sed -e '/^[ 	]*#/d'`
+        EXTRALAYERS=`echo $EXTRALAYERS | sed -e 's/\n//g'`
+        OPTIONALLAYERS="$OPTIONALLAYERS $EXTRALAYERS"
+        unset EXTRALAYERS
+    fi
+
     OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" $layerdir/scripts/setup-mel-builddir "$@" && \
         [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ] && \
         . $BUILDDIR/setup-environment
+    unset EXTRAMELLAYERS
     unset OPTIONALLAYERS
     unset layerdir
 fi
