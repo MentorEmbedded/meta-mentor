@@ -1,7 +1,7 @@
-LDFLAGS = "${@TARGET_LDFLAGS}"
-LDFLAGS_class-native = "${@BUILD_LDFLAGS}"
+do_install() {
+	oe_runmake CC="${CC} ${CFLAGS}" LD="${LD} ${LDFLAGS}" INSTALLROOT="${D}" firmware="bios" install
 
-EXTRA_OEMAKE += "\
-    'CC=${CC}' \
-    'LD=${LD}' \
-"
+	install -d ${D}${datadir}/syslinux/
+	install -m 644 ${S}/bios/core/ldlinux.sys ${D}${datadir}/syslinux/
+	install -m 644 ${S}/bios/core/ldlinux.bss ${D}${datadir}/syslinux/
+}
