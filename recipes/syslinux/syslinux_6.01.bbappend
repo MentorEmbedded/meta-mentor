@@ -1,4 +1,4 @@
-do_install() {
+do_install_class-target () {
 	oe_runmake CC="${CC} ${CFLAGS}" LD="${LD} ${LDFLAGS}" INSTALLROOT="${D}" firmware="bios" install
 
 	install -d ${D}${datadir}/syslinux/
