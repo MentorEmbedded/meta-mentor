@@ -1,7 +1,11 @@
-do_install_class-target () {
-	oe_runmake CC="${CC} ${CFLAGS}" LD="${LD} ${LDFLAGS}" INSTALLROOT="${D}" firmware="bios" install
+inherit siteinfo
 
-	install -d ${D}${datadir}/syslinux/
-	install -m 644 ${S}/bios/core/ldlinux.sys ${D}${datadir}/syslinux/
-	install -m 644 ${S}/bios/core/ldlinux.bss ${D}${datadir}/syslinux/
-}
+SIZEOF_POINTER = "${@'8' if SITEINFO_BITS == '64' else '4'}"
+CFLAGS_append_class-native = "\
+    -D__SIZEOF_POINTER__=${SIZEOF_POINTER} \
+"
+
+EXTRA_OEMAKE += "\
+    'CC=${CC} ${CFLAGS}' \
+    'LD=${LD} ${@LDFLAGS.replace('-Wl,', '').replace(',', '=')}' \
+"
