@@ -289,7 +289,7 @@ def print_layers(cmdline_opts):
     for layer in optional:
         sys.stderr.write("Layer '{0}' was detected, including in configuration\n".format(layer.name))
 
-    for layer in sorted(configured_layers, key=lambda l: l.priority, reverse=True):
+    for layer in sorted(configured_layers, key=lambda l: (l.priority, l.name), reverse=True):
         print(layer.path)
 
 
