@@ -121,6 +121,7 @@ repo_root () {
             ;;
     esac
 }
+repo_root[vardepsexclude] += "1#${MELDIR}/ rel%%/*"
 
 bb_layers () {
     # Workaround shell function dependency issue
@@ -141,6 +142,7 @@ bb_layers () {
         printf "%s %s\n" "$topdir" "$layer_relpath"
     done
 }
+bb_layers[vardepsexclude] += "layer%/ topdir##*/ layer#${topdir}/"
 
 prepare_templates () {
     csl_version="$(echo ${CSL_VER_MAIN} | sed 's/-.*$//')"
