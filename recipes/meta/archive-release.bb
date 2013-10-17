@@ -303,7 +303,6 @@ addtask dump_headrevs
 
 do_prepare_release[dirs] =+ "${DEPLOY_DIR_RELEASE} ${MELDIR} ${S}"
 do_prepare_release[cleandirs] = "${S}"
-do_prepare_release[nostamp] = "1"
 do_prepare_release[depends] += "${RELEASE_IMAGE}:do_rootfs"
 do_prepare_release[depends] += "${RELEASE_IMAGE}:do_build"
 do_prepare_release[recrdeptask] += "do_package_write"
