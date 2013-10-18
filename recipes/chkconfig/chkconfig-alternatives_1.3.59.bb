@@ -8,6 +8,10 @@ USE_NLS = "no"
 PROVIDES = "${PN} virtual/update-alternatives"
 LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263"
 
+# Lacking a specific preference, stick to default behavior of using the
+# chkconfig recipe rather than this one.
+DEFAULT_PREFERENCE = "-1"
+
 # The sysroot branch is 1.3.59 + some git commits from master + --sysroot
 # support for alternatives.
 SRC_URI = "git://github.com/kergoth/chkconfig;branch=sysroot \
