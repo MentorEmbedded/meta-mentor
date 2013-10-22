@@ -1,4 +1,4 @@
-pstream-Status: Backport
+Upstream-Status: Backport
 
 From 0b4060f61f1bb101b5d8d084714b7d2feacdb199 Mon Sep 17 00:00:00 2001
 From: Ali Polatel <alip@exherbo.org>
