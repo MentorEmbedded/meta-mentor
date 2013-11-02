@@ -506,10 +506,10 @@ def pstaging_fetch(sstatefetch, sstatepkg, d):
     dldir = localdata.expand("${SSTATE_DIR}")
     bb.utils.mkdirhier(dldir)
 
-    localdata.delVar('PREMIRRORS')
+    localdata.delVar('MIRRORS')
     localdata.delVar('FILESPATH')
     localdata.setVar('DL_DIR', dldir)
-    localdata.setVar('MIRRORS', mirrors)
+    localdata.setVar('PREMIRRORS', mirrors)
 
     # if BB_NO_NETWORK is set but we also have SSTATE_MIRROR_ALLOW_NETWORK,
     # we'll want to allow network access for the current set of fetches.
