@@ -8,7 +8,7 @@
 
 packages="make gcc gcc-c++ patch texi2html diffstat texinfo tetex cvs git
           subversion gawk tar gzip bzip2 redhat-lsb sqlite ncurses-devel \
-          SDL-devel"
+          SDL-devel glibc-devel glibc-devel.i686 libgcc.i686"
 scriptsdir="$(cd $(dirname $0) && pwd)"
 
 set -e
@@ -23,8 +23,8 @@ if ! sudo -v; then
         exit 1
 fi
 
-if ! is_installed python26; then
-    packages="$packages python26"
+if ! is_installed python; then
+    packages="$packages python"
 fi
 
 if ! is_installed chrpath; then
