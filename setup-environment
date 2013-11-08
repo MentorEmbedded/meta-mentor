@@ -30,6 +30,7 @@ else
     done
 
     OPTIONALLAYERS="$OPTIONALLAYERS"
+    EXCLUDEDLAYERS="$EXCLUDEDLAYERS"
 
     # Customer directory layers handling (e.g. <customername>-custom)
     if [ -e "$layerdir/../customer.conf" ] ; then
@@ -62,10 +63,11 @@ else
         unset EXTRALAYERS
     fi
 
-    OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" $layerdir/scripts/setup-mel-builddir "$@" && \
+    OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" EXCLUDEDLAYERS="$EXCLUDEDLAYERS" $layerdir/scripts/setup-mel-builddir "$@" && \
         [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ] && \
         . $BUILDDIR/setup-environment
     unset EXTRAMELLAYERS
     unset OPTIONALLAYERS
+    unset EXCLUDEDLAYERS
     unset layerdir
 fi
