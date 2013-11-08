@@ -31,7 +31,7 @@ else
 
     OPTIONALLAYERS="$OPTIONALLAYERS"
 
-    # Customer directory layers handling (e.g. adit-custom, conti-custom, etc.)
+    # Customer directory layers handling (e.g. <customername>-custom)
     if [ -e "$layerdir/../customer.conf" ] ; then
         for CUSTOMER in $(cat $layerdir/../customer.conf) ; do
             if [ -d "$CUSTOMER-custom" ] ; then
