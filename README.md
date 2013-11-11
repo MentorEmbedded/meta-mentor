@@ -65,10 +65,10 @@ Distro bits
   automatically check sstate mirrors in the default sstate extra path,
   specified fallback hosts for native recipes, and a flat layout. As one
   example, this means that a mirror can be populated with native sstate
-  archives in a RedHatEnterprise-5 directory, and knowing we can run
+  archives in a RedHatEnterprise-6 directory, and knowing we can run
   binaries from that host, it will check there on the mirror:
 
-      SSTATE_MIRROR_DISTROS += "RedHatEnterprise-5"
+      SSTATE_MIRROR_DISTROS += "RedHatEnterprise-6"
       SSTATE_MIRROR_SITES += "file:///cache/sstate http://my.server/sstate-cache"
 
 - isolated-sstate-dir class: link any used shared state archives into an
