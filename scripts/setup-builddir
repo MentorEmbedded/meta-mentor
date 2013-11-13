@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2007-2012 Mentor Graphics Corporation
+# Copyright 2007-2013 Mentor Graphics Corporation
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -157,7 +157,7 @@ sed -i -n '/^BBLAYERS/{ :start; /\\$/{n; b start}; d; }; p' $BUILDDIR/conf/bblay
 
 echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
 layersfile=$(mktemp setup-builddir.XXXXXX)
-$(dirname $0)/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" $MACHINE >$layersfile
+$(dirname $0)/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -x "$EXCLUDEDLAYERS" $MACHINE >$layersfile
 if [ $? -ne 0 ]; then
     rm -f $layersfile
     echo >&2 "Error in execution of bb-determine-layers, aborting"

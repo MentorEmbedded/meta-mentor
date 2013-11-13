@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2007-2012 Mentor Graphics Corporation
+# Copyright 2007-2013 Mentor Graphics Corporation
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -195,10 +195,11 @@ else
     layerdir=$(mel_abspath $layerdir)
     export OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
     export EXTRAMELLAYERS="${EXTRAMELLAYERS:-openembedded-layer networking toolchain-layer sourcery}"
+    export EXCLUDEDLAYERS="${EXCLUDEDLAYERS}"
     mel_setup "$@"
     sed -i -e "s/^DISTRO.*/DISTRO = 'mel'/" conf/local.conf
 
-    unset OPTIONALLAYERS EXTRAMELLAYERS
+    unset OPTIONALLAYERS EXTRAMELLAYERS EXCLUDEDLAYERS
     unset MACHINE BUILDDIR MELDIR force_overwrite layerdir
     unset -f mel_setup mel_usage mel_prompt_machine mel_list_all_machines mel_abspath
     unset -f run_builddir
