@@ -88,7 +88,7 @@ configure_for_machine () {
 
     echo 'BBLAYERS = "\' >> $1/bblayers.conf
     layersfile=$(mktemp setup-mel-builddir.XXXXXX)
-    $layerdir/scripts/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" $MACHINE >$layersfile
+    $layerdir/scripts/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -x "$EXCLUDEDLAYERS" $MACHINE >$layersfile
     if [ $? -ne 0 ]; then
         rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
