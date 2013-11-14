@@ -69,6 +69,8 @@ def process_arguments(cmdline_args):
             help='base layers to include. space separated. default="{0}"'.format(layers_default))
     parser.add_option('-o', '--optional-layers', default='',
             help='optional layers to include. space separated.')
+    parser.add_option('-x', '--excluded-layers', default='',
+            help='explicit layers to excluded. space separated.')
     parser.add_option('-g', '--globs', default=glob_default,
             help='wildcard patterns to locate layers. colon separated. default="{0}"'.format(glob_default))
     parser.add_option('-p', '--paths',
@@ -79,6 +81,7 @@ def process_arguments(cmdline_args):
 
     opts.layers = opts.layers.split()
     opts.optional_layers = opts.optional_layers.split()
+    opts.excluded_layers = opts.excluded_layers.split()
 
     new_globs = []
     for pattern in opts.globs.split(':'):
@@ -266,6 +269,8 @@ def print_layers(cmdline_opts):
                 sys.exit(str(exc))
             else:
                 all_layers |= set(layers)
+
+    all_layers = set(filter(lambda layer:layer.name not in opts.excluded_layers, all_layers))
 
     for layer in all_layers:
         priority_override = priority_overrides.get(layer.name)
