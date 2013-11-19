@@ -3,7 +3,7 @@
 # and the LGPL bits are under lib/, which appears to be used for libgnu, which
 # appears to be used for DOS builds. So we're left with GPLv2+ and PD.
 
-LICENSE = "GPLv2+ & GPLv3+ & LGPLv2.1+"
+LICENSE = "GPLv2+ & GPLv3+ & LGPLv2.1+ & PD"
 
 LICENSE_${PN} = "GPLv2+"
 LICENSE_${PN}-dev = "GPLv2+"
