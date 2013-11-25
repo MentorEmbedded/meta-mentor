@@ -29,7 +29,7 @@ else
         esac
     done
 
-    OPTIONALLAYERS="$OPTIONALLAYERS"
+    OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
     EXCLUDEDLAYERS="$EXCLUDEDLAYERS"
 
     # Customer directory layers handling (e.g. <customername>-custom)
