@@ -27,12 +27,17 @@ unspecified, and the script will set you up for that build directory without
 changing its configuration.
 
 Options:
+
   -b BUILDDIR  Specify the build directory to create (default: 'build')
-  -o MELDIR    Specify the root of the MEL install, where you can find bitbake and the layers
+  -o MELDIR    Specify the root of the MEL install, where you can find bitbake
+               and the layers
+  -l LAYERS    Space-separated list of layer names for additional layers you
+               want to be included in the configuration
   -f           Force overwrite of existing configuration files in the build
                directory. This includes local.conf and bblayers.conf, but not
                site.conf
   -h           Show this usage information
+
 END
 }
 
@@ -88,7 +93,7 @@ configure_for_machine () {
 
     echo 'BBLAYERS = "\' >> $1/bblayers.conf
     layersfile=$(mktemp setup-mel-builddir.XXXXXX)
-    $layerdir/scripts/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -x "$EXCLUDEDLAYERS" $MACHINE >$layersfile
+    $layerdir/scripts/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -o "$extralayers $EXTRAMELLAYERS $OPTIONALLAYERS" -x "$EXCLUDEDLAYERS" $MACHINE >$layersfile
     if [ $? -ne 0 ]; then
         rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
@@ -104,14 +109,18 @@ process_arguments () {
     BUILDDIR=
     MELDIR=
     OEROOT=
+    extralayers=
     force_overwrite=
-    while getopts b:o:fh opt; do
+    while getopts b:o:l:fh opt; do
         case "$opt" in
             b)
                 BUILDDIR="$(abspath $OPTARG)"
                 ;;
             o)
                 MELDIR="$(abspath $OPTARG)"
+                ;;
+            l)
+                extralayers="$OPTARG"
                 ;;
             f)
                 force_overwrite="-f"
