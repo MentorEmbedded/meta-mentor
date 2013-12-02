@@ -163,8 +163,16 @@ setup_builddir () {
         fi
     else
         if [ ! -e $BUILDDIR/conf/local.conf -o ! -e $BUILDDIR/conf/bblayers.conf ]; then
-            MACHINE="$(ls -1d $MELDIR/*/binary 2>/dev/null | sed "s,^$MELDIR/,,; s,/binary$,," | prompt_choice "Select BSP to use")"
-            if [ $? -ne 0 ]; then
+            tmpfile="$(mktemp -t "${0##*/}.XXXXX")"
+            ls -1d $MELDIR/*/binary 2>/dev/null | sed "s,^$MELDIR/,,; s,/binary$,," | \
+                while read machine; do
+                    if [ ! -e "$MELDIR/$machine/conf/local.conf.sample" ]; then
+                        continue
+                    fi
+                done | prompt_choice "Select BSP to use" >$tmpfile
+            MACHINE="$(cat "$tmpfile")"
+            rm -f "$tmpfile"
+            if [ -z "$MACHINE" ]; then
                 echo >&2 "Error: no installed MEL BSP, please specify MACHINE"
                 return 1
             else
