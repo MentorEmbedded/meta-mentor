@@ -1,3 +1,5 @@
+RRECOMMENDS_${PN} += "os-release"
+
 PACKAGECONFIG ??= "\
     xz \
     tcp-wrappers \
