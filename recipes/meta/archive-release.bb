@@ -296,7 +296,8 @@ do_prepare_release () {
 addtask prepare_release before do_build after do_dump_headrevs
 
 python do_dump_headrevs () {
-    dump_headrevs(d, os.path.join(d.getVar('WORKDIR', True), 'dumped-headrevs.db'))
+    if d.getVar('DUMP_HEADREVS_DB', True):
+        dump_headrevs(d, os.path.join(d.getVar('WORKDIR', True), 'dumped-headrevs.db'))
 }
 addtask dump_headrevs
 
