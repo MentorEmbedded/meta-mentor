@@ -216,6 +216,7 @@ do_prepare_release () {
                         deploy/$name-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/$name
             done
         else
+            mkdir -p downloads
             find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
                 source_name="$(basename "$source")"
                 if [ -e "${DL_DIR}/$source_name" ]; then
