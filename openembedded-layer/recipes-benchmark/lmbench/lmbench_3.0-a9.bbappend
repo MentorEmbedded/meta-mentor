@@ -10,6 +10,6 @@ LIC_FILES_CHKSUM = "\
 do_install_append () {
     if [ -f ${WORKDIR}/CONFIG.${MACHINE} ]; then
         install -D 0644 ${WORKDIR}/CONFIG.${MACHINE} \
-                        ${D}/${datadir}/lmbench/bin/${TARGET_PREFIX}/CONFIG.${MACHINE}
+                        ${D}/${datadir}/lmbench/scripts/CONFIG.${MACHINE}
     fi
 }
