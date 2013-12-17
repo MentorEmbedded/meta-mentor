@@ -121,6 +121,14 @@ process_arguments () {
                 ;;
             l)
                 extralayers="$OPTARG"
+                layernames=""
+                for layer in $extralayers; do
+                    if [ -d "$layer" ]; then
+                        layer="$($(dirname "$0")/bb-print-layer-data 2>/dev/null "$layer" | cut -d: -f1)"
+                    fi
+                    layernames="$layernames $layer"
+                done
+                extralayers="$layernames"
                 ;;
             f)
                 force_overwrite="-f"

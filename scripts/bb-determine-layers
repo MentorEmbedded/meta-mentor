@@ -209,7 +209,7 @@ def get_configured_layers(all_layers, base_layer_names, optional_layer_names, mi
             if layer.name == base_layer_name:
                 break
         else:
-            raise Exception("Unable to locate base layer '{0}".format(base_layer_name))
+            raise Exception("Unable to locate base layer named '{0}'".format(base_layer_name))
 
     for layer in list(optional):
         if not layer.missingdeps:
