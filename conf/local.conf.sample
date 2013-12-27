@@ -56,6 +56,11 @@ CORE_IMAGE_EXTRA_INSTALL = "oprofile"
 
 EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-profile"
 
+# Uncomment to enable runtime testing with ptest
+#USER_FEATURES += "ptest"
+#EXTRA_IMAGE_FEATURES += "ptest-pkgs"
+#CORE_IMAGE_EXTRA_INSTALL += "ptest-runner"
+
 # Uncomment this to enable inclusion of gdbserver in the codebench-debug
 # packagegroup / image feature even when GPLv3 is in INCOMPATIBLE_LICENSE, or
 # using a distro which sets it that way (atp).
