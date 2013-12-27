@@ -9,7 +9,8 @@ def generate_sstatefn(spec, hash, d):
     return hash[:2] + "/" + spec + hash
 
 SSTATE_PKGARCH    = "${PACKAGE_ARCH}"
-SSTATE_PKGSPEC    = "sstate-${PN}-${PACKAGE_ARCH}${TARGET_VENDOR}-${TARGET_OS}-${PV}-${PR}-${SSTATE_PKGARCH}-${SSTATE_VERSION}-"
+SSTATE_PKGSPEC    = "sstate:${PN}:${PACKAGE_ARCH}${TARGET_VENDOR}-${TARGET_OS}:${PV}:${PR}:${SSTATE_PKGARCH}:${SSTATE_VERSION}:"
+SSTATE_SWSPEC     = "sstate:${BPN}::${PV}:${PR}::${SSTATE_VERSION}:"
 SSTATE_PKGNAME    = "${SSTATE_EXTRAPATH}${@generate_sstatefn(d.getVar('SSTATE_PKGSPEC', True), d.getVar('BB_TASKHASH', True), d)}"
 SSTATE_PKG        = "${SSTATE_DIR}/${SSTATE_PKGNAME}"
 SSTATE_EXTRAPATH   = ""
@@ -26,7 +27,7 @@ SSTATE_DUPWHITELIST += "${STAGING_ETCDIR_NATIVE}/sgml ${STAGING_DATADIR_NATIVE}/
 SSTATE_SCAN_FILES ?= "*.la *-config *_config"
 SSTATE_SCAN_CMD ?= 'find ${SSTATE_BUILDDIR} \( -name "${@"\" -o -name \"".join(d.getVar("SSTATE_SCAN_FILES", True).split())}" \) -type f'
 
-BB_HASHFILENAME = "${SSTATE_EXTRAPATH} ${SSTATE_PKGSPEC}"
+BB_HASHFILENAME = "${SSTATE_EXTRAPATH} ${SSTATE_PKGSPEC} ${SSTATE_SWSPEC}"
 
 SSTATE_MANMACH ?= "${SSTATE_PKGARCH}"
 
@@ -68,12 +69,9 @@ python () {
 
     unique_tasks = set((d.getVar('SSTATETASKS', True) or "").split())
     d.setVar('SSTATETASKS', " ".join(unique_tasks))
-    namemap = []
     for task in unique_tasks:
-        namemap.append(d.getVarFlag(task, 'sstate-name'))
         d.prependVarFlag(task, 'prefuncs', "sstate_task_prefunc ")
         d.appendVarFlag(task, 'postfuncs', " sstate_task_postfunc")
-    d.setVar('SSTATETASKNAMES', " ".join(namemap))
 }
 
 def sstate_init(name, task, d):
@@ -93,7 +91,9 @@ def sstate_state_fromvars(d, task = None):
             bb.fatal("sstate code running without task context?!")
         task = task.replace("_setscene", "")
 
-    name = d.getVarFlag("do_" + task, 'sstate-name', True)
+    name = task
+    if task.startswith("do_"):
+        name = task[3:]
     inputs = (d.getVarFlag("do_" + task, 'sstate-inputdirs', True) or "").split()
     outputs = (d.getVarFlag("do_" + task, 'sstate-outputdirs', True) or "").split()
     plaindirs = (d.getVarFlag("do_" + task, 'sstate-plaindirs', True) or "").split()
@@ -102,6 +102,10 @@ def sstate_state_fromvars(d, task = None):
     interceptfuncs = (d.getVarFlag("do_" + task, 'sstate-interceptfuncs', True) or "").split()
     if not name or len(inputs) != len(outputs):
         bb.fatal("sstate variables not setup correctly?!")
+
+    if name == "populate_lic":
+        d.setVar("SSTATE_PKGSPEC", "${SSTATE_SWSPEC}")
+        d.setVar("SSTATE_EXTRAPATH", "")
 
     ss = sstate_init(name, task, d)
     for i in range(len(inputs)):
@@ -296,8 +300,9 @@ def sstate_clean_cachefile(ss, d):
 
 def sstate_clean_cachefiles(d):
     for task in (d.getVar('SSTATETASKS', True) or "").split():
-        ss = sstate_state_fromvars(d, task[3:])
-        sstate_clean_cachefile(ss, d)
+        ld = d.createCopy()
+        ss = sstate_state_fromvars(ld, task)
+        sstate_clean_cachefile(ss, ld)
 
 def sstate_clean_manifest(manifest, d):
     import oe.path
@@ -364,12 +369,11 @@ python sstate_cleanall() {
     if not os.path.exists(manifest_dir):
         return
 
-    namemap = d.getVar('SSTATETASKNAMES', True).split()
     tasks = d.getVar('SSTATETASKS', True).split()
-    for name in namemap:
-        taskname = tasks[namemap.index(name)]
-        shared_state = sstate_state_fromvars(d, taskname[3:])
-        sstate_clean(shared_state, d)
+    for name in tasks:
+        ld = d.createCopy()
+        shared_state = sstate_state_fromvars(ld, name)
+        sstate_clean(shared_state, ld)
 }
 
 def sstate_hardcode_path(d):
@@ -596,26 +600,32 @@ sstate_unpack_package () {
 	tar -xmvzf ${SSTATE_PKG}
 }
 
-# Need to inject information about classes not in the global configuration scope
-EXTRASSTATEMAPS += "do_deploy:deploy"
-
 BB_HASHCHECK_FUNCTION = "sstate_checkhashes"
 
 def sstate_checkhashes(sq_fn, sq_task, sq_hash, sq_hashfn, d):
 
     ret = []
-    mapping = {}
-    for t in d.getVar("SSTATETASKS", True).split():
-        mapping[t] = d.getVarFlag(t, "sstate-name", True)
-    for extra in d.getVar("EXTRASSTATEMAPS", True).split():
-        e = extra.split(":")
-        mapping[e[0]] = e[1]
+
+    def getpathcomponents(task, d):
+        # Magic data from BB_HASHFILENAME
+        splithashfn = sq_hashfn[task].split(" ")
+        spec = splithashfn[1]
+        extrapath = splithashfn[0]
+
+        tname = sq_task[task][3:]
+
+        if tname in ["fetch", "unpack", "patch", "populate_lic"] and splithashfn[2]:
+            spec = splithashfn[2]
+            extrapath = ""
+
+        return spec, extrapath, tname
+
 
     for task in range(len(sq_fn)):
-        spec = sq_hashfn[task].split(" ")[1]
-        extrapath = sq_hashfn[task].split(" ")[0]
 
-        sstatefile = d.expand("${SSTATE_DIR}/" + extrapath + generate_sstatefn(spec, sq_hash[task], d) + "_" + mapping[sq_task[task]] + ".tgz")
+        spec, extrapath, tname = getpathcomponents(task, d)
+
+        sstatefile = d.expand("${SSTATE_DIR}/" + extrapath + generate_sstatefn(spec, sq_hash[task], d) + "_" + tname + ".tgz.siginfo")
         if os.path.exists(sstatefile):
             bb.debug(2, "SState: Found valid sstate file %s" % sstatefile)
             ret.append(task)
@@ -644,9 +654,9 @@ def sstate_checkhashes(sq_fn, sq_task, sq_hash, sq_hashfn, d):
             if task in ret:
                 continue
 
-            spec = sq_hashfn[task].split(" ")[1]
-            extrapath = sq_hashfn[task].split(" ")[0]
-            sstatefile = d.expand(extrapath + generate_sstatefn(spec, sq_hash[task], d) + "_" + mapping[sq_task[task]] + ".tgz")
+            spec, extrapath, tname = getpathcomponents(task, d)
+
+            sstatefile = d.expand(extrapath + generate_sstatefn(spec, sq_hash[task], d) + "_" + tname + ".tgz.siginfo")
 
             srcuri = "file://" + sstatefile
             localdata.setVar('SRC_URI', srcuri)
@@ -740,3 +750,19 @@ def setscene_depvalid(task, taskdependees, notneeded, d):
         return False
     return True
 
+addhandler sstate_eventhandler
+sstate_eventhandler[eventmask] = "bb.build.TaskSucceeded"
+python sstate_eventhandler() {
+    d = e.data
+    # When we write an sstate package we rewrite the SSTATE_PKG
+    spkg = d.getVar('SSTATE_PKG', True)
+    if not spkg.endswith(".tgz"):
+        taskname = d.getVar("BB_RUNTASK", True)[3:]
+        spec = d.getVar('SSTATE_PKGSPEC', True)
+        swspec = d.getVar('SSTATE_SWSPEC', True)
+        if taskname in ["fetch", "unpack", "patch", "populate_lic"] and swspec:
+            d.setVar("SSTATE_PKGSPEC", "${SSTATE_SWSPEC}")
+            d.setVar("SSTATE_EXTRAPATH", "")
+        sstatepkg = d.getVar('SSTATE_PKG', True)
+        bb.siggen.dump_this_task(sstatepkg + '_' + taskname + ".tgz" ".siginfo", d)
+}
