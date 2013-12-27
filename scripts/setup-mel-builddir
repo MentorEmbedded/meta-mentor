@@ -7,7 +7,7 @@
 # kind, whether express or implied.
 
 OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
-EXTRAMELLAYERS="${EXTRAMELLAYERS:-openembedded-layer filesystems-layer networking sourcery}"
+EXTRAMELLAYERS="${EXTRAMELLAYERS:-openembedded-layer filesystems-layer networking-layer sourcery}"
 
 usage () {
     cat >&2 <<END
