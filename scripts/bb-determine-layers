@@ -196,6 +196,8 @@ def get_configured_layers(all_layers, base_layer_names, optional_layer_names, mi
             for dep in layer.depends:
                 configured_layers.add(dep)
         elif layer.name in base_layer_names:
+            for dep in layer.depends:
+                configured_layers.add(dep)
             configured_layers.add(layer)
         elif layer.name in optional_layer_names:
             optional.add(layer)
