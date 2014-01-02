@@ -88,20 +88,26 @@ abspath () {
 }
 
 configure_for_machine () {
+    if [ -n "$EXCLUDEDLAYERS" ]; then
+        set -- -x "$EXCLUDEDLAYERS"
+    else
+        set --
+    fi
+
     sed -i -e"s/^#*MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $1/local.conf
     sed -n -i -e "s|##COREBASE##|$OEROOT|g" -e '/^BBLAYERS /{ :start; /\\$/{n; b start}; d; }; p' $1/bblayers.conf
 
     echo 'BBLAYERS = "\' >> $1/bblayers.conf
     layersfile=$(mktemp setup-mel-builddir.XXXXXX)
-    $layerdir/scripts/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -l "core yocto mentor $extralayers" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -x "$EXCLUDEDLAYERS" $MACHINE >$layersfile
+    $layerdir/scripts/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -l "core yocto mentor $extralayers" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" "$@" $MACHINE >$layersfile
     if [ $? -ne 0 ]; then
         rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
         exit 1
     fi
-    sed 's,^,    ,; s,$, \\,' <$layersfile >>$1/bblayers.conf
+    sed 's,^,    ,; s,$, \\,' <$layersfile >>$BUILDDIR/conf/bblayers.conf
     rm -f $layersfile
-    echo '"' >> $1/bblayers.conf
+    echo '"' >> $BUILDDIR/conf/bblayers.conf
     unset layersfile
 }
 
