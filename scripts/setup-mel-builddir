@@ -94,10 +94,10 @@ configure_for_machine () {
         set --
     fi
 
-    sed -i -e"s/^#*MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $1/local.conf
-    sed -n -i -e "s|##COREBASE##|$OEROOT|g" -e '/^BBLAYERS /{ :start; /\\$/{n; b start}; d; }; p' $1/bblayers.conf
+    sed -i -e"s/^#*MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
+    sed -n -i -e "s|##COREBASE##|$OEROOT|g" -e '/^BBLAYERS /{ :start; /\\$/{n; b start}; d; }; p' $BUILDDIR/conf/bblayers.conf
 
-    echo 'BBLAYERS = "\' >> $1/bblayers.conf
+    echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
     layersfile=$(mktemp setup-mel-builddir.XXXXXX)
     $layerdir/scripts/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -l "core yocto mentor $extralayers" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" "$@" $MACHINE >$layersfile
     if [ $? -ne 0 ]; then
