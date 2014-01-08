@@ -15,9 +15,20 @@ append_fragments () {
 
     for fragment in ${WORKDIR}/*.cfg; do
         if [ -e $fragment ] || [ -L $fragment ]; then
-            cat $fragment >> ${KERNEL_DEFCONFIG}
+            while read line; do
+                CONFIG="${line%=*}"
+                DEF_GREP=`awk "/\<${CONFIG}\>/" "${KERNEL_DEFCONFIG}" `
+                RC=$?
+                if [ 0 = $RC ] && [ -n "${DEF_GREP}" ]; then
+                    sed -i "s/${DEF_GREP}/${line}/g" ${KERNEL_DEFCONFIG}
+                else
+                    echo ${line} >> ${KERNEL_DEFCONFIG}
+                fi
+            done < $fragment
         fi
     done
+    CONF_DIR=`dirname ${KERNEL_DEFCONFIG}`
+    rm -f ${CONF_DIR}/sed*
 }
 
 python () {
