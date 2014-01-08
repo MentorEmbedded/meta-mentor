@@ -10,9 +10,7 @@ from collections import defaultdict
 
 glob_default = './*/:./*/*/:{scriptdir}/../../*/:{scriptdir}/../../*/*/'
 layers_default = 'core yocto mentor'
-priority_overrides = {
-    'openembedded-layer': 1,
-}
+override_default = 'openembedded-layer=1'
 
 
 class Terminate(BaseException):
@@ -81,6 +79,40 @@ class StatusDisplay(object):
 status = StatusDisplay
 
 
+class DictArgument(object):
+    def __init__(self, listsep=None, valuesep='=', keytype=None, valuetype=None):
+        self.listsep = listsep
+        self.valuesep = valuesep
+        self.keytype = keytype
+        self.valuetype = valuetype
+
+    def __call__(self, string):
+        d = {}
+        for o in string.split(self.listsep):
+            try:
+                k, v = o.rsplit(self.valuesep, 1)
+            except ValueError:
+                raise argparse.ArgumentTypeError('invalid entry `{0}`'.format(o))
+
+            if self.keytype is not None:
+                try:
+                    k = self.keytype(k)
+                except ValueError:
+                    raise argparse.ArgumentTypeError('invalid key `{0}` for type `{1}`'.format(k, self.keytype.__name__))
+
+            if self.valuetype is not None:
+                try:
+                    v = self.valuetype(v)
+                except ValueError:
+                    raise argparse.ArgumentTypeError('invalid value `{0}` for type `{1}`'.format(v, self.valuetype.__name__))
+
+            d[k] = v
+        return d
+
+    def __repr__(self):
+        return 'DictArgument(listsep={0}, valuesep={1}, keytype={2}, valuetype={3})'.format(repr(self.listsep), repr(self.valuesep), repr(self.keytype), repr(self.valuetype))
+
+
 def process_arguments(cmdline_args):
     parser = argparse.ArgumentParser(description='Determine the bitbake layers to use for a given machine, with sanity checks')
     parser.add_argument('-l', '--layers', default=layers_default,
@@ -91,6 +123,9 @@ def process_arguments(cmdline_args):
             help='extra layers to include. space separated. These layers are expected to exist, but are only included if their dependencies are already included in the configuration.')
     parser.add_argument('-x', '--excluded-layers', default='',
             help='explicit layers to excluded. space separated.')
+    parser.add_argument('-O', '--override-layer-priorities', default=override_default,
+            type=DictArgument(valuetype=int),
+            help='override the priority of one or more layers. space separated list of layername=priority values. default: `{0}`'.format(override_default))
     parser.add_argument('-g', '--globs', default=glob_default,
             help='wildcard patterns to locate layers. colon separated. default: `{0}`'.format(glob_default))
     parser.add_argument('-p', '--paths',
@@ -300,7 +335,7 @@ def print_layers(cmdline_opts):
     all_layers = set(filter(lambda layer:layer.name not in args.excluded_layers, all_layers))
 
     for layer in all_layers:
-        priority_override = priority_overrides.get(layer.name)
+        priority_override = args.override_layer_priorities.get(layer.name)
         if priority_override is not None:
             layer.priority = priority_override
 
