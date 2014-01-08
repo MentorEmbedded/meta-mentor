@@ -63,6 +63,7 @@ else
         unset EXTRALAYERS
     fi
 
+    export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE MGLS LM_LICENSE_FILE"
     OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" EXCLUDEDLAYERS="$EXCLUDEDLAYERS" $layerdir/scripts/setup-mel-builddir "$@" && \
         [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ] && \
         . $BUILDDIR/setup-environment
