@@ -25,7 +25,7 @@ def sigterm_exception(signum, stackframe):
 
 def setup_command_import(command, relpath='../lib'):
     """Set up sys.path based on the location of a binary in the PATH """
-    PATH = os.getenv('PATH').split(':')
+    PATH = os.environ['PATH'].split(':')
     cmd_paths = [os.path.join(path, relpath)
                  for path in PATH if os.path.exists(os.path.join(path, command))]
     if not cmd_paths:
@@ -299,6 +299,28 @@ def get_configured_layers(all_layers, base_layer_names, optional_layer_names, ex
 def print_layers(cmdline_opts):
     args = process_arguments(cmdline_opts)
 
+    layer_paths = set()
+    with status('Locating layers and bitbake'):
+        bitbake_path = None
+
+        for pattern in args.globs:
+            for glob_path in glob.glob(pattern)
+                layerconf_path = os.path.join(glob_path, 'conf', 'layer.conf')
+                if os.path.exists(layerconf_path):
+                    layer_paths.add(os.path.realpath(glob_path))
+                elif os.path.exists(os.path.join(glob_path, 'bin', 'bitbake')):
+                    bitbake_path = os.path.join(glob_path, 'bin')
+
+        for path in args.paths:
+            for subpath in find(path):
+                if subpath.endswith('/conf/layer.conf'):
+                    layer_paths.add(os.path.realpath(os.path.dirname(os.path.dirname(subpath))))
+                elif subpath.endswith('/bin/bitbake'):
+                    bitbake_path = os.path.dirname(subpath)
+
+        if bitbake_path is not None:
+            os.environ['PATH'] += ':' + bitbake_path
+
     setup_command_import('bitbake')
     try:
         import bb
@@ -312,20 +334,7 @@ def print_layers(cmdline_opts):
     bb.parse.init_parser(data)
 
     all_layers = set()
-    with status('Locating layers and parsing layer.conf files'):
-        layer_paths = set()
-        for pattern in args.globs:
-            paths = glob.glob(pattern)
-            for path in paths:
-                layerconf_path = os.path.join(path, 'conf', 'layer.conf')
-                if os.path.exists(layerconf_path):
-                    layer_paths.add(os.path.realpath(path))
-
-        for path in args.paths:
-            for subpath in find(path):
-                if subpath.endswith('/conf/layer.conf'):
-                    layer_paths.add(os.path.realpath(subpath))
-
+    with status('Parsing layer configuration files'):
         for layer_path in layer_paths:
             try:
                 layers = Layer.from_layerpath(layer_path, data)
