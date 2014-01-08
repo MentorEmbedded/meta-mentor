@@ -34,11 +34,16 @@ def setup_command_import(command, relpath='../lib'):
     sys.path[0:0] = cmd_paths
 
 
-def find(dir, **walkoptions):
+def find(dir, dirfilter=None, **walkoptions):
     """ Given a directory, recurse into that directory,
     returning all files as absolute paths. """
 
     for root, dirs, files in os.walk(dir, **walkoptions):
+        if dirfilter is not None:
+            for d in dirs:
+                if not dirfilter(d):
+                    dirs.remove(d)
+
         for file in files:
             yield os.path.join(root, file)
 
@@ -312,7 +317,7 @@ def print_layers(cmdline_opts):
                     bitbake_path = os.path.join(glob_path, 'bin')
 
         for path in args.paths:
-            for subpath in find(path):
+            for subpath in find(path, dirfilter=lambda d: d != 'lib'):
                 if subpath.endswith('/conf/layer.conf'):
                     layer_paths.add(os.path.realpath(os.path.dirname(os.path.dirname(subpath))))
                 elif subpath.endswith('/bin/bitbake'):
