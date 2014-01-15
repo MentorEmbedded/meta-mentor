@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 import argparse
+import collections
+import contextlib
 import glob
 import os
 import signal
 import sys
-from collections import defaultdict
 
 
 glob_default = './*/:./*/*/:{scriptdir}/../../*/:{scriptdir}/../../*/*/'
@@ -200,13 +201,13 @@ class Layer(object):
             raise LayerError(exc)
         ldata.expandVarref('LAYERDIR')
 
-        collections = (ldata.getVar('BBFILE_COLLECTIONS', True) or '').split()
-        if not collections:
+        bbfile_collections = (ldata.getVar('BBFILE_COLLECTIONS', True) or '').split()
+        if not bbfile_collections:
             name = os.path.basename(layer_path)
             l = Layer(layer_path, lconf, name, 0, None, set())
             layers.append(l)
 
-        for name in collections:
+        for name in bbfile_collections:
             pattern = ldata.getVar('BBFILE_PATTERN_%s' % name, True)
             priority = ldata.getVar('BBFILE_PRIORITY_%s' % name, True) or 0
             depends = ldata.getVar('LAYERDEPENDS_%s' % name, True) or ''
@@ -218,8 +219,52 @@ class Layer(object):
             return layers
 
 
+class Layers(collections.MutableSet):
+    def __init__(self, iterable=None):
+        self.layers = set()
+        self.by_path = {}
+        self.by_name = {}
+
+        if iterable is not None:
+            self |= iterable
+
+    def add(self, layer):
+        if layer.name in self.by_name:
+            raise Exception("Layer name '{0}' found more than once", layer.name)
+
+        if layer.path in self.by_path:
+            return
+
+        self.layers.add(layer)
+        self.by_path[layer.path] = layer
+        self.by_name[layer.name] = layer
+
+    def add_from_path(self, layerpath, data=None):
+        self |= Layer.from_layerpath(os.path.realpath(layerpath), data)
+
+    def discard(self, layer):
+        self.layers.discard(layer)
+        del self.by_path[layer.path]
+        del self.by_name[layer.name]
+
+    def clear(self):
+        self.layers.clear()
+        self.by_path.clear()
+        self.by_name.clear()
+
+    def __contains__(self, layer):
+        return layer in self.layers
+        #return layer.path in self.by_path
+
+    def __iter__(self):
+        return iter(self.layers)
+
+    def __len__(self):
+        return len(self.layers)
+
+
 def resolve_dependencies(layers_by_name):
-    missing_dependencies = defaultdict(set)
+    missing_dependencies = collections.defaultdict(set)
 
     for layer in layers_by_name.values():
         missing_layer_deps = set()
@@ -301,28 +346,33 @@ def get_configured_layers(all_layers, base_layer_names, optional_layer_names, ex
     return configured_layers, optional
 
 
-def print_layers(cmdline_opts):
+def get_layerpaths_bitbake(globs=None, paths=None):
+    bitbake_path = None
+    layer_paths = set()
+
+    for pattern in globs:
+        for glob_path in glob.glob(pattern):
+            layerconf_path = os.path.join(glob_path, 'conf', 'layer.conf')
+            if os.path.exists(layerconf_path):
+                layer_paths.add(os.path.realpath(glob_path))
+            elif os.path.exists(os.path.join(glob_path, 'bin', 'bitbake')):
+                bitbake_path = os.path.join(glob_path, 'bin')
+
+    for path in paths:
+        for subpath in find(path, dirfilter=lambda d: d != 'lib'):
+            if subpath.endswith('/conf/layer.conf'):
+                layer_paths.add(os.path.realpath(os.path.dirname(os.path.dirname(subpath))))
+            elif subpath.endswith('/bin/bitbake'):
+                bitbake_path = os.path.dirname(subpath)
+
+    return layer_paths, bitbake_path
+
+
+def determine_layers(cmdline_opts):
     args = process_arguments(cmdline_opts)
 
-    layer_paths = set()
     with status('Locating layers and bitbake'):
-        bitbake_path = None
-
-        for pattern in args.globs:
-            for glob_path in glob.glob(pattern)
-                layerconf_path = os.path.join(glob_path, 'conf', 'layer.conf')
-                if os.path.exists(layerconf_path):
-                    layer_paths.add(os.path.realpath(glob_path))
-                elif os.path.exists(os.path.join(glob_path, 'bin', 'bitbake')):
-                    bitbake_path = os.path.join(glob_path, 'bin')
-
-        for path in args.paths:
-            for subpath in find(path, dirfilter=lambda d: d != 'lib'):
-                if subpath.endswith('/conf/layer.conf'):
-                    layer_paths.add(os.path.realpath(os.path.dirname(os.path.dirname(subpath))))
-                elif subpath.endswith('/bin/bitbake'):
-                    bitbake_path = os.path.dirname(subpath)
-
+        layer_paths, bitbake_path = get_layerpaths_bitbake(args.globs, args.paths)
         if bitbake_path is not None:
             os.environ['PATH'] += ':' + bitbake_path
 
@@ -338,22 +388,21 @@ def print_layers(cmdline_opts):
     data = bb.data.init()
     bb.parse.init_parser(data)
 
-    all_layers = set()
+    all_layers = Layers()
     with status('Parsing layer configuration files'):
         for layer_path in layer_paths:
             try:
-                layers = Layer.from_layerpath(layer_path, data)
+                all_layers.add_from_path(layer_path, data)
             except LayerError as exc:
                 sys.exit(str(exc))
-            else:
-                all_layers |= set(layers)
 
-    all_layers = set(filter(lambda layer:layer.name not in args.excluded_layers, all_layers))
-
-    for layer in all_layers:
-        priority_override = args.override_layer_priorities.get(layer.name)
-        if priority_override is not None:
-            layer.priority = priority_override
+    for layer in list(all_layers):
+        if layer.name in args.excluded_layers:
+            all_layers.discard(layer)
+        else:
+            priority_override = args.override_layer_priorities.get(layer.name)
+            if priority_override is not None:
+                layer.priority = priority_override
 
     duplicates = defaultdict(set)
     with status('Resolving layer dependencies'):
@@ -391,7 +440,7 @@ def print_layers(cmdline_opts):
 if __name__ == '__main__':
     signal.signal(signal.SIGTERM, sigterm_exception)
     try:
-        sys.exit(print_layers(sys.argv[1:]) or 0)
+        sys.exit(determine_layers(sys.argv[1:]) or 0)
     except KeyboardInterrupt:
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         os.kill(os.getpid(), signal.SIGINT)
