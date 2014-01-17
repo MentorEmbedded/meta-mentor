@@ -240,7 +240,7 @@ def print_layers(cmdline_opts):
     setup_command_import('bitbake')
     try:
         import bb
-    except ImportError as exc:
+    except (ImportError, RuntimeError) as exc:
         sys.exit("Unable to import 'bb' python package: %s" % exc)
 
     import bb.parse
