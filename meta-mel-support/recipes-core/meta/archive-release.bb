@@ -9,7 +9,7 @@ PACKAGES = ""
 EXCLUDE_FROM_WORLD = "1"
 
 MELDIR ?= "${COREBASE}/.."
-TEMPLATECONF ?= "${FILE_DIRNAME}/../../conf"
+TEMPLATECONF ?= "${FILE_DIRNAME}/../../../conf"
 
 # Add a default in case the user doesn't inherit copyleft_compliance
 COPYLEFT_SOURCES_DIR ?= "${DL_DIR}"
