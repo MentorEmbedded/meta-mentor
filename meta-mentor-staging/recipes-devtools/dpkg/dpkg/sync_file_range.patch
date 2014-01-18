@@ -1,0 +1,22 @@
+Upstream-Status: Inappropriate (upstream doesn't care about kernels this old)
+
+diff --git i/src/archives.c w/src/archives.c
+index 3a1714f..8f18618 100644
+--- i/src/archives.c
++++ w/src/archives.c
+@@ -69,6 +69,15 @@
+ #include "filters.h"
+ #include "infodb.h"
+ 
++#ifdef __linux__
++#include <linux/version.h>
++#include <features.h>
++#if !(LINUX_VERSION_CODE >= 0x020611 && __GLIBC_PREREQ(2, 6))
++#undef SYNC_FILE_RANGE_WRITE
++#undef SYNC_FILE_RANGE_WAIT_BEFORE
++#endif
++#endif
++
+ static inline void
+ fd_writeback_init(int fd)
+ {
