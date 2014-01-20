@@ -20,9 +20,6 @@ sstate_create_package_append () {
     sstate_write_isolated
 }
 
-# Work around missing variable dependency bug
-sstate_create_package[vardeps] += "sstate_write_isolated"
-
 # Copy existing/fetched archives from SSTATE_DIR to ISOLATED_SSTATE_DIR
 sstate_write_isolated_preinst () {
     sstate_write_isolated
