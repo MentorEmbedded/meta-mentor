@@ -1,0 +1,13 @@
+Index: systemd-195/src/core/system.conf
+===================================================================
+--- systemd-195.orig/src/core/system.conf	2012-09-20 22:42:06.254974951 +0530
++++ systemd-195/src/core/system.conf	2013-04-12 17:53:11.460550233 +0530
+@@ -8,7 +8,7 @@
+ # See systemd.conf(5) for details
+ 
+ [Manager]
+-#LogLevel=info
++LogLevel=emerg
+ #LogTarget=journal-or-kmsg
+ #LogColor=yes
+ #LogLocation=no

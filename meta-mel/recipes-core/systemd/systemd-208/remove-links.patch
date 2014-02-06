@@ -1,0 +1,29 @@
+Index: systemd-199/src/core/mount.c
+===================================================================
+--- systemd-199.orig/src/core/mount.c	2012-10-23 00:03:10.000000000 -0700
++++ systemd-199/src/core/mount.c	2012-11-06 15:29:58.486851000 -0700
+@@ -955,6 +955,7 @@
+ static void mount_enter_mounting(Mount *m) {
+         int r;
+         MountParameters *p;
++        DIR* dp;
+ 
+         assert(m);
+ 
+@@ -966,6 +967,16 @@
+         if (dir_is_empty(m->where) <= 0)
+                 log_notice("%s: Directory %s to mount over is not empty, mounting anyway. (To see the over-mounted files, please manually mount the underlying file system to a secondary location.)", m->meta.id, m->where);
+ 
++        dp = opendir(m->where);
++        if (!dp) {
++                //this is not a directory but rather file or link
++                remove(m->where);
++                mkdir_p(m->where, m->directory_mode);
++        }
++        else {
++                closedir(dp);
++        }
++
+         /* Create the source directory for bind-mounts if needed */
+         p = get_mount_parameters_fragment(m);
+         if (p && mount_is_bind(p))
