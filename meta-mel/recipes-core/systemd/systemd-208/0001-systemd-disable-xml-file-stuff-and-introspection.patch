@@ -1,0 +1,119 @@
+Index: systemd-199/Makefile.am
+===================================================================
+--- Makefile.am.orig	2013-03-26 19:42:11.000000000 +0500
++++ Makefile.am	2013-06-14 16:03:27.282471922 +0500
+@@ -517,8 +517,6 @@
+ 
+ XML_FILES = \
+ 	${patsubst %.1,%.xml,${patsubst %.3,%.xml,${patsubst %.5,%.xml,${patsubst %.7,%.xml,${patsubst %.8,%.xml,$(MANPAGES)}}}}}
+-HTML_FILES = \
+-	${XML_FILES:.xml=.html}
+ HTML_ALIAS = \
+ 	${patsubst %.1,%.html,${patsubst %.3,%.html,${patsubst %.5,%.html,${patsubst %.7,%.html,${patsubst %.8,%.html,$(MANPAGES_ALIAS)}}}}}
+ 
+@@ -528,12 +526,10 @@
+ 	$(MANPAGES_ALIAS)
+ 
+ noinst_DATA += \
+-	$(HTML_FILES) \
+ 	$(HTML_ALIAS)
+ 
+ CLEANFILES += \
+ 	$(man_MANS) \
+-	$(HTML_FILES) \
+ 	$(HTML_ALIAS)
+ 
+ docs/html/man:
+@@ -550,9 +546,6 @@
+ man/index.html: man/systemd.index.html
+ 	$(AM_V_LN)$(LN_S) -f systemd.index.html $@
+ 
+-noinst_DATA += \
+-	man/index.html
+-
+ CLEANFILES += \
+ 	man/index.html
+ 
+@@ -587,7 +580,6 @@
+ 
+ EXTRA_DIST += \
+ 	$(XML_FILES) \
+-	$(HTML_FILES) \
+ 	$(HTML_ALIAS) \
+ 	$(dist_MANS) \
+ 	make-man-index.py \
+@@ -1017,29 +1009,9 @@
+ dist_dbussystemservice_DATA += \
+ 	src/core/org.freedesktop.systemd1.service
+ 
+-dbusinterface_DATA += \
+-	org.freedesktop.systemd1.Manager.xml \
+-	org.freedesktop.systemd1.Job.xml \
+-	org.freedesktop.systemd1.Unit.xml \
+-	org.freedesktop.systemd1.Service.xml \
+-	org.freedesktop.systemd1.Socket.xml \
+-	org.freedesktop.systemd1.Timer.xml \
+-	org.freedesktop.systemd1.Target.xml \
+-	org.freedesktop.systemd1.Device.xml \
+-	org.freedesktop.systemd1.Mount.xml \
+-	org.freedesktop.systemd1.Automount.xml \
+-	org.freedesktop.systemd1.Snapshot.xml \
+-	org.freedesktop.systemd1.Swap.xml \
+-	org.freedesktop.systemd1.Path.xml
+-
+ polkitpolicy_in_in_files += \
+ 	src/core/org.freedesktop.systemd1.policy.in.in
+ 
+-org.freedesktop.systemd1.%.xml: systemd
+-	$(AM_V_GEN)$(LIBTOOL) --mode=execute $(OBJCOPY) -O binary -j introspect.$* $< $@.tmp && \
+-		$(STRINGS) $@.tmp | $(AWK) -f $(srcdir)/introspect.awk | \
+-		$(DBUS_PREPROCESS) -o $@ - && rm $@.tmp
+-
+ pkgconfigdata_DATA = \
+ 	src/core/systemd.pc
+ 
+@@ -3115,14 +3087,6 @@
+ polkitpolicy_files += \
+ 	src/hostname/org.freedesktop.hostname1.policy
+ 
+-dbusinterface_DATA += \
+-	org.freedesktop.hostname1.xml
+-
+-org.freedesktop.hostname1.xml: systemd-hostnamed
+-	$(AM_V_GEN)$(LIBTOOL) --mode=execute $(OBJCOPY) -O binary -j introspect.hostname1 $< $@.tmp && \
+-		$(STRINGS) $@.tmp | $(AWK) -f $(srcdir)/introspect.awk | \
+-		$(DBUS_PREPROCESS) -o $@ - && rm $@.tmp
+-
+ SYSTEM_UNIT_ALIASES += \
+ 	systemd-hostnamed.service dbus-org.freedesktop.hostname1.service
+ 
+@@ -3182,14 +3146,6 @@
+ polkitpolicy_files += \
+ 	src/locale/org.freedesktop.locale1.policy
+ 
+-dbusinterface_DATA += \
+-	org.freedesktop.locale1.xml
+-
+-org.freedesktop.locale1.xml: systemd-localed
+-	$(AM_V_GEN)$(LIBTOOL) --mode=execute $(OBJCOPY) -O binary -j introspect.locale1 $< $@.tmp && \
+-		$(STRINGS) $@.tmp | $(AWK) -f $(srcdir)/introspect.awk | \
+-		$(DBUS_PREPROCESS) -o $@ - && rm $@.tmp
+-
+ SYSTEM_UNIT_ALIASES += \
+ 	systemd-localed.service dbus-org.freedesktop.locale1.service
+ 
+@@ -3258,14 +3214,6 @@
+ polkitpolicy_files += \
+ 	src/timedate/org.freedesktop.timedate1.policy
+ 
+-org.freedesktop.timedate1.xml: systemd-timedated
+-	$(AM_V_GEN)$(LIBTOOL) --mode=execute $(OBJCOPY) -O binary -j introspect.timedate1 $< $@.tmp && \
+-		$(STRINGS) $@.tmp | $(AWK) -f $(srcdir)/introspect.awk | \
+-		$(DBUS_PREPROCESS) -o $@ - && rm $@.tmp
+-
+-dbusinterface_DATA += \
+-	org.freedesktop.timedate1.xml
+-
+ INSTALL_DIRS += \
+ 	$(prefix)/lib/systemd/ntp-units.d \
+ 	$(sysconfdir)/systemd/ntp-units.d

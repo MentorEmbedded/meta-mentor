@@ -1,0 +1,160 @@
+From 349b0586d07a9d48b781c18c7932c0b3cd102e65 Mon Sep 17 00:00:00 2001
+From: Muhammad Shakeel <mshakeel@pkl-mshakeel-ubuntu.(none)>
+Date: Tue, 25 Jun 2013 18:58:02 +0500
+Subject: [PATCH] systemctl-clock: Use monotonic instead of realtime clock
+
+Currently if system clock is updated then 'ago' part of any service
+running time doesn't show correct information. This is reported here:
+https://bugs.freedesktop.org/show_bug.cgi?id=65616
+---
+ src/login/loginctl.c      | 10 ++++++++--
+ src/machine/machinectl.c  |  2 +-
+ src/shared/time-util.c    |  2 +-
+ src/systemctl/systemctl.c | 27 ++++++++++++++++++++++++---
+ 4 files changed, 34 insertions(+), 7 deletions(-)
+
+diff --git a/src/login/loginctl.c b/src/login/loginctl.c
+index 736db6a..ea64546 100644
+--- a/src/login/loginctl.c
++++ b/src/login/loginctl.c
+@@ -339,6 +339,7 @@ typedef struct SessionStatusInfo {
+         uid_t uid;
+         const char *name;
+         usec_t timestamp;
++        usec_t timestamp_monotonic;
+         int vtnr;
+         const char *seat;
+         const char *tty;
+@@ -358,6 +359,7 @@ typedef struct UserStatusInfo {
+         uid_t uid;
+         const char *name;
+         usec_t timestamp;
++        usec_t timestamp_monotonic;
+         const char *state;
+         char **sessions;
+         const char *display;
+@@ -382,7 +384,7 @@ static void print_session_status_info(DBusConnection *bus, SessionStatusInfo *i)
+         else
+                 printf("%u\n", (unsigned) i->uid);
+ 
+-        s1 = format_timestamp_relative(since1, sizeof(since1), i->timestamp);
++        s1 = format_timestamp_relative(since1, sizeof(since1), i->timestamp_monotonic);
+         s2 = format_timestamp(since2, sizeof(since2), i->timestamp);
+ 
+         if (s1)
+@@ -462,7 +464,7 @@ static void print_user_status_info(DBusConnection *bus, UserStatusInfo *i) {
+         else
+                 printf("%u\n", (unsigned) i->uid);
+ 
+-        s1 = format_timestamp_relative(since1, sizeof(since1), i->timestamp);
++        s1 = format_timestamp_relative(since1, sizeof(since1), i->timestamp_monotonic);
+         s2 = format_timestamp(since2, sizeof(since2), i->timestamp);
+ 
+         if (s1)
+@@ -598,6 +600,8 @@ static int status_property_session(const char *name, DBusMessageIter *iter, Sess
+ 
+                 if (streq(name, "Timestamp"))
+                         i->timestamp = (usec_t) u;
++                else if (streq(name, "TimestampMonotonic"))
++                        i->timestamp_monotonic = (usec_t) u;
+ 
+                 break;
+         }
+@@ -670,6 +674,8 @@ static int status_property_user(const char *name, DBusMessageIter *iter, UserSta
+ 
+                 if (streq(name, "Timestamp"))
+                         i->timestamp = (usec_t) u;
++                else if (streq(name, "TimestampMonotonic"))
++                        i->timestamp_monotonic = (usec_t) u;
+ 
+                 break;
+         }
+diff --git a/src/shared/time-util.c b/src/shared/time-util.c
+index 9ee711a..08c8a2f 100644
+--- a/src/shared/time-util.c
++++ b/src/shared/time-util.c
+@@ -171,7 +171,7 @@ char *format_timestamp(char *buf, size_t l, usec_t t) {
+ char *format_timestamp_relative(char *buf, size_t l, usec_t t) {
+         usec_t n, d;
+ 
+-        n = now(CLOCK_REALTIME);
++        n = now(CLOCK_MONOTONIC);
+ 
+         if (t <= 0 || t > n || t + USEC_PER_DAY*7 <= t)
+                 return NULL;
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index 9f47b2c..a05b5f8 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -2515,6 +2515,9 @@ typedef struct UnitStatusInfo {
+         usec_t active_enter_timestamp;
+         usec_t active_exit_timestamp;
+         usec_t inactive_enter_timestamp;
++        usec_t active_enter_timestamp_monotonic;
++        usec_t active_exit_timestamp_monotonic;
++        usec_t inactive_enter_timestamp_monotonic;
+ 
+         bool need_daemon_reload;
+ 
+@@ -2531,6 +2534,7 @@ typedef struct UnitStatusInfo {
+         int exit_code, exit_status;
+ 
+         usec_t condition_timestamp;
++        usec_t condition_timestamp_monotonic;
+         bool condition_result;
+         bool failed_condition_trigger;
+         bool failed_condition_negate;
+@@ -2560,7 +2564,7 @@ typedef struct UnitStatusInfo {
+ static void print_status_info(UnitStatusInfo *i) {
+         ExecStatusInfo *p;
+         const char *on, *off, *ss;
+-        usec_t timestamp;
++        usec_t timestamp, timestamp_monotonic;
+         char since1[FORMAT_TIMESTAMP_RELATIVE_MAX], *s1;
+         char since2[FORMAT_TIMESTAMP_MAX], *s2;
+         const char *path;
+@@ -2664,7 +2668,14 @@ static void print_status_info(UnitStatusInfo *i) {
+                     streq_ptr(i->active_state, "activating")    ? i->inactive_exit_timestamp :
+                                                                   i->active_exit_timestamp;
+ 
+-        s1 = format_timestamp_relative(since1, sizeof(since1), timestamp);
++        timestamp_monotonic = (streq_ptr(i->active_state, "active")      ||
++                     streq_ptr(i->active_state, "reloading"))   ? i->active_enter_timestamp_monotonic :
++                    (streq_ptr(i->active_state, "inactive")    ||
++                     streq_ptr(i->active_state, "failed"))      ? i->inactive_enter_timestamp_monotonic :
++                    streq_ptr(i->active_state, "activating")    ? i->inactive_exit_timestamp_monotonic :
++                                                                  i->active_exit_timestamp_monotonic;
++
++        s1 = format_timestamp_relative(since1, sizeof(since1), timestamp_monotonic);
+         s2 = format_timestamp(since2, sizeof(since2), timestamp);
+ 
+         if (s1)
+@@ -2675,7 +2686,7 @@ static void print_status_info(UnitStatusInfo *i) {
+                 printf("\n");
+ 
+         if (!i->condition_result && i->condition_timestamp > 0) {
+-                s1 = format_timestamp_relative(since1, sizeof(since1), i->condition_timestamp);
++                s1 = format_timestamp_relative(since1, sizeof(since1), i->condition_timestamp_monotonic);
+                 s2 = format_timestamp(since2, sizeof(since2), i->condition_timestamp);
+ 
+                 printf("           start condition failed at %s%s%s\n",
+@@ -3030,6 +3041,16 @@ static int status_property(const char *name, DBusMessageIter *iter, UnitStatusIn
+                         i->active_exit_timestamp = (usec_t) u;
+                 else if (streq(name, "ConditionTimestamp"))
+                         i->condition_timestamp = (usec_t) u;
++                else if (streq(name, "ActiveEnterTimestampMonotonic"))
++                        i->active_enter_timestamp_monotonic = (usec_t) u;
++                else if (streq(name, "InactiveEnterTimestampMonotonic"))
++                        i->inactive_enter_timestamp_monotonic = (usec_t) u;
++                else if (streq(name, "InactiveExitTimestampMonotonic"))
++                        i->inactive_exit_timestamp_monotonic = (usec_t) u;
++                else if (streq(name, "ActiveExitTimestampMonotonic"))
++                        i->active_exit_timestamp_monotonic = (usec_t) u;
++                else if (streq(name, "ConditionTimestampMonotonic"))
++                        i->condition_timestamp_monotonic = (usec_t) u;
+ 
+                 break;
+         }
+-- 
+1.8.3.4
+
