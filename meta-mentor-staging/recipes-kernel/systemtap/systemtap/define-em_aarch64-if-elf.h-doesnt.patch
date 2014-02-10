@@ -1,0 +1,30 @@
+Upstream-Status: backport
+
+From 508059f04842ed85d10bfbec8a9c688d57368860 Mon Sep 17 00:00:00 2001
+From: Mark Wielaard <mjw@redhat.com>
+Date: Wed, 13 Nov 2013 16:59:53 +0100
+Subject: [PATCH] Define EM_AARCH64 if elf.h doesn't.
+
+---
+ tapsets.cxx | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/tapsets.cxx b/tapsets.cxx
+index 9755bf3..844b3f3 100644
+--- a/tapsets.cxx
++++ b/tapsets.cxx
+@@ -63,6 +63,11 @@ extern "C" {
+ #include <inttypes.h>
+ }
+ 
++// Old elf.h doesn't know about this machine type.
++#ifndef EM_AARCH64
++#define EM_AARCH64 183
++#endif
++
+ 
+ using namespace std;
+ using namespace __gnu_cxx;
+-- 
+1.8.3.4
+
