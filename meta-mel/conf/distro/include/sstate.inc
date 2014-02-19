@@ -1,8 +1,8 @@
 INHERIT += "sstate-mirror-sites"
 
-# We know RHEL 6 is the oldest distro we support, and that binaries built
-# there will run on any other host we support
-SSTATE_MIRROR_DISTROS = "RedHatEnterprise-6"
+# We know anything built on RHEL 5 or 6 will run on any of the host
+# distributions we support.
+SSTATE_MIRROR_DISTROS = "RedHatEnterprise-5 RedHatEnterprise-6"
 
 def lsb_distro_adjust(distro_id, ver):
     """This hook ensures that RHEL server, RHEL client, and CentOS all return
