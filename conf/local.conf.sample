@@ -205,6 +205,12 @@ BB_DISKMON_DIRS = "\
 #    file:///some/local/dir \
 #"
 
+# Uncomment following lines to enable sysvinit
+#VIRTUAL-RUNTIME_init_manager = "sysvinit"
+#VIRTUAL-RUNTIME_initscripts = "initscripts"
+#DISTRO_FEATURES_BACKFILL_CONSIDERED = ""
+#DISTRO_FEATURES_remove = " systemd"
+
 # This may be used to abort the build when using an untested/unverified
 # version of the external toolchain.
 #CSL_VER_REQUIRED = "2012.03"
