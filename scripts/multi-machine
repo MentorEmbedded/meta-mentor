@@ -42,9 +42,10 @@ bgrm () {
 builddir=build
 bitbakeopts=core-image-base
 setupscript=$(dirname $0)/../setup-environment
+setupscriptargs=
 continue=0
 clean=0
-while getopts b:o:s:ckh opt; do
+while getopts b:o:s:a:ckh opt; do
     case "$opt" in
         b)
             builddir="$OPTARG"
@@ -54,6 +55,9 @@ while getopts b:o:s:ckh opt; do
             ;;
         s)
             setupscript="$OPTARG"
+            ;;
+        a)
+            setupscriptargs="$OPTARG"
             ;;
         c)
             clean=1
@@ -76,7 +80,7 @@ fi
 bitbakeopts="-k $bitbakeopts"
 topdir=$PWD
 for machine; do
-    . $setupscript -f -b $builddir $machine >/dev/null
+    eval . "$setupscript -f -b $builddir $setupscriptargs $machine"
     echo "Running bitbake $bitbakeopts for $machine.."
     eval bitbake $bitbakeopts
     ret=$?
