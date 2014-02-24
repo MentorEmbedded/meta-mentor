@@ -26,6 +26,9 @@ If the build directory already exists and is configured, you can leave MACHINE
 unspecified, and the script will set you up for that build directory without
 changing its configuration.
 
+All layers whose directory name is update-* will be automatically included, as
+a mechanism for delivering sets of updates for releases.
+
 Options:
 
   -b BUILDDIR  Specify the build directory to create (default: 'build')
@@ -127,14 +130,6 @@ process_arguments () {
                 ;;
             l)
                 extralayers="$OPTARG"
-                layernames=""
-                for layer in $extralayers; do
-                    if [ -d "$layer" ]; then
-                        layer="$($(dirname "$0")/bb-print-layer-data 2>/dev/null "$layer" | cut -d: -f1)"
-                    fi
-                    layernames="$layernames $layer"
-                done
-                extralayers="$layernames"
                 ;;
             f)
                 force_overwrite="-f"
@@ -158,6 +153,18 @@ process_arguments () {
     if [ -z "$MELDIR" ]; then
         MELDIR=$(dirname $layerdir)
     fi
+
+    extralayers="$extralayers $(ls -d update-*/ $MELDIR/update-*/ 2>/dev/null)"
+
+    # Convert layer paths to layer names for bb-determine-layers
+    layernames=
+    for layer in $extralayers; do
+        if [ -d "$layer" ]; then
+            layer="$($(dirname "$0")/bb-print-layer-data 2>/dev/null "$layer" | cut -d: -f1)"
+        fi
+        layernames="$layernames $layer"
+    done
+    extralayers="$layernames"
 }
 
 setup_builddir () {
