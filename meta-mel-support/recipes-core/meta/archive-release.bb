@@ -15,6 +15,21 @@ TEMPLATECONF ?= "${FILE_DIRNAME}/../../../conf"
 COPYLEFT_SOURCES_DIR ?= "${DL_DIR}"
 COPYLEFT_SOURCES_BASE_DIR ?= "${COPYLEFT_SOURCES_DIR}"
 
+# Default to shipping update-* as individual artifacts
+def configured_update_layers(d):
+    """Return the configured layers whose basenames are update-*"""
+    update_layers = set()
+    for layer in d.getVar('BBLAYERS', True).split():
+        basename = os.path.basename(layer)
+        if basename.startswith('update-'):
+            update_layers.add(layer)
+    return ' '.join(update_layers)
+
+# Sub-layers to archive individually, rather than grabbing the entire
+# repository they're in
+SUBLAYERS_INDIVIDUAL_ONLY ?= ""
+SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL ?= "${@configured_update_layers(d)}"
+
 DUMP_HEADREVS_DB ?= ""
 DEPLOY_DIR_RELEASE ?= "${DEPLOY_DIR}/release-artifacts"
 RELEASE_ARTIFACTS ?= "layers bitbake templates images downloads sstate"
@@ -131,15 +146,24 @@ bb_layers () {
 
     for layer in ${BBLAYERS}; do
         layer="${layer%/}"
+
         topdir="$(repo_root "$layer")"
         repo_name="${topdir##*/}"
+
         layer_relpath="${layer#${topdir}/}"
         if [ "$layer_relpath" = "$topdir" ]; then
             layer_relpath=$repo_name
         else
             layer_relpath=$repo_name/$layer_relpath
         fi
-        printf "%s %s\n" "$topdir" "$layer_relpath"
+
+        if echo "${SUBLAYERS_INDIVIDUAL_ONLY}" | grep -w "$layer"; then
+            printf "%s %s\n" "$layer" "$layer_relpath"
+        elif echo "${SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL}" | grep -w "$layer"; then
+            printf "%s %s\n" "$layer" "${layer##*/}"
+        else
+            printf "%s %s\n" "$topdir" "$layer_relpath"
+        fi
     done
 }
 bb_layers[vardepsexclude] += "layer%/ topdir##*/ layer#${topdir}/"
