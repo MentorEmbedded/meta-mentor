@@ -26,6 +26,10 @@ If the build directory already exists and is configured, you can leave MACHINE
 unspecified, and the script will set you up for that build directory without
 changing its configuration.
 
+All layers whose directory name is update-*, at toplevel or a subdir, of
+MELDIR or $PWD, will be automatically included, as a mechanism for delivering
+sets of updates for releases.
+
 Options:
 
   -b BUILDDIR  Specify the build directory to create (default: 'build')
@@ -99,7 +103,17 @@ configure_for_machine () {
 
     echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
     layersfile=$(mktemp setup-mel-builddir.XXXXXX)
-    $layerdir/scripts/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -l "core mel mel-support mentor-staging $extralayers" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" "$@" $MACHINE >$layersfile
+
+    # Convert layer paths to layer names for bb-determine-layers
+    extralayernames=
+    for layer in $extralayers; do
+        if [ -d "$layer" ]; then
+            layer="$(PATH="$OEROOT/scripts:$OEROOT/bitbake/bin:$PATH" $(dirname "$0")/bb-print-layer-data 2>/dev/null "$layer" | cut -d: -f1)"
+        fi
+        extralayernames="$extralayernames $layer"
+    done
+
+    $layerdir/scripts/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -l "core mel mel-support mentor-staging $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" "$@" $MACHINE >$layersfile
     if [ $? -ne 0 ]; then
         rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
@@ -127,14 +141,6 @@ process_arguments () {
                 ;;
             l)
                 extralayers="$OPTARG"
-                layernames=""
-                for layer in $extralayers; do
-                    if [ -d "$layer" ]; then
-                        layer="$($(dirname "$0")/bb-print-layer-data 2>/dev/null "$layer" | cut -d: -f1)"
-                    fi
-                    layernames="$layernames $layer"
-                done
-                extralayers="$layernames"
                 ;;
             f)
                 force_overwrite="-f"
@@ -158,6 +164,14 @@ process_arguments () {
     if [ -z "$MELDIR" ]; then
         MELDIR=$(dirname $layerdir)
     fi
+
+    for lconf in update-*/conf/layer.conf */update-*/conf/layer.conf \
+                 $MELDIR/update-*/conf/layer.conf $MELDIR/*/update-*/conf/layer.conf; do
+        updatelayer="${lconf%/conf/layer.conf}"
+        if [ -e "$updatelayer" ]; then
+            extralayers="$extralayers $updatelayer"
+        fi
+    done
 }
 
 setup_builddir () {
