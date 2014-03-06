@@ -1,4 +1,4 @@
-Upstream-status: backport
+Upstream-Status: backport
 
 From 602070f9cce790debd8d1469254e7726ab499ae7 Mon Sep 17 00:00:00 2001
 From: Peter Eisentraut <peter_e@gmx.net>
