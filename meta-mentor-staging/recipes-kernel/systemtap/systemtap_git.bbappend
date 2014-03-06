@@ -1,4 +1,3 @@
-PRINC := "${@int(PRINC) + 4}"
 SRC_URI += " \
     file://system_map_location.patch \
     file://define-em_aarch64-if-elf.h-doesnt.patch \

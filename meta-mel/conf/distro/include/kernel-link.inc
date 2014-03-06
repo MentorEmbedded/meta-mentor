@@ -1,6 +1,5 @@
 python add_kernel_imgtype_link () {
     if isinstance(e, bb.event.RecipePreFinalise) and oe.utils.inherits(e.data, 'kernel'):
-        e.data.setVar('PRINC', str(int(e.data.getVar('PRINC', True)) + 1))
         e.data.setVar('kernel_do_deploy_append', 'kernel_imgtype_link\n')
 }
 addhandler add_kernel_imgtype_link

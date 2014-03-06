@@ -1,4 +1,3 @@
-PRINC := "${@int(PRINC) + 1}"
 
 LICENSE = 'GPL-2.0+'
 

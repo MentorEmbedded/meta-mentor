@@ -1,4 +1,3 @@
-PRINC := "${@int(PRINC) + 1}"
 
 LICENSE = "GPL-2.0 & GPL-2.0-with-lmbench-exception"
 LIC_FILES_CHKSUM = "\
