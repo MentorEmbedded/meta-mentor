@@ -1,5 +1,5 @@
 WPA_SUPPLICANT_TLS_LIB ?= "gnutls"
-DEPENDS := "${@DEPENDS.replace('gnutls', '${WPA_SUPPLICANT_TLS_LIB}' if 'mel' in OVERRIDES.split(':') else 'gnutls')}"
+DEPENDS := "${@DEPENDS.replace('openssl', '').replace('gnutls', '${WPA_SUPPLICANT_TLS_LIB}' if 'mel' in OVERRIDES.split(':') else 'gnutls openssl')}"
 
 do_configure_append_mel () {
     sed -i '/CONFIG_TLS/d' wpa_supplicant/.config
