@@ -14,7 +14,7 @@ usage () {
     echo >&2 "  -o BITBAKE_ARGUMENTS  Specify bitbake args (default: core-image-base)"
     echo >&2 "  -s SETUP_ENVIRONMENT  Specify the setup-environment script to use"
     echo >&2 "  -k                    Continue when one build fails"
-    echo >&2 "  -c                    Clean the TMPDIR between builds"
+    echo >&2 "  -c                    Clean the TMPDIR before each build"
     echo >&2 "  -h                    Show this usage information"
     exit 1
 }
