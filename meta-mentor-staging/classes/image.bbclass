@@ -387,6 +387,16 @@ do_package_write_deb[noexec] = "1"
 do_package_write_rpm[noexec] = "1"
 
 addtask rootfs before do_build
+
+fakeroot do_capture_debug() {
+	if ${@base_contains('SPLIT_DEBUG_FS', 'True', 'true', 'false', d)} && [ -n "${IMAGE_ROOTFS}" ] && [ -d "${IMAGE_ROOTFS}dbg" ] ; then
+		tar czf ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}.debug.tar.gz -C ${IMAGE_ROOTFS}dbg .
+		[ "${IMAGE_NAME}" == "${IMAGE_LINK_NAME}" ] || ln -sf ${IMAGE_NAME}.debug.tar.gz ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.debug.tar.gz
+	fi
+}
+
+addtask capture_debug before do_build after do_rootfs
+
 # Allow the kernel to be repacked with the initramfs and boot image file as a single file
 do_bundle_initramfs[depends] += "virtual/kernel:do_bundle_initramfs"
 do_bundle_initramfs[nostamp] = "1"
