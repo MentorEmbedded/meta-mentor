@@ -243,7 +243,7 @@ class PackageManager(object):
     True, installation failures are ignored.
     """
     @abstractmethod
-    def install(self, pkgs, attempt_only=False):
+    def install(self, pkgs, attempt_only=False, extra_args=""):
         pass
 
     """
@@ -280,7 +280,7 @@ class PackageManager(object):
     backend needs to call this function explicitly after the normal package
     installation
     """
-    def install_complementary(self, globs=None):
+    def install_complementary(self, globs=None, extra_args=""):
         # we need to write the list of installed packages to a file because the
         # oe-pkgdata-util reads it from a file
         installed_pkgs_file = os.path.join(self.d.getVar('WORKDIR', True),
@@ -290,6 +290,13 @@ class PackageManager(object):
 
         if globs is None:
             globs = self.d.getVar('IMAGE_INSTALL_COMPLEMENTARY', True)
+            globs_debug_fs = self.d.getVar('IMAGE_INSTALL_COMPLEMENTARY_DEBUG', True)
+
+            split_debug_fs = self.d.getVar('SPLIT_DEBUG_FS', True)
+            # In case of split debug file-system, dev and dbg packages would be
+            # installed in a separate folder, so we don't want them here.
+            # TODO: remove the globs in globs_debug_fs from actual globs
+
             split_linguas = set()
 
             for translation in self.d.getVar('IMAGE_LINGUAS', True).split():
@@ -315,7 +322,7 @@ class PackageManager(object):
                      "'%s' returned %d:\n%s" %
                      (' '.join(cmd), e.returncode, e.output))
 
-        self.install(complementary_pkgs.split(), attempt_only=True)
+        self.install(complementary_pkgs.split(), attempt_only=True, extra_args=extra_args)
 
     def deploy_dir_lock(self):
         if self.deploy_dir is None:
@@ -729,7 +736,7 @@ class RpmPM(PackageManager):
     '''
     Install pkgs with smart, the pkg name is oe format
     '''
-    def install(self, pkgs, attempt_only=False):
+    def install(self, pkgs, attempt_only=False, extra_args=""):
 
         bb.note("Installing the following packages: %s" % ' '.join(pkgs))
         if attempt_only and len(pkgs) == 0:
@@ -1018,6 +1025,7 @@ class OpkgPM(PackageManager):
         self.opkg_cmd = bb.utils.which(os.getenv('PATH'), "opkg-cl")
         self.opkg_args = "-f %s -o %s " % (self.config_file, target_rootfs)
         self.opkg_args += self.d.getVar("OPKG_ARGS", True)
+        self.opkg_extra_debug_args = " -d debug_fs "
 
         opkg_lib_dir = self.d.getVar('OPKGLIBDIR', True)
         if opkg_lib_dir[0] == "/":
@@ -1119,6 +1127,8 @@ class OpkgPM(PackageManager):
                 if os.path.isdir(pkgs_dir):
                     config_file.write("src oe-%s file:%s\n" %
                                       (arch, pkgs_dir))
+            config_file.write("dest root /\n")
+            config_file.write("dest debug_fs dbg\n")
 
     def insert_feeds_uris(self):
         if self.feed_uris == "":
@@ -1157,11 +1167,11 @@ class OpkgPM(PackageManager):
 
         self.deploy_dir_unlock()
 
-    def install(self, pkgs, attempt_only=False):
+    def install(self, pkgs, attempt_only=False, extra_args=""):
         if attempt_only and len(pkgs) == 0:
             return
 
-        cmd = "%s %s install %s" % (self.opkg_cmd, self.opkg_args, ' '.join(pkgs))
+        cmd = "%s %s %s install %s" % (self.opkg_cmd, self.opkg_args, extra_args, ' '.join(pkgs))
 
         os.environ['D'] = self.target_rootfs
         os.environ['OFFLINE_ROOT'] = self.target_rootfs
@@ -1448,7 +1458,7 @@ class DpkgPM(PackageManager):
 
         self.deploy_dir_unlock()
 
-    def install(self, pkgs, attempt_only=False):
+    def install(self, pkgs, attempt_only=False, extra_args=""):
         if attempt_only and len(pkgs) == 0:
             return
 
