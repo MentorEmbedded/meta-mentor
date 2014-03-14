@@ -24,6 +24,7 @@ class Rootfs(object):
         self.deploy_dir_image = self.d.getVar('DEPLOY_DIR_IMAGE', True)
 
         self.install_order = Manifest.INSTALL_ORDER
+        self.split_debug_fs = self.d.getVar('SPLIT_DEBUG_FS', True)
 
     @abstractmethod
     def _create(self):
@@ -645,6 +646,17 @@ class OpkgRootfs(Rootfs):
 
                 self.pm.install(pkgs_to_install[pkg_type],
                                 [False, True][pkg_type == Manifest.PKG_TYPE_ATTEMPT_ONLY])
+
+        if self.split_debug_fs == "True":
+            globs = self.d.getVar('IMAGE_INSTALL_COMPLEMENTARY', True)
+            globs_debug_fs = self.d.getVar('IMAGE_INSTALL_COMPLEMENTARY_DEBUG', True)
+
+            self.pm.install_complementary(globs_debug_fs, extra_args=self.pm.opkg_extra_debug_args)
+
+            # install the extra packages specified by the user that would only 
+            # go to split-debug file-system
+            extra_debug_packages = self.d.getVar('EXTRA_DEBUG_PACKAGES', True)
+            self.pm.install(re.split(" +", extra_debug_packages), attempt_only=True, extra_args=self.pm.opkg_extra_debug_args)
 
         self.pm.install_complementary()
 
