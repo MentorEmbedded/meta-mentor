@@ -25,7 +25,8 @@ python do_compile () {
     with open(d.expand('${B}/os-release'), 'w') as f:
         for field in d.getVar('OS_RELEASE_FIELDS', True).split():
             value = d.getVar(field, True)
-            f.write('{0}={1}'.format(field, value))
+            if value:
+                f.write('{0}={1}'.format(field, value))
 }
 do_compile[vardeps] += "${OS_RELEASE_FIELDS}"
 
