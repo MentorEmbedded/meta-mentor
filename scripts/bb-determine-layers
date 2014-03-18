@@ -68,7 +68,9 @@ def process_arguments(cmdline_args):
     parser.add_option('-l', '--layers', default=layers_default,
             help='base layers to include. space separated. default="{0}"'.format(layers_default))
     parser.add_option('-o', '--optional-layers', default='',
-            help='optional layers to include. space separated.')
+            help='optional layers to include. space separated. These layers are included if they and their dependencies are available, but are silently left out otherwise.')
+    parser.add_option('-e', '--extra-layers', default='',
+            help='extra layers to include. space separated. These layers are expected to exist, but are only included if their dependencies are already included in the configuration.')
     parser.add_option('-x', '--excluded-layers', default='',
             help='explicit layers to excluded. space separated.')
     parser.add_option('-g', '--globs', default=glob_default,
@@ -82,6 +84,7 @@ def process_arguments(cmdline_args):
     opts.layers = opts.layers.split()
     opts.optional_layers = opts.optional_layers.split()
     opts.excluded_layers = opts.excluded_layers.split()
+    opts.extra_layers = opts.extra_layers.split()
 
     new_globs = []
     for pattern in opts.globs.split(':'):
@@ -182,8 +185,9 @@ def resolve_dependencies(layers_by_name):
     return missing_dependencies
 
 
-def get_configured_layers(all_layers, base_layer_names, optional_layer_names, missing_deps, machine):
+def get_configured_layers(all_layers, base_layer_names, optional_layer_names, extra_layer_names, missing_deps, machine):
     optional = set()
+    extra = set()
     configured_layers = set()
     machine_layers = set()
     for layer in all_layers:
@@ -192,6 +196,8 @@ def get_configured_layers(all_layers, base_layer_names, optional_layer_names, mi
             machine_layers.add(layer)
             if layer.name in optional_layer_names:
                 optional_layer_names.remove(layer.name)
+            if layer.name in extra_layer_names:
+                extra_layer_names.remove(layer.name)
             configured_layers.add(layer)
             for dep in layer.depends:
                 configured_layers.add(dep)
@@ -202,9 +208,16 @@ def get_configured_layers(all_layers, base_layer_names, optional_layer_names, mi
         elif layer.name in optional_layer_names:
             optional.add(layer)
             configured_layers.add(layer)
+        elif layer.name in extra_layer_names:
+            extra.add(layer)
+
 
     if not machine_layers:
         raise Exception("No layer found for machine '{0}'".format(machine))
+
+    missing_extras = set(extra_layer_names) - set(l.name for l in extra)
+    if missing_extras:
+        raise Exception("Unable to locate requested extra layers: {0}".format(" ".join(missing_extras)))
 
     for base_layer_name in base_layer_names:
         for layer in configured_layers:
@@ -226,6 +239,13 @@ def get_configured_layers(all_layers, base_layer_names, optional_layer_names, mi
         configured_layers.remove(layer)
         optional.remove(layer)
 
+    for layer in list(extra):
+        for dep in layer.depends:
+            if dep not in configured_layers:
+                extra.remove(layer)
+                break
+        else:
+            configured_layers.add(layer)
 
     for layer in list(configured_layers):
         if layer in missing_deps:
@@ -289,7 +309,7 @@ def print_layers(cmdline_opts):
 
     with status("Determining layers to include for MACHINE '{0}'".format(opts.machine)):
         try:
-            configured_layers, optional = get_configured_layers(all_layers, opts.layers, opts.optional_layers, missing_deps, opts.machine)
+            configured_layers, optional = get_configured_layers(all_layers, opts.layers, opts.optional_layers, opts.extra_layers, missing_deps, opts.machine)
         except Exception as exc:
             sys.exit('ERROR: {0}'.format(exc))
 

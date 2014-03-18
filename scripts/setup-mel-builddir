@@ -113,7 +113,15 @@ configure_for_machine () {
         extralayernames="$extralayernames $layer"
     done
 
-    $layerdir/scripts/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -l "core mel mel-support mentor-staging $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" "$@" $MACHINE >$layersfile
+    updatelayernames=
+    for layer in $updatelayers; do
+        if [ -d "$layer" ]; then
+            layer="$(PATH="$OEROOT/scripts:$OEROOT/bitbake/bin:$PATH" $(dirname "$0")/bb-print-layer-data 2>/dev/null "$layer" | cut -d: -f1)"
+        fi
+        updatelayernames="$updatelayernames $layer"
+    done
+
+    $layerdir/scripts/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -l "core mel mel-support mentor-staging $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" "$@" $MACHINE >$layersfile
     if [ $? -ne 0 ]; then
         rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
@@ -165,10 +173,11 @@ process_arguments () {
         MELDIR=$(dirname $layerdir)
     fi
 
+    updatelayers=
     for lconf in $MELDIR/update-*/conf/layer.conf $MELDIR/*/update-*/conf/layer.conf; do
         updatelayer="${lconf%/conf/layer.conf}"
         if [ -e "$updatelayer" ]; then
-            extralayers="$extralayers $updatelayer"
+            updatelayers="$updatelayers $updatelayer"
         fi
     done
 }
