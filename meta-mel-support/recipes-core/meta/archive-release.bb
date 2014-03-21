@@ -12,8 +12,8 @@ MELDIR ?= "${COREBASE}/.."
 TEMPLATECONF ?= "${FILE_DIRNAME}/../../../conf"
 
 # Add a default in case the user doesn't inherit copyleft_compliance
-COPYLEFT_SOURCES_DIR ?= "${DL_DIR}"
-COPYLEFT_SOURCES_BASE_DIR ?= "${COPYLEFT_SOURCES_DIR}"
+ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
+ARCHIVE_RELEASE_DL_TOPDIR ?= "${DL_DIR}"
 
 # Default to shipping update-* as individual artifacts
 def configured_update_layers(d):
@@ -40,7 +40,7 @@ RELEASE_USE_TAGS ?= "false"
 RELEASE_USE_TAGS[doc] = "Use git tags rather than just # of commits for layer archive versioning"
 RELEASE_USE_TAGS[type] = "boolean"
 RELEASE_EXCLUDED_SOURCES ?= ""
-RELEASE_EXCLUDED_SOURCES[doc] = "Patterns of files in COPYLEFT_SOURCES_DIR to exclude"
+RELEASE_EXCLUDED_SOURCES[doc] = "Patterns of files in ARCHIVE_RELEASE_DL_DIR to exclude"
 BINARY_ARTIFACTS_COMPRESSION ?= ""
 BINARY_ARTIFACTS_COMPRESSION[doc] = "Compression type for images, downloads and sstate artifacts.\
  Available: '.bz2' and '.gz'. No compression if empty"
@@ -220,8 +220,8 @@ do_prepare_release () {
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw downloads; then
-        if [ "${COPYLEFT_SOURCES_BASE_DIR}" != "${COPYLEFT_SOURCES_DIR}" ]; then
-            for dir in ${COPYLEFT_SOURCES_BASE_DIR}/*; do
+        if [ "${ARCHIVE_RELEASE_DL_TOPDIR}" != "${ARCHIVE_RELEASE_DL_DIR}" ]; then
+            for dir in ${ARCHIVE_RELEASE_DL_TOPDIR}/*; do
                 name=$(basename $dir)
                 mkdir -p downloads/$name
                 find -L $dir -type f -maxdepth 2 | while read source; do
@@ -241,7 +241,7 @@ do_prepare_release () {
             done
         else
             mkdir -p downloads
-            find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
+            find -L ${ARCHIVE_RELEASE_DL_DIR} -type f -maxdepth 2 | while read source; do
                 source_name="$(basename "$source")"
                 if [ -e "${DL_DIR}/$source_name" ]; then
                     ln -sf "${DL_DIR}/$source_name" "downloads/$source_name"
@@ -335,9 +335,9 @@ do_prepare_release[recrdeptask] += "do_package_write"
 do_prepare_release[recrdeptask] += "do_populate_sysroot"
 
 python () {
-    if oe.utils.inherits(d, 'copyleft_compliance'):
+    if oe.utils.inherits(d, 'archive-release-downloads'):
         d.appendVarFlag('do_prepare_release', 'recrdeptask',
-                        ' do_prepare_copyleft_sources')
+                        ' do_archive_release_downloads')
 }
 
 do_fetch[noexec] = "1"
