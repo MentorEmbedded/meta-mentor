@@ -10,6 +10,7 @@ inherit gzipnative
 
 LICENSE = "MIT"
 PACKAGES = ""
+EXTRA_DEBUG_PACKAGES ?= ""
 DEPENDS += "${MLPREFIX}qemuwrapper-cross ${MLPREFIX}depmodwrapper-cross"
 RDEPENDS += "${PACKAGE_INSTALL} ${LINGUAS_INSTALL} \
              ${EXTRA_DEBUG_PACKAGES}"
@@ -24,6 +25,9 @@ inherit ${TESTIMAGECLASS}
 IMAGE_FEATURES ?= ""
 IMAGE_FEATURES[type] = "list"
 IMAGE_FEATURES[validitems] += "debug-tweaks read-only-rootfs"
+
+# Default to installing debug packages into the split debug filesystem
+IMAGE_FEATURES_DEBUG ?= "dbg-pkgs"
 
 # rootfs bootstrap install
 ROOTFS_BOOTSTRAP_INSTALL = "${@base_contains("IMAGE_FEATURES", "package-management", "", "${ROOTFS_PKGMANAGE_BOOTSTRAP}",d)}"

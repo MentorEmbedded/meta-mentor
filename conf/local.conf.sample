@@ -215,10 +215,11 @@ BB_DISKMON_DIRS = "\
 # version of the external toolchain.
 #CSL_VER_REQUIRED = "2012.03"
 
-# Uncomment the following two lines to enable split-debug file system
+# Uncomment to enable split-debug filesystem
 #SPLIT_DEBUG_FS = "True"
+#
+# Use this to add extra packages to the split-debug filesystem
 #EXTRA_DEBUG_PACKAGES = "ltrace strace"
-#IMAGE_FEATURES_DEBUG = "dbg-pkgs"
 
 # CONF_VERSION is increased each time build/conf/ changes incompatibly and is used to
 # track the version of this file when it was generated. This can safely be ignored if
