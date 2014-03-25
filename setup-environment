@@ -71,7 +71,7 @@ else
     unset OPTIONALLAYERS
     unset EXCLUDEDLAYERS
     unset layerdir
-    CONFIGURED_LAYERS=`sed -n -e '/^BBLAYERS = /,/^"/{ /^BBLAYERS =/d; /^"/d; p;}' $BUILDDIR/conf/bblayers.conf | awk {'print $1'}`
+    CONFIGURED_LAYERS=`tac $BUILDDIR/conf/bblayers.conf | sed -n -e '/^"/,/^BBLAYERS = /{ /^BBLAYERS =/d; /^"/d; p;}' | awk {'print $1'}`
     for layers in $CONFIGURED_LAYERS; do
        if [ -e $layers/post-setup-environment ]; then
          . $layers/post-setup-environment
