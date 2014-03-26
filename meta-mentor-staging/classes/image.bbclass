@@ -37,6 +37,7 @@ SPLASH ?= "psplash"
 FEATURE_PACKAGES_splash = "${SPLASH}"
 
 IMAGE_INSTALL_COMPLEMENTARY = '${@complementary_globs("IMAGE_FEATURES", d)}'
+IMAGE_INSTALL_COMPLEMENTARY_DEBUG = '${@complementary_globs("IMAGE_FEATURES_DEBUG", d)}'
 
 def check_image_features(d):
     valid_features = (d.getVarFlag('IMAGE_FEATURES', 'validitems', True) or "").split()
