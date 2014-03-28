@@ -3,6 +3,7 @@ from oe.utils import execute_pre_post_process
 from oe.utils import contains as base_contains
 from oe.package_manager import *
 from oe.manifest import *
+import oe.types
 import oe.path
 import filecmp
 import shutil
@@ -24,7 +25,7 @@ class Rootfs(object):
         self.deploy_dir_image = self.d.getVar('DEPLOY_DIR_IMAGE', True)
 
         self.install_order = Manifest.INSTALL_ORDER
-        self.split_debug_fs = self.d.getVar('SPLIT_DEBUG_FS', True)
+        self.split_debug_fs = oe.types.boolean(self.d.getVar('SPLIT_DEBUG_FS', True) or "false")
 
     @abstractmethod
     def _create(self):
@@ -647,7 +648,7 @@ class OpkgRootfs(Rootfs):
                 self.pm.install(pkgs_to_install[pkg_type],
                                 [False, True][pkg_type == Manifest.PKG_TYPE_ATTEMPT_ONLY])
 
-        if self.split_debug_fs == "True":
+        if self.split_debug_fs:
             globs = self.d.getVar('IMAGE_INSTALL_COMPLEMENTARY', True)
             globs_debug_fs = self.d.getVar('IMAGE_INSTALL_COMPLEMENTARY_DEBUG', True)
 

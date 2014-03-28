@@ -216,7 +216,7 @@ BB_DISKMON_DIRS = "\
 #CSL_VER_REQUIRED = "2012.03"
 
 # Uncomment to enable split-debug filesystem
-#SPLIT_DEBUG_FS = "True"
+#SPLIT_DEBUG_FS = "true"
 #
 # Use this to add extra packages to the split-debug filesystem
 #EXTRA_DEBUG_PACKAGES = "ltrace strace"

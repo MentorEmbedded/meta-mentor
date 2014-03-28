@@ -29,6 +29,10 @@ IMAGE_FEATURES[validitems] += "debug-tweaks read-only-rootfs"
 # Default to installing debug packages into the split debug filesystem
 IMAGE_FEATURES_DEBUG ?= "dbg-pkgs"
 
+# Set to true to enable a separate debug filesystem
+SPLIT_DEBUG_FS ?= "false"
+SPLIT_DEBUG_FS[type] = "boolean"
+
 # rootfs bootstrap install
 ROOTFS_BOOTSTRAP_INSTALL = "${@base_contains("IMAGE_FEATURES", "package-management", "", "${ROOTFS_PKGMANAGE_BOOTSTRAP}",d)}"
 
@@ -394,7 +398,7 @@ do_package_write_rpm[noexec] = "1"
 addtask rootfs before do_build
 
 fakeroot do_capture_debug() {
-	if ${@base_contains('SPLIT_DEBUG_FS', 'True', 'true', 'false', d)} && [ -n "${IMAGE_ROOTFS}" ] && [ -d "${IMAGE_ROOTFS}dbg" ] ; then
+	if ${@str(oe.data.typed_value('SPLIT_DEBUG_FS', d)).lower()} && [ -n "${IMAGE_ROOTFS}" ] && [ -d "${IMAGE_ROOTFS}dbg" ] ; then
 		tar czf ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}.debug.tar.gz -C ${IMAGE_ROOTFS}dbg .
 		[ "${IMAGE_NAME}" == "${IMAGE_LINK_NAME}" ] || ln -sf ${IMAGE_NAME}.debug.tar.gz ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.debug.tar.gz
 	fi

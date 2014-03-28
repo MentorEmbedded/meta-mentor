@@ -6,6 +6,7 @@ import shutil
 import multiprocessing
 import re
 import bb
+import oe.types
 
 
 # this can be used by all PM backends to create the index files in parallel
@@ -292,7 +293,7 @@ class PackageManager(object):
             globs = self.d.getVar('IMAGE_INSTALL_COMPLEMENTARY', True)
             globs_debug_fs = self.d.getVar('IMAGE_INSTALL_COMPLEMENTARY_DEBUG', True)
 
-            split_debug_fs = self.d.getVar('SPLIT_DEBUG_FS', True)
+            split_debug_fs = oe.types.boolean(self.d.getVar('SPLIT_DEBUG_FS', True) or "false")
             # In case of split debug file-system, dev and dbg packages would be
             # installed in a separate folder, so we don't want them here.
             # TODO: remove the globs in globs_debug_fs from actual globs
