@@ -1,0 +1,1 @@
+EXTRA_OEMAKE += "'LD=${CCLD}'"
