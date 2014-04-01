@@ -6,4 +6,3 @@ SRC_URI += "file://fix-stoping-interfaces-at-start.patch \
 do_install_append() {
     cp -f ${WORKDIR}/connman.service ${D}${systemd_unitdir}/system/
 }
-
