@@ -52,6 +52,15 @@ class Rootfs(object):
     def _handle_intercept_failure(self, failed_script):
         pass
 
+    """
+    The _cleanup() method should be used to clean-up stuff that we don't really
+    want to end up on target. For example, in the case of RPM, the DB locks.
+    The method is called, once, at the end of create() method.
+    """
+    @abstractmethod
+    def _cleanup(self):
+        pass
+
     def _exec_shell_cmd(self, cmd):
         fakerootcmd = self.d.getVar('FAKEROOT', True)
         if fakerootcmd is not None:
@@ -109,7 +118,8 @@ class Rootfs(object):
                          "offline and rootfs is read-only: %s" %
                          delayed_postinsts)
 
-        self._create_devfs()
+        if self.d.getVar('USE_DEVFS', True) != "1":
+            self._create_devfs()
 
         self._uninstall_uneeded()
 
@@ -118,6 +128,8 @@ class Rootfs(object):
         self._run_ldconfig()
 
         self._generate_kernel_module_deps()
+
+        self._cleanup()
 
     def _uninstall_uneeded(self):
         if base_contains("IMAGE_FEATURES", "package-management",
@@ -360,6 +372,13 @@ class RpmRootfs(Rootfs):
         for pkg in registered_pkgs.split():
             self.pm.save_rpmpostinst(pkg)
 
+    def _cleanup(self):
+        # during the execution of postprocess commands, rpm is called several
+        # times to get the files installed, dependencies, etc. This creates the
+        # __db.00* (Berkeley DB files that hold locks, rpm specific environment
+        # settings, etc.), that should not get into the final rootfs
+        self.pm.unlock_rpm_db()
+
 
 class DpkgRootfs(Rootfs):
     def __init__(self, d, manifest_dir):
@@ -431,6 +450,9 @@ class DpkgRootfs(Rootfs):
         self.pm.mark_packages("unpacked", registered_pkgs.split())
 
     def _log_check(self):
+        pass
+
+    def _cleanup(self):
         pass
 
 
@@ -707,6 +729,10 @@ class OpkgRootfs(Rootfs):
     def _log_check(self):
         pass
 
+    def _cleanup(self):
+        pass
+
+
 def create_rootfs(d, manifest_dir=None):
     env_bkp = os.environ.copy()
 
@@ -722,28 +748,17 @@ def create_rootfs(d, manifest_dir=None):
     os.environ.update(env_bkp)
 
 
-def list_installed_packages(d, format=None, rootfs_dir=None):
+def image_list_installed_packages(d, format=None, rootfs_dir=None):
     if not rootfs_dir:
         rootfs_dir = d.getVar('IMAGE_ROOTFS', True)
 
     img_type = d.getVar('IMAGE_PKGTYPE', True)
     if img_type == "rpm":
-        return RpmPM(d,
-                     rootfs_dir,
-                     d.getVar('TARGET_VENDOR', True)
-                     ).list_installed(format)
+        return RpmPkgsList(d, rootfs_dir).list(format)
     elif img_type == "ipk":
-        return OpkgPM(d,
-                      rootfs_dir,
-                      d.getVar("IPKGCONF_TARGET", True),
-                      d.getVar("ALL_MULTILIB_PACKAGE_ARCHS", True)
-                      ).list_installed(format)
+        return OpkgPkgsList(d, rootfs_dir, d.getVar("IPKGCONF_TARGET", True)).list(format)
     elif img_type == "deb":
-        return DpkgPM(d,
-                      rootfs_dir,
-                      d.getVar('PACKAGE_ARCHS', True),
-                      d.getVar('DPKG_ARCH', True)
-                      ).list_installed(format)
+        return DpkgPkgsList(d, rootfs_dir).list(format)
 
 if __name__ == "__main__":
     """
