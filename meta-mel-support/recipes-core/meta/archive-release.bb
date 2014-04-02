@@ -3,6 +3,7 @@ LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=3f40d7994397109285ec7b81fdeb3b58 \
                     file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
 INHIBIT_DEFAULT_DEPS = "1"
+DEPENDS += "${RELEASE_IMAGE}"
 PROVIDES += "mel-release"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 PACKAGES = ""
@@ -74,9 +75,6 @@ python () {
         extension = d.getVar('IMAGE_EXTENSION_%s' % type, True) or type
         extensions.add(extension)
     d.setVar('IMAGE_EXTENSIONS', ' '.join(extensions))
-
-    if 'live' in fstypes:
-        d.appendVarFlag('do_prepare_release', 'depends', ' ${RELEASE_IMAGE}:do_bootimg')
 
     # Make sure MELDIR is absolute, as we use it in transforms
     d.setVar('MELDIR', os.path.abspath(d.getVar('MELDIR', True)))
@@ -191,6 +189,12 @@ prepare_templates () {
     done
     echo '"' >>bblayers.conf.sample
 }
+
+python do_dump_headrevs () {
+    if d.getVar('DUMP_HEADREVS_DB', True):
+        dump_headrevs(d, os.path.join(d.getVar('WORKDIR', True), 'dumped-headrevs.db'))
+}
+addtask dump_headrevs
 
 do_prepare_release () {
     mkdir -p deploy
@@ -320,24 +324,16 @@ do_prepare_release () {
 }
 addtask prepare_release before do_build after do_dump_headrevs
 
-python do_dump_headrevs () {
-    if d.getVar('DUMP_HEADREVS_DB', True):
-        dump_headrevs(d, os.path.join(d.getVar('WORKDIR', True), 'dumped-headrevs.db'))
-}
-addtask dump_headrevs
-
-
-do_prepare_release[dirs] =+ "${DEPLOY_DIR_RELEASE} ${MELDIR} ${S}"
-do_prepare_release[cleandirs] = "${S}"
-do_prepare_release[depends] += "${RELEASE_IMAGE}:do_rootfs"
-do_prepare_release[depends] += "${RELEASE_IMAGE}:do_build"
+do_prepare_release[deptask] += "do_rootfs do_bootimg"
 do_prepare_release[recrdeptask] += "do_package_write"
 do_prepare_release[recrdeptask] += "do_populate_sysroot"
 
+do_prepare_release[dirs] =+ "${DEPLOY_DIR_RELEASE} ${MELDIR} ${S}"
+do_prepare_release[cleandirs] = "${S}"
+
 python () {
     if oe.utils.inherits(d, 'archive-release-downloads'):
-        d.appendVarFlag('do_prepare_release', 'recrdeptask',
-                        ' do_archive_release_downloads')
+        d.appendVarFlag('do_prepare_release', 'recrdeptask', ' do_archive_release_downloads')
 }
 
 do_fetch[noexec] = "1"
