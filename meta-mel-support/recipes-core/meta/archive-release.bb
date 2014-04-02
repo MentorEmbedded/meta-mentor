@@ -3,6 +3,7 @@ LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=3f40d7994397109285ec7b81fdeb3b58 \
                     file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
 INHIBIT_DEFAULT_DEPS = "1"
+DEPENDS += "${RELEASE_IMAGE}"
 PROVIDES += "mel-release"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 PACKAGES = ""
@@ -12,8 +13,8 @@ MELDIR ?= "${COREBASE}/.."
 TEMPLATECONF ?= "${FILE_DIRNAME}/../../../conf"
 
 # Add a default in case the user doesn't inherit copyleft_compliance
-COPYLEFT_SOURCES_DIR ?= "${DL_DIR}"
-COPYLEFT_SOURCES_BASE_DIR ?= "${COPYLEFT_SOURCES_DIR}"
+ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
+ARCHIVE_RELEASE_DL_TOPDIR ?= "${DL_DIR}"
 
 # Default to shipping update-* as individual artifacts
 def configured_update_layers(d):
@@ -40,7 +41,7 @@ RELEASE_USE_TAGS ?= "false"
 RELEASE_USE_TAGS[doc] = "Use git tags rather than just # of commits for layer archive versioning"
 RELEASE_USE_TAGS[type] = "boolean"
 RELEASE_EXCLUDED_SOURCES ?= ""
-RELEASE_EXCLUDED_SOURCES[doc] = "Patterns of files in COPYLEFT_SOURCES_DIR to exclude"
+RELEASE_EXCLUDED_SOURCES[doc] = "Patterns of files in ARCHIVE_RELEASE_DL_DIR to exclude"
 BINARY_ARTIFACTS_COMPRESSION ?= ""
 BINARY_ARTIFACTS_COMPRESSION[doc] = "Compression type for images, downloads and sstate artifacts.\
  Available: '.bz2' and '.gz'. No compression if empty"
@@ -74,9 +75,6 @@ python () {
         extension = d.getVar('IMAGE_EXTENSION_%s' % type, True) or type
         extensions.add(extension)
     d.setVar('IMAGE_EXTENSIONS', ' '.join(extensions))
-
-    if 'live' in fstypes:
-        d.appendVarFlag('do_prepare_release', 'depends', ' ${RELEASE_IMAGE}:do_bootimg')
 
     # Make sure MELDIR is absolute, as we use it in transforms
     d.setVar('MELDIR', os.path.abspath(d.getVar('MELDIR', True)))
@@ -192,6 +190,12 @@ prepare_templates () {
     echo '"' >>bblayers.conf.sample
 }
 
+python do_dump_headrevs () {
+    if d.getVar('DUMP_HEADREVS_DB', True):
+        dump_headrevs(d, os.path.join(d.getVar('WORKDIR', True), 'dumped-headrevs.db'))
+}
+addtask dump_headrevs
+
 do_prepare_release () {
     mkdir -p deploy
 
@@ -220,8 +224,8 @@ do_prepare_release () {
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw downloads; then
-        if [ "${COPYLEFT_SOURCES_BASE_DIR}" != "${COPYLEFT_SOURCES_DIR}" ]; then
-            for dir in ${COPYLEFT_SOURCES_BASE_DIR}/*; do
+        if [ "${ARCHIVE_RELEASE_DL_TOPDIR}" != "${ARCHIVE_RELEASE_DL_DIR}" ]; then
+            for dir in ${ARCHIVE_RELEASE_DL_TOPDIR}/*; do
                 name=$(basename $dir)
                 mkdir -p downloads/$name
                 find -L $dir -type f -maxdepth 2 | while read source; do
@@ -241,7 +245,7 @@ do_prepare_release () {
             done
         else
             mkdir -p downloads
-            find -L ${COPYLEFT_SOURCES_DIR} -type f -maxdepth 2 | while read source; do
+            find -L ${ARCHIVE_RELEASE_DL_DIR} -type f -maxdepth 2 | while read source; do
                 source_name="$(basename "$source")"
                 if [ -e "${DL_DIR}/$source_name" ]; then
                     ln -sf "${DL_DIR}/$source_name" "downloads/$source_name"
@@ -320,24 +324,16 @@ do_prepare_release () {
 }
 addtask prepare_release before do_build after do_dump_headrevs
 
-python do_dump_headrevs () {
-    if d.getVar('DUMP_HEADREVS_DB', True):
-        dump_headrevs(d, os.path.join(d.getVar('WORKDIR', True), 'dumped-headrevs.db'))
-}
-addtask dump_headrevs
-
-
-do_prepare_release[dirs] =+ "${DEPLOY_DIR_RELEASE} ${MELDIR} ${S}"
-do_prepare_release[cleandirs] = "${S}"
-do_prepare_release[depends] += "${RELEASE_IMAGE}:do_rootfs"
-do_prepare_release[depends] += "${RELEASE_IMAGE}:do_build"
+do_prepare_release[deptask] += "do_rootfs do_bootimg"
 do_prepare_release[recrdeptask] += "do_package_write"
 do_prepare_release[recrdeptask] += "do_populate_sysroot"
 
+do_prepare_release[dirs] =+ "${DEPLOY_DIR_RELEASE} ${MELDIR} ${S}"
+do_prepare_release[cleandirs] = "${S}"
+
 python () {
-    if oe.utils.inherits(d, 'copyleft_compliance'):
-        d.appendVarFlag('do_prepare_release', 'recrdeptask',
-                        ' do_prepare_copyleft_sources')
+    if oe.utils.inherits(d, 'archive-release-downloads'):
+        d.appendVarFlag('do_prepare_release', 'recrdeptask', ' do_archive_release_downloads')
 }
 
 do_fetch[noexec] = "1"
