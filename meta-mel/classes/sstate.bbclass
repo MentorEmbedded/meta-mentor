@@ -17,6 +17,10 @@ SSTATE_EXTRAPATH   = ""
 SSTATE_EXTRAPATHWILDCARD = ""
 SSTATE_PATHSPEC   = "${SSTATE_DIR}/${SSTATE_EXTRAPATHWILDCARD}*/${SSTATE_PKGSPEC}"
 
+# We don't want the sstate to depend on things like the distro string
+# of the system, we let the sstate paths take care of this.
+SSTATE_EXTRAPATH[vardepvalue] = ""
+
 SSTATE_DUPWHITELIST = "${DEPLOY_DIR_IMAGE}/ ${DEPLOY_DIR}/licenses/"
 # Also need to make cross recipes append to ${PN} and install once for any given PACAGE_ARCH so
 # can avoid multiple installs (e.g. routerstationpro+qemumips both using mips32)
@@ -74,10 +78,9 @@ python () {
         d.appendVarFlag(task, 'postfuncs', " sstate_task_postfunc")
 }
 
-def sstate_init(name, task, d):
+def sstate_init(task, d):
     ss = {}
     ss['task'] = task
-    ss['name'] = name
     ss['dirs'] = []
     ss['plaindirs'] = []
     ss['lockfiles'] = []
@@ -91,23 +94,22 @@ def sstate_state_fromvars(d, task = None):
             bb.fatal("sstate code running without task context?!")
         task = task.replace("_setscene", "")
 
-    name = task
     if task.startswith("do_"):
-        name = task[3:]
+        task = task[3:]
     inputs = (d.getVarFlag("do_" + task, 'sstate-inputdirs', True) or "").split()
     outputs = (d.getVarFlag("do_" + task, 'sstate-outputdirs', True) or "").split()
     plaindirs = (d.getVarFlag("do_" + task, 'sstate-plaindirs', True) or "").split()
     lockfiles = (d.getVarFlag("do_" + task, 'sstate-lockfile', True) or "").split()
     lockfilesshared = (d.getVarFlag("do_" + task, 'sstate-lockfile-shared', True) or "").split()
     interceptfuncs = (d.getVarFlag("do_" + task, 'sstate-interceptfuncs', True) or "").split()
-    if not name or len(inputs) != len(outputs):
+    if not task or len(inputs) != len(outputs):
         bb.fatal("sstate variables not setup correctly?!")
 
-    if name == "populate_lic":
+    if task == "populate_lic":
         d.setVar("SSTATE_PKGSPEC", "${SSTATE_SWSPEC}")
         d.setVar("SSTATE_EXTRAPATH", "")
 
-    ss = sstate_init(name, task, d)
+    ss = sstate_init(task, d)
     for i in range(len(inputs)):
         sstate_add(ss, inputs[i], outputs[i], d)
     ss['lockfiles'] = lockfiles
@@ -139,7 +141,7 @@ def sstate_install(ss, d):
     extrainf = d.getVarFlag("do_" + ss['task'], 'stamp-extra-info', True)
     if extrainf:
         d2.setVar("SSTATE_MANMACH", extrainf)
-    manifest = d2.expand("${SSTATE_MANFILEPREFIX}.%s" % ss['name'])
+    manifest = d2.expand("${SSTATE_MANFILEPREFIX}.%s" % ss['task'])
 
     if os.access(manifest, os.R_OK):
         bb.fatal("Package already staged (%s)?!" % manifest)
@@ -211,6 +213,9 @@ def sstate_install(ss, d):
     for lock in locks:
         bb.utils.unlockfile(lock)
 
+sstate_install[vardepsexclude] += "SSTATE_DUPWHITELIST STATE_MANMACH SSTATE_MANFILEPREFIX"
+sstate_install[vardeps] += "${SSTATEPOSTINSTFUNCS}"
+
 def sstate_installpkg(ss, d):
     import oe.path
     import subprocess
@@ -222,9 +227,9 @@ def sstate_installpkg(ss, d):
         bb.utils.mkdirhier(dir)
         oe.path.remove(dir)
 
-    sstateinst = d.expand("${WORKDIR}/sstate-install-%s/" % ss['name'])
-    sstatefetch = d.getVar('SSTATE_PKGNAME', True) + '_' + ss['name'] + ".tgz"
-    sstatepkg = d.getVar('SSTATE_PKG', True) + '_' + ss['name'] + ".tgz"
+    sstateinst = d.expand("${WORKDIR}/sstate-install-%s/" % ss['task'])
+    sstatefetch = d.getVar('SSTATE_PKGNAME', True) + '_' + ss['task'] + ".tgz"
+    sstatepkg = d.getVar('SSTATE_PKG', True) + '_' + ss['task'] + ".tgz"
 
     if not os.path.exists(sstatepkg):
         pstaging_fetch(sstatefetch, sstatepkg, d)
@@ -294,7 +299,7 @@ def sstate_installpkg(ss, d):
 def sstate_clean_cachefile(ss, d):
     import oe.path
 
-    sstatepkgfile = d.getVar('SSTATE_PATHSPEC', True) + "*_" + ss['name'] + ".tgz*"
+    sstatepkgfile = d.getVar('SSTATE_PATHSPEC', True) + "*_" + ss['task'] + ".tgz*"
     bb.note("Removing %s" % sstatepkgfile)
     oe.path.remove(sstatepkgfile)
 
@@ -331,12 +336,18 @@ def sstate_clean_manifest(manifest, d):
 
 def sstate_clean(ss, d):
     import oe.path
+    import glob
 
     d2 = d.createCopy()
+    stamp_clean = d.getVar("STAMPCLEAN", True)
     extrainf = d.getVarFlag("do_" + ss['task'], 'stamp-extra-info', True)
     if extrainf:
         d2.setVar("SSTATE_MANMACH", extrainf)
-    manifest = d2.expand("${SSTATE_MANFILEPREFIX}.%s" % ss['name'])
+        wildcard_stfile = "%s.do_%s*.%s" % (stamp_clean, ss['task'], extrainf)
+    else:
+        wildcard_stfile = "%s.do_%s*" % (stamp_clean, ss['task'])
+
+    manifest = d2.expand("${SSTATE_MANFILEPREFIX}.%s" % ss['task'])
 
     if os.path.exists(manifest):
         locks = []
@@ -350,15 +361,27 @@ def sstate_clean(ss, d):
         for lock in locks:
             bb.utils.unlockfile(lock)
 
-    stfile = d.getVar("STAMP", True) + ".do_" + ss['task']
-    oe.path.remove(stfile)
-    oe.path.remove(stfile + "_setscene")
-    if extrainf:
-        oe.path.remove(stfile + ".*" + extrainf)
-        oe.path.remove(stfile + "_setscene" + ".*" + extrainf)
-    else:
-        oe.path.remove(stfile + ".*")
-        oe.path.remove(stfile + "_setscene" + ".*")
+    # Remove the current and previous stamps, but keep the sigdata.
+    #
+    # The glob() matches do_task* which may match multiple tasks, for
+    # example: do_package and do_package_write_ipk, so we need to
+    # exactly match *.do_task.* and *.do_task_setscene.*
+    rm_stamp = '.do_%s.' % ss['task']
+    rm_setscene = '.do_%s_setscene.' % ss['task']
+    # For BB_SIGNATURE_HANDLER = "noop"
+    rm_nohash = ".do_%s" % ss['task']
+    for stfile in glob.glob(wildcard_stfile):
+        # Keep the sigdata
+        if ".sigdata." in stfile:
+            continue
+        # Preserve taint files in the stamps directory
+        if stfile.endswith('.taint'):
+            continue
+        if rm_stamp in stfile or rm_setscene in stfile or \
+                stfile.endswith(rm_nohash):
+            oe.path.remove(stfile)
+
+sstate_clean[vardepsexclude] = "SSTATE_MANFILEPREFIX"
 
 CLEANFUNCS += "sstate_cleanall"
 
@@ -457,8 +480,8 @@ def sstate_package(ss, d):
 
     tmpdir = d.getVar('TMPDIR', True)
 
-    sstatebuild = d.expand("${WORKDIR}/sstate-build-%s/" % ss['name'])
-    sstatepkg = d.getVar('SSTATE_PKG', True) + '_'+ ss['name'] + ".tgz"
+    sstatebuild = d.expand("${WORKDIR}/sstate-build-%s/" % ss['task'])
+    sstatepkg = d.getVar('SSTATE_PKG', True) + '_'+ ss['task'] + ".tgz"
     bb.utils.remove(sstatebuild, recurse=True)
     bb.utils.mkdirhier(sstatebuild)
     bb.utils.mkdirhier(os.path.dirname(sstatepkg))
@@ -605,6 +628,7 @@ BB_HASHCHECK_FUNCTION = "sstate_checkhashes"
 def sstate_checkhashes(sq_fn, sq_task, sq_hash, sq_hashfn, d):
 
     ret = []
+    missed = []
 
     def getpathcomponents(task, d):
         # Magic data from BB_HASHFILENAME
@@ -626,11 +650,13 @@ def sstate_checkhashes(sq_fn, sq_task, sq_hash, sq_hashfn, d):
         spec, extrapath, tname = getpathcomponents(task, d)
 
         sstatefile = d.expand("${SSTATE_DIR}/" + extrapath + generate_sstatefn(spec, sq_hash[task], d) + "_" + tname + ".tgz.siginfo")
+
         if os.path.exists(sstatefile):
             bb.debug(2, "SState: Found valid sstate file %s" % sstatefile)
             ret.append(task)
             continue
         else:
+            missed.append(task)
             bb.debug(2, "SState: Looked for but didn't find file %s" % sstatefile)
 
     mirrors = d.getVar("SSTATE_MIRRORS", True)
@@ -667,9 +693,25 @@ def sstate_checkhashes(sq_fn, sq_task, sq_hash, sq_hashfn, d):
                 fetcher.checkstatus()
                 bb.debug(2, "SState: Successful fetch test for %s" % srcuri)
                 ret.append(task)
+                if task in missed:
+                    missed.remove(task)
             except:
+                missed.append(task)
                 bb.debug(2, "SState: Unsuccessful fetch test for %s" % srcuri)
                 pass     
+
+    inheritlist = d.getVar("INHERIT", True)
+    if "toaster" in inheritlist:
+        evdata = {'missed': [], 'found': []};
+        for task in missed:
+            spec, extrapath, tname = getpathcomponents(task, d)
+            sstatefile = d.expand(extrapath + generate_sstatefn(spec, sq_hash[task], d) + "_" + tname + ".tgz")
+            evdata['missed'].append( (sq_fn[task], sq_task[task], sq_hash[task], sstatefile ) )
+        for task in ret:
+            spec, extrapath, tname = getpathcomponents(task, d)
+            sstatefile = d.expand(extrapath + generate_sstatefn(spec, sq_hash[task], d) + "_" + tname + ".tgz")
+            evdata['found'].append( (sq_fn[task], sq_task[task], sq_hash[task], sstatefile ) )
+        bb.event.fire(bb.event.MetadataEvent("MissedSstate", evdata), d)
 
     return ret
 
@@ -681,22 +723,13 @@ def setscene_depvalid(task, taskdependees, notneeded, d):
 
     bb.debug(2, "Considering setscene task: %s" % (str(taskdependees[task])))
 
-    def isNative(x):
-        return x.endswith("-native")
     def isNativeCross(x):
-        return x.endswith("-native") or x.endswith("-cross") or x.endswith("-cross-initial")
-    def isSafeDep(x):
-        if x in ["quilt-native", "autoconf-native", "automake-native", "gnu-config-native", "libtool-native", "pkgconfig-native", "gcc-cross", "binutils-cross", "gcc-cross-initial"]:
-            return True
-        return False
+        return x.endswith("-native") or x.endswith("-cross") or x.endswith("-cross-initial") or x.endswith("-crosssdk") or x.endswith("-crosssdk-initial")
+
     def isPostInstDep(x):
         if x in ["qemu-native", "gdk-pixbuf-native", "qemuwrapper-cross", "depmodwrapper-cross", "systemd-systemctl-native", "gtk-update-icon-cache-native"]:
             return True
         return False
-
-    # We can skip these "safe" dependencies since the aren't runtime dependencies, just build time
-    if isSafeDep(taskdependees[task][0]) and taskdependees[task][1] == "do_populate_sysroot":
-        return True
 
     # We only need to trigger populate_lic through direct dependencies
     if taskdependees[task][1] == "do_populate_lic":
@@ -717,7 +750,7 @@ def setscene_depvalid(task, taskdependees, notneeded, d):
                 return False
             continue
         # Native/Cross packages don't exist and are noexec anyway
-        if isNativeCross(taskdependees[dep][0]) and taskdependees[dep][1] in ['do_package_write_deb', 'do_package_write_ipk', 'do_package_write_rpm', 'do_packagedata']:
+        if isNativeCross(taskdependees[dep][0]) and taskdependees[dep][1] in ['do_package_write_deb', 'do_package_write_ipk', 'do_package_write_rpm', 'do_packagedata', 'do_package']:
             continue
 
         # Consider sysroot depending on sysroot tasks
