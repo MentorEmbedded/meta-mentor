@@ -277,7 +277,7 @@ def sstate_installpkg(ss, d):
         bb.note("Replacing fixme paths in sstate package: %s" % (sstate_hardcode_cmd))
         subprocess.call(sstate_hardcode_cmd, shell=True)
 
-        # Need to remove this or we'd copy it into the target directory and may 
+        # Need to remove this or we'd copy it into the target directory and may
         # conflict with another writer
         os.remove(fixmefn)
 
@@ -512,7 +512,7 @@ def sstate_package(ss, d):
     d.setVar('SSTATE_PKG', sstatepkg)
     sstate_hardcode_path(d)
     bb.build.exec_func('sstate_create_package', d)
-    
+
     bb.siggen.dump_this_task(sstatepkg + ".siginfo", d)
 
     return
@@ -587,7 +587,7 @@ python sstate_task_postfunc () {
     sstate_package(shared_state, d)
     os.umask(omask)
 }
-  
+
 
 #
 # Shell function to generate a sstate package from a directory
@@ -607,7 +607,7 @@ sstate_create_package () {
 	else
 		tar -cz --file=$TFILE --files-from=/dev/null
 	fi
-	chmod 0664 $TFILE 
+	chmod 0664 $TFILE
 	mv -f $TFILE ${SSTATE_PKG}
 
 	cd ${WORKDIR}
@@ -698,7 +698,7 @@ def sstate_checkhashes(sq_fn, sq_task, sq_hash, sq_hashfn, d):
             except:
                 missed.append(task)
                 bb.debug(2, "SState: Unsuccessful fetch test for %s" % srcuri)
-                pass     
+                pass
 
     inheritlist = d.getVar("INHERIT", True)
     if "toaster" in inheritlist:
