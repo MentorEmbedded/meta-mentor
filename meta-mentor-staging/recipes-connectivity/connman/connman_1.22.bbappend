@@ -1,8 +1,8 @@
 # Use PACKAGECONFIG handling for rdepends
 RDEPENDS_${PN} = "dbus xuser-account"
-PACKAGECONFIG[bluetooth] .= ",bluez4"
-PACKAGECONFIG[3g] .= ",ofono"
-PACKAGECONFIG[wifi] .= ",wpa-supplicant"
+PACKAGECONFIG[wifi] = "--enable-wifi, --disable-wifi,,wpa-supplicant"
+PACKAGECONFIG[bluetooth] = "--enable-bluetooth, --disable-bluetooth,,bluez4"
+PACKAGECONFIG[3g] = "--enable-ofono, --disable-ofono,,ofono"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
