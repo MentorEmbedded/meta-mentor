@@ -3,7 +3,7 @@
 # to the set of cached binaries which were used in this build.
 
 ISOLATED_SSTATE_DIR ?= "${TMPDIR}/sstate-cache"
-ISOLATED_SSTATE_PATHSPEC = "${@SSTATE_PATHSPEC.replace(SSTATE_DIR, ISOLATED_SSTATE_DIR)}"
+ISOLATED_SSTATE_PATHSPEC = "${@SSTATE_PATHSPEC.replace(SSTATE_DIR + '/', ISOLATED_SSTATE_DIR + '/')}"
 
 sstate_write_isolated () {
     if [ -n "${ISOLATED_SSTATE_DIR}" ] && \
@@ -28,12 +28,10 @@ sstate_write_isolated_preinst () {
 SSTATEPREINSTFUNCS += "sstate_write_isolated_preinst"
 
 def cleansstate_isolated(d):
-    isolated = d.getVar('ISOLATED_SSTATE_DIR', True)
-    if isolated and isolated != d.getVar('SSTATE_DIR', True):
-        for task in (d.getVar('SSTATETASKS', True) or "").split():
-                ss = sstate_state_fromvars(d, task[3:])
-                sstatepkgfile = d.getVar('ISOLATED_SSTATE_PATHSPEC', True) + "*_" + ss['name'] + ".tgz*"
-                oe.path.remove(sstatepkgfile)
+    if d.getVar('ISOLATED_SSTATE_DIR', True) != d.getVar('SSTATE_DIR', True):
+        l = d.createCopy()
+        l.setVar('SSTATE_PATHSPEC', d.getVar('ISOLATED_SSTATE_PATHSPEC', True))
+        sstate_clean_cachefiles(l)
 
 python do_cleansstate_append() {
         cleansstate_isolated(d)
