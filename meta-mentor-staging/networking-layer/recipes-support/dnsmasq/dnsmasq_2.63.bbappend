@@ -1,0 +1,4 @@
+EXTRA_OEMAKE += "\
+    'CFLAGS=${CFLAGS}' \
+    'LDFLAGS=${LDFLAGS}' \
+"
