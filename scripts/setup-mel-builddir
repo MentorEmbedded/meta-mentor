@@ -235,8 +235,8 @@ setup_builddir () {
         echo "created for you with some default values."
 
         (
-            JOBS_FACTOR="2"
-            THREADS_FACTOR="3 / 2"
+            JOBS_FACTOR="3 / 2"
+            THREADS_FACTOR="1"
             NCPU=`grep -c processor /proc/cpuinfo`
             JOBS=`expr $NCPU \* $JOBS_FACTOR`
             THREADS=`expr $NCPU \* $THREADS_FACTOR`
