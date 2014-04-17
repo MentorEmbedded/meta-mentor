@@ -36,3 +36,34 @@ def cleansstate_isolated(d):
 python do_cleansstate_append() {
         cleansstate_isolated(d)
 }
+
+# Sadly, there's no way to guarantee event handler execution order, so we need
+# to duplicate the bits to dump the siginfo to SSTATE_DIR.
+addhandler isolated_sstate_eventhandler
+isolated_sstate_eventhandler[eventmask] = "bb.build.TaskSucceeded"
+python isolated_sstate_eventhandler() {
+    d = e.data
+    sstate_dir = d.getVar('SSTATE_DIR', True)
+    isolated_sstate_dir = d.getVar('ISOLATED_SSTATE_DIR', True)
+    if sstate_dir == isolated_sstate_dir:
+        return
+
+    # When we write an sstate package we rewrite the SSTATE_PKG
+    spkg = d.getVar('SSTATE_PKG', True)
+    if not spkg.endswith(".tgz"):
+        taskname = d.getVar("BB_RUNTASK", True)[3:]
+        spec = d.getVar('SSTATE_PKGSPEC', True)
+        swspec = d.getVar('SSTATE_SWSPEC', True)
+        if taskname in ["fetch", "unpack", "patch", "populate_lic"] and swspec:
+            d.setVar("SSTATE_PKGSPEC", "${SSTATE_SWSPEC}")
+            d.setVar("SSTATE_EXTRAPATH", "")
+        sstatepkg = d.getVar('SSTATE_PKG', True)
+        fn = sstatepkg + '_' + taskname + '.tgz.siginfo'
+        if not os.path.exists(fn):
+            bb.utils.mkdirhier(os.path.dirname(fn))
+            bb.siggen.dump_this_task(fn, d)
+
+        isolated_fn = fn.replace(sstate_dir + '/', isolated_sstate_dir + '/')
+        bb.utils.mkdirhier(os.path.dirname(isolated_fn))
+        os.symlink(fn, isolated_fn)
+}
