@@ -278,7 +278,7 @@ else
     BUILDDIR="\$(pwd)"
 fi
 export TEMPLATECONF="$TEMPLATECONF"
-. $OEROOT/oe-init-build-env $BUILDDIR
+. $OEROOT/oe-init-build-env \$BUILDDIR
 export BB_ENV_EXTRAWHITE="\$BB_ENV_EXTRAWHITE MGLS LM_LICENSE_FILE"
 unset TEMPLATECONF
 END
