@@ -23,7 +23,7 @@ MACHINE ??= "qemux86"
 # The CORE_IMAGE_EXTRA_INSTALL variable allows extra individual packages to be
 # added to any of the "core" images (e.g. core-image-base,
 # core-image-minimal).
-CORE_IMAGE_EXTRA_INSTALL = "oprofile"
+#CORE_IMAGE_EXTRA_INSTALL = ""
 
 # The EXTRA_IMAGE_FEATURES variable allows groups of packages to be added to
 # the generated images. Some of these options are added to certain image types
@@ -54,7 +54,7 @@ CORE_IMAGE_EXTRA_INSTALL = "oprofile"
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
 # details.
 
-EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-profile"
+EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug"
 
 # Uncomment to enable runtime testing with ptest
 #USER_FEATURES += "ptest"
