@@ -19,6 +19,8 @@ sstate_write_isolated () {
 sstate_create_package_append () {
     sstate_write_isolated
 }
+# Work around missing vardep bug in bitbake
+sstate_create_package[vardeps] += "sstate_write_isolated"
 
 # Copy existing/fetched archives from SSTATE_DIR to ISOLATED_SSTATE_DIR
 sstate_write_isolated_preinst () {
