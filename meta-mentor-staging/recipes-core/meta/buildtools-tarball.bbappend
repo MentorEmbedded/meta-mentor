@@ -28,8 +28,14 @@ TOOLCHAIN_HOST_TASK += "\
     nativesdk-perl-module-posix \
 "
 
-# glib-mkenums needs these perl modules. TODO: See if glib-2.0-native inherits
-# perlnative, and if not, why not, as clearly it needs functioning perl.
+# identified by the oe-core sanity checker
+TOOLCHAIN_HOST_TASK += "\
+    nativesdk-perl-module-data-dumper \
+    nativesdk-perl-module-text-parsewords \
+    nativesdk-perl-module-thread-queue \
+"
+
+# glib-mkenums needs these perl modules
 TOOLCHAIN_HOST_TASK += "\
     nativesdk-perl-module-safe \
     nativesdk-perl-module-unicore \
@@ -40,3 +46,12 @@ TOOLCHAIN_HOST_TASK += "\
     nativesdk-perl-module-english \
     nativesdk-perl-module-tie-hash-namedcapture \
 "
+
+# makevalues.pl in qtwebkit needs this
+TOOLCHAIN_HOST_TASK += "\
+    nativesdk-perl-module-ipc-open2 \
+    nativesdk-perl-module-file-find \
+"
+
+# generate-forwarding-headers.pl in qtwebkit needs this
+TOOLCHAIN_HOST_TASK += "nativesdk-perl-module-file-spec-functions"
