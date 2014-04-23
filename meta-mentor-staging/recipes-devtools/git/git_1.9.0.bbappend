@@ -1,3 +1,5 @@
+EXTRA_OEMAKE += "'PERL_PATH=/usr/bin/env perl'"
+
 # RUNTIME_PREFIX has multiple bugs at this time, as far as I can tell. Revert
 # to the previous wrapper-based relocation mechanism
 EXTRA_OEMAKE := "${@oe_filter_out('RUNTIME_PREFIX=1', EXTRA_OEMAKE, d)}"
