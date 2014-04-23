@@ -8,50 +8,14 @@ TOOLCHAIN_HOST_TASK += "nativesdk-ca-certificates"
 # support bitbake's gitsm:// fetcher
 TOOLCHAIN_HOST_TASK += "nativesdk-git-perltools"
 
-# nativesdk-git-perltools pulls in nativesdk-perl, but if the buildtools
-# tarball includes perl, that will be used in the autoconf build (as it doesn't
-# inherit perlnative), so we also need the perl modules necessary to run autoconf
-TOOLCHAIN_HOST_TASK += "\
-    nativesdk-perl \
-    nativesdk-perl-module-carp \
-    nativesdk-perl-module-constant \
-    nativesdk-perl-module-errno \
-    nativesdk-perl-module-exporter \
-    nativesdk-perl-module-file-basename \
-    nativesdk-perl-module-file-compare \
-    nativesdk-perl-module-file-copy \
-    nativesdk-perl-module-file-glob \
-    nativesdk-perl-module-file-path \
-    nativesdk-perl-module-file-stat \
-    nativesdk-perl-module-getopt-long \
-    nativesdk-perl-module-io-file \
-    nativesdk-perl-module-posix \
-"
+# as with oe itself, we'll rely on the host perl. this is a hack, obviously,
+# but I don't want to alter the nativesdk-git-perltools rdepends to be
+# inaccurate, and there's no clean way to uninstall nativesdk-perl without
+# also uninstalling nativesdk-git-perltools
+SDK_POSTPROCESS_COMMAND_append_pn-buildtools-tarball = "kill_perl;"
+do_populate_sdk[vardeps] += "SDK_POSTPROCESS_COMMAND"
 
-# identified by the oe-core sanity checker
-TOOLCHAIN_HOST_TASK += "\
-    nativesdk-perl-module-data-dumper \
-    nativesdk-perl-module-text-parsewords \
-    nativesdk-perl-module-thread-queue \
-"
-
-# glib-mkenums needs these perl modules
-TOOLCHAIN_HOST_TASK += "\
-    nativesdk-perl-module-safe \
-    nativesdk-perl-module-unicore \
-"
-
-# syncqt.pl from qtmultimedia needs this
-TOOLCHAIN_HOST_TASK += "\
-    nativesdk-perl-module-english \
-    nativesdk-perl-module-tie-hash-namedcapture \
-"
-
-# makevalues.pl in qtwebkit needs this
-TOOLCHAIN_HOST_TASK += "\
-    nativesdk-perl-module-ipc-open2 \
-    nativesdk-perl-module-file-find \
-"
-
-# generate-forwarding-headers.pl in qtwebkit needs this
-TOOLCHAIN_HOST_TASK += "nativesdk-perl-module-file-spec-functions"
+kill_perl () {
+    rm ${SDK_OUTPUT}${SDKPATHNATIVE}${bindir_nativesdk}/perl
+    rm -r ${SDK_OUTPUT}${SDKPATHNATIVE}${libdir_nativesdk}/perl
+}
