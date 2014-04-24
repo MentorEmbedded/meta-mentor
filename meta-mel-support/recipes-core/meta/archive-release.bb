@@ -67,11 +67,19 @@ DEPLOY_IMAGES[doc] = "List of files from DEPLOY_DIR_IMAGE which will be archived
 # extension name(s)
 IMAGE_EXTENSION_live = "hddimg iso"
 
+# Exclude certain image types from the packaged build.
+# This allows us to build in the automated environment for regression,
+# general testing or simply for availability of extra image types for
+# internal use without necessarily packaging them in the installers.
+ARCHIVE_RELEASE_IMAGE_FSTYPES_EXCLUDE ?= ""
 
 python () {
     extensions = set()
     fstypes = d.getVar('IMAGE_FSTYPES', True).split()
+    fstypes_exclude = d.getVar('ARCHIVE_RELEASE_IMAGE_FSTYPES_EXCLUDE', True).split()
     for type in fstypes:
+        if type in fstypes_exclude:
+            continue
         extension = d.getVar('IMAGE_EXTENSION_%s' % type, True) or type
         extensions.add(extension)
     d.setVar('IMAGE_EXTENSIONS', ' '.join(extensions))
