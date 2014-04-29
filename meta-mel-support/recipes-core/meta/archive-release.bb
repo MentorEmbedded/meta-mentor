@@ -101,7 +101,7 @@ release_tar () {
         bbfatal "Invalid binary artifacts compression type ${BINARY_ARTIFACTS_COMPRESSION}"
     fi
 
-    tar --absolute-names $COMPRESSION "$@" "--transform=s,^${MELDIR}/,," --exclude=.svn \
+    tar --absolute-names $COMPRESSION "$@" --exclude=.svn \
         --exclude=.git --exclude=\*.pyc --exclude=\*.pyo --exclude=.gitignore \
         -v --show-stored-names
 }
@@ -332,16 +332,16 @@ do_prepare_release () {
 }
 addtask prepare_release before do_build after do_dump_headrevs
 
-do_prepare_release[deptask] += "do_rootfs do_bootimg"
-do_prepare_release[recrdeptask] += "do_package_write"
-do_prepare_release[recrdeptask] += "do_populate_sysroot"
-
 do_prepare_release[dirs] =+ "${DEPLOY_DIR_RELEASE} ${MELDIR} ${S}"
 do_prepare_release[cleandirs] = "${S}"
 
+# Ensure that all our dependencies are entirely built
+do_prepare_release[deptask] += "do_${BB_DEFAULT_TASK}"
+
+# Ensure that all the license-filtered downloads are available
 python () {
     if oe.utils.inherits(d, 'archive-release-downloads'):
-        d.appendVarFlag('do_prepare_release', 'recrdeptask', ' do_archive_release_downloads')
+        bb.build.addtask('do_prepare_release', '', 'do_archive_release_downloads_all', d)
 }
 
 do_fetch[noexec] = "1"
