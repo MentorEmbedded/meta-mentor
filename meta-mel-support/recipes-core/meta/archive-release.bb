@@ -101,7 +101,7 @@ release_tar () {
         bbfatal "Invalid binary artifacts compression type ${BINARY_ARTIFACTS_COMPRESSION}"
     fi
 
-    tar --absolute-names $COMPRESSION "$@" "--transform=s,^${MELDIR}/,," --exclude=.svn \
+    tar --absolute-names $COMPRESSION "$@" --exclude=.svn \
         --exclude=.git --exclude=\*.pyc --exclude=\*.pyo --exclude=.gitignore \
         -v --show-stored-names
 }
