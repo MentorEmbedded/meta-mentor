@@ -1,0 +1,40 @@
+# Author: Andreas Pape <apape@de.adit-jv.com>
+# Date:   Tue Feb 4 10:00:00 2014
+# pcm plug: save converter config.
+#
+# Passed config is freed after call to open, thus it is invalid when trying to extract the converter name.
+# This patch copies the config entry for later usage.
+#
+
+--- alsa-lib-1.0.27_orig/src/pcm/pcm_plug.c	2013-04-11 13:43:05.000000000 +0200
++++ alsa-lib-1.0.27/src/pcm/pcm_plug.c	2014-02-05 16:15:18.968306436 +0100
+@@ -64,6 +64,8 @@
+	snd_pcm_plug_t *plug = pcm->private_data;
+	int err, result = 0;
+	free(plug->ttable);
++	if (plug->rate_converter)
++		snd_config_delete((snd_config_t*)plug->rate_converter);
+	assert(plug->gen.slave == plug->req_slave);
+	if (plug->gen.close_slave) {
+		snd_pcm_unlink_hw_ptr(pcm, plug->req_slave);
+@@ -1122,7 +1124,10 @@
+	plug->sformat = sformat;
+	plug->schannels = schannels;
+	plug->srate = srate;
+-	plug->rate_converter = rate_converter;
++	if (rate_converter) {
++		if ((err = snd_config_copy((snd_config_t**)&plug->rate_converter, (snd_config_t *)rate_converter)) < 0)
++			return -EINVAL;
++	}
+	plug->gen.slave = plug->req_slave = slave;
+	plug->gen.close_slave = close_slave;
+	plug->route_policy = route_policy;
+@@ -1133,6 +1138,8 @@
+
+	err = snd_pcm_new(&pcm, SND_PCM_TYPE_PLUG, name, slave->stream, slave->mode);
+	if (err < 0) {
++		if (plug->rate_converter)
++			snd_config_delete((snd_config_t*)plug->rate_converter);
+		free(plug);
+		return err;
+	}
