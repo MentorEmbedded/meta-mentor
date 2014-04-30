@@ -211,6 +211,9 @@ BB_DISKMON_DIRS = "\
 #DISTRO_FEATURES_BACKFILL_CONSIDERED = ""
 #DISTRO_FEATURES_remove = " systemd"
 
+# Change the following variable value to yes to enable real time kernel for minnow board
+RT_KERNEL_MINNOW = 'no'
+
 # This may be used to abort the build when using an untested/unverified
 # version of the external toolchain.
 #CSL_VER_REQUIRED = "2012.03"
