@@ -6,3 +6,13 @@ do_install_append () {
         rm -f ${D}${libdir}/pulse-${PV}/modules/module-console-kit.so
     fi
 }
+
+python adjust_server_rdeps () {
+    d = e.data
+    rdeps = d.getVar('RDEPENDS_pulseaudio-server', False)
+    rdeps = rdeps.replace("${@base_contains('DISTRO_FEATURES', 'x11', 'pulseaudio-module-console-kit', '', d)}",
+                          "${@base_contains('PACKAGECONFIG', 'x11', 'pulseaudio-module-console-kit', '', d)}")
+    d.setVar('RDEPENDS_pulseaudio-server', rdeps)
+}
+adjust_server_rdeps[eventmask] = "bb.event.RecipePreFinalise"
+addhandler adjust_server_rdeps
