@@ -1,1 +1,4 @@
-PACKAGECONFIG[bluetooth] = "--enable-bluetooth, --disable-bluetooth,,${@'${VIRTUAL-RUNTIME_bluetooth-stack}' if 'mel' in '${OVERRIDES}'.split(':') else 'bluez4'}"
+python () {
+    if 'mel' in d.getVar('OVERRIDES', True).split(':'):
+        d.setVarFlag('PACKAGECONFIG', 'bluetooth', d.getVarFlag('PACKAGECONFIG', 'bluetooth', True).replace('bluez4', '${VIRTUAL-RUNTIME_bluetooth-stack}'))
+}
