@@ -19,3 +19,7 @@ kill_perl () {
     rm ${SDK_OUTPUT}${SDKPATHNATIVE}${bindir_nativesdk}/perl
     rm -r ${SDK_OUTPUT}${SDKPATHNATIVE}${libdir_nativesdk}/perl
 }
+
+create_sdk_files_append () {
+    echo 'export GIT_SSL_CAINFO="${SDKPATHNATIVE}${sysconfdir}/ssl/certs/ca-certificates.crt"' >>$script
+}
