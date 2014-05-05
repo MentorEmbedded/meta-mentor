@@ -1,5 +1,6 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}:"
 
-dirs755 += "${sysconfdir}/alternatives \
-            ${localstatedir}/lib/alternatives \
-            "
+dirs755_append_mel = "\
+    ${sysconfdir}/alternatives \
+    ${localstatedir}/lib/alternatives \
+"

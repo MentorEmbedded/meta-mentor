@@ -1,1 +1,1 @@
-PROVIDES += "virtual/libbluetooth"
+PROVIDES_append_mel = " virtual/libbluetooth"
