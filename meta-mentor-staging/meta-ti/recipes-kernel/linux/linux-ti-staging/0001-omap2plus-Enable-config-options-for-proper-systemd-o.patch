@@ -1,0 +1,44 @@
+From 6c37a195792e838302533cfb1a1da0010bc76310 Mon Sep 17 00:00:00 2001
+From: Wade Farnsworth <wade_farnsworth@mentor.com>
+Date: Mon, 21 Apr 2014 07:58:53 -0700
+Subject: [PATCH] omap2plus: Enable config options for proper systemd
+ operation
+
+CGROUPS, AUTOFS4, and FHANDLE are required for systemd to initialize
+properly.  These are missing from the omap2plus, which causes the
+boot to fail on Beaglebone and related platforms.
+
+Signed-off-by: Wade Farnsworth <wade_farnsworth@mentor.com>
+---
+ arch/arm/configs/omap2plus_defconfig |    3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/configs/omap2plus_defconfig b/arch/arm/configs/omap2plus_defconfig
+index ff579a7..d29c89c 100644
+--- a/arch/arm/configs/omap2plus_defconfig
++++ b/arch/arm/configs/omap2plus_defconfig
+@@ -1,11 +1,13 @@
+ CONFIG_SYSVIPC=y
+ CONFIG_POSIX_MQUEUE=y
++CONFIG_FHANDLE=y
+ CONFIG_NO_HZ=y
+ CONFIG_HIGH_RES_TIMERS=y
+ CONFIG_BSD_PROCESS_ACCT=y
+ CONFIG_IKCONFIG=y
+ CONFIG_IKCONFIG_PROC=y
+ CONFIG_LOG_BUF_SHIFT=16
++CONFIG_CGROUPS=y
+ CONFIG_BLK_DEV_INITRD=y
+ CONFIG_EXPERT=y
+ CONFIG_SLAB=y
+@@ -358,6 +360,7 @@ CONFIG_EXT3_FS=y
+ CONFIG_EXT4_FS=y
+ CONFIG_QUOTA=y
+ CONFIG_QFMT_V2=y
++CONFIG_AUTOFS4_FS=y
+ CONFIG_MSDOS_FS=y
+ CONFIG_VFAT_FS=y
+ CONFIG_TMPFS=y
+-- 
+1.7.9.5
+
