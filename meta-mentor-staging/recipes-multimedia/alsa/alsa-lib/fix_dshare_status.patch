@@ -1,0 +1,11 @@
+--- alsa-lib-1.0.27_orig/src/pcm/pcm_dshare.c	2013-04-11 13:43:05.000000000 +0200
++++ alsa-lib-1.0.27/src/pcm/pcm_dshare.c	2014-01-27 14:06:38.798040657 +0100
+@@ -224,7 +224,7 @@
+		break;
+	}
+	memset(status, 0, sizeof(*status));
+-	status->state = snd_pcm_state(dshare->spcm);
++	status->state = snd_pcm_state(pcm);
+	status->trigger_tstamp = dshare->trigger_tstamp;
+	gettimestamp(&status->tstamp, pcm->monotonic);
+	status->avail = snd_pcm_mmap_playback_avail(pcm);
