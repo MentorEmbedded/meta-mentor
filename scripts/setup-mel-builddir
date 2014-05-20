@@ -214,6 +214,7 @@ setup_builddir () {
                     if [ ! -e "$MELDIR/$machine/conf/local.conf.sample" ]; then
                         continue
                     fi
+                    echo "$machine"
                 done | prompt_choice "Select BSP to use" >$tmpfile
             MACHINE="$(cat "$tmpfile")"
             rm -f "$tmpfile"
