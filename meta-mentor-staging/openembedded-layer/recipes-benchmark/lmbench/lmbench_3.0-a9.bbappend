@@ -1,5 +1,4 @@
-
-LICENSE = "GPL-2.0 & GPL-2.0-with-lmbench-exception"
+LICENSE = "GPL-2.0 & GPL-2.0-with-lmbench-restriction"
 LIC_FILES_CHKSUM = "\
 	file://COPYING;md5=8ca43cbc842c2336e835926c2166c28b \
 	file://COPYING-2;md5=8e9aee2ccc75d61d107e43794a25cdf9 \
