@@ -1,0 +1,12 @@
+diff -Nur alsa-lib-1.0.25_orig/src/pcm/pcm_extplug.c alsa-lib-1.0.25/src/pcm/pcm_extplug.c
+--- alsa-lib-1.0.25_orig/src/pcm/pcm_extplug.c	2013-09-05 08:14:41.076809000 +0200
++++ alsa-lib-1.0.25/src/pcm/pcm_extplug.c	2013-09-05 08:15:16.716854838 +0200
+@@ -172,6 +172,8 @@
+	unsigned int i;
+
+	parm += type;
++	if (! parm->active)
++		return 0;
+	memset(&bits, 0, sizeof(bits));
+	for (i = 0; i < parm->num_list; i++)
+		bits.bits[parm->list[i] / 32] |= 1U << (parm->list[i] % 32);

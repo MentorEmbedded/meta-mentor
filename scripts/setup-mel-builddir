@@ -214,6 +214,7 @@ setup_builddir () {
                     if [ ! -e "$MELDIR/$machine/conf/local.conf.sample" ]; then
                         continue
                     fi
+                    echo "$machine"
                 done | prompt_choice "Select BSP to use" >$tmpfile
             MACHINE="$(cat "$tmpfile")"
             rm -f "$tmpfile"
@@ -279,7 +280,7 @@ else
 fi
 export TEMPLATECONF="$TEMPLATECONF"
 . $OEROOT/oe-init-build-env \$BUILDDIR
-export BB_ENV_EXTRAWHITE="\$BB_ENV_EXTRAWHITE MGLS LM_LICENSE_FILE"
+export BB_ENV_EXTRAWHITE="\$BB_ENV_EXTRAWHITE GIT_SSL_CAINFO MGLS LM_LICENSE_FILE"
 unset TEMPLATECONF
 END
 }

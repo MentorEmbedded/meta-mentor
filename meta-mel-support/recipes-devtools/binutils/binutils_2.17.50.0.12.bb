@@ -42,3 +42,6 @@ do_configure () {
 do_install_append () {
 	rm -rf ${D}${prefix}/${TARGET_SYS}/lib
 }
+
+# This version doesn't provide these
+USE_ALTERNATIVES_FOR := "${@oe_filter_out('ld.bfd|elfedit', USE_ALTERNATIVES_FOR, d)}"

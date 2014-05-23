@@ -1,0 +1,27 @@
+diff -Nur alsa-lib-1.0.25_orig/src/pcm/pcm_plugin.c alsa-lib-1.0.25/src/pcm/pcm_plugin.c
+--- alsa-lib-1.0.25_orig/src/pcm/pcm_plugin.c	2012-01-25 08:56:56.000000000 +0100
++++ alsa-lib-1.0.25/src/pcm/pcm_plugin.c	2013-09-05 10:27:18.935308942 +0200
+@@ -285,8 +285,10 @@
+		if (result > 0 && (snd_pcm_uframes_t)result != slave_frames) {
+			snd_pcm_sframes_t res;
+			res = plugin->undo_write(pcm, slave_areas, slave_offset + result, slave_frames, slave_frames - result);
+-			if (res < 0)
++			if (res < 0) {
++				snd_atomic_write_end(&plugin->watom);
+				return xfer > 0 ? (snd_pcm_sframes_t)xfer : res;
++			}
+			frames -= res;
+		}
+		snd_atomic_write_end(&plugin->watom);
+@@ -332,8 +334,10 @@
+			snd_pcm_sframes_t res;
+
+			res = plugin->undo_read(slave, areas, offset, frames, slave_frames - result);
+-			if (res < 0)
++			if (res < 0) {
++				snd_atomic_write_end(&plugin->watom);
+				return xfer > 0 ? (snd_pcm_sframes_t)xfer : res;
++			}
+			frames -= res;
+		}
+		snd_atomic_write_end(&plugin->watom);
