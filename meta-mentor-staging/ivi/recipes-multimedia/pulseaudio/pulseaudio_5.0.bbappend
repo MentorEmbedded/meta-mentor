@@ -7,7 +7,7 @@ PR = "r1"
 inherit systemd
 
 SYSTEMD_PACKAGES = "${PN}-server"
-SYSTEMD_SERVICE = "pulseaudio.service"
+SYSTEMD_SERVICE_${PN}-server = "pulseaudio.service"
 
 PACKAGECONFIG := "${@PACKAGECONFIG.replace('bluez4', 'bluez5')}"
 
