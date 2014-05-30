@@ -1,0 +1,24 @@
+diff --git a/mozilla/certdata2pem.py b/mozilla/certdata2pem.py
+index 5cc8f4c..0482894 100644
+--- a/mozilla/certdata2pem.py
++++ b/mozilla/certdata2pem.py
+@@ -116,12 +116,16 @@ for obj in objects:
+     if obj['CKA_CLASS'] == 'CKO_CERTIFICATE':
+         if not obj['CKA_LABEL'] in trust or not trust[obj['CKA_LABEL']]:
+             continue
+-        fname = obj['CKA_LABEL'][1:-1].replace('/', '_')\
++        bname = obj['CKA_LABEL'][1:-1].replace('/', '_')\
+                                       .replace(' ', '_')\
+                                       .replace('(', '=')\
+                                       .replace(')', '=')\
+-                                      .replace(',', '_') + '.crt'
+-        fname = fname.decode('string_escape')
++                                      .replace(',', '_')
++        bname = bname.decode('string_escape')
++        fname = bname + '.crt'
++        if os.path.exists(fname):
++            print "Found duplicate certificate name %s, renaming." % bname
++            fname = bname + '_2.crt'
+         f = open(fname, 'w')
+         f.write("-----BEGIN CERTIFICATE-----\n")
+         f.write("\n".join(textwrap.wrap(base64.b64encode(obj['CKA_VALUE']), 64)))
