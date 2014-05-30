@@ -5,6 +5,7 @@ DEPENDS = "zlib nettle"
 
 LICENSE = "GPLv3+ & LGPLv2.1+"
 LICENSE_${PN} = "LGPLv2.1+"
+LICENSE_${PN}-xssl = "LGPLv2.1+"
 LICENSE_${PN}-xx = "LGPLv2.1+"
 LICENSE_${PN}-bin = "GPLv3+"
 LICENSE_${PN}-openssl = "GPLv3+"
@@ -17,7 +18,7 @@ SHRT_VER = "${@d.getVar('PV',1).split('.')[0]}.${@d.getVar('PV',1).split('.')[1]
 
 SRC_URI = "ftp://ftp.gnutls.org/gcrypt/gnutls/v${SHRT_VER}/gnutls-${PV}.tar.xz"
 
-inherit autotools-brokensep texinfo binconfig pkgconfig gettext lib_package
+inherit autotools-brokensep binconfig pkgconfig gettext lib_package
 
 EXTRA_OECONF="--disable-rpath \
               --with-included-libtasn1 \
@@ -34,11 +35,12 @@ do_configure_prepend() {
 	done
 }
 
-PACKAGES =+ "${PN}-openssl ${PN}-xx"
+PACKAGES =+ "${PN}-openssl ${PN}-xx ${PN}-xssl"
 
 FILES_${PN}-dev += "${bindir}/gnutls-cli-debug"
 FILES_${PN}-openssl = "${libdir}/libgnutls-openssl.so.*"
 FILES_${PN}-xx = "${libdir}/libgnutlsxx.so.*"
+FILES_${PN}-xssl = "${libdir}/libgnutls-xssl.so.*"
 
 LDFLAGS_append_libc-uclibc += " -pthread"
 
