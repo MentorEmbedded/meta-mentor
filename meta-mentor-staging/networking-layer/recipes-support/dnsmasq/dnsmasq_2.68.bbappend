@@ -1,7 +1,2 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${BPN}:"
-SRC_URI += "file://parallel-make.patch"
-
-EXTRA_OEMAKE += "\
-    'CFLAGS=${CFLAGS}' \
-    'LDFLAGS=${LDFLAGS}' \
-"
+SRC_URI += "file://dnsmasq-CVE-2013-0198.patch"
