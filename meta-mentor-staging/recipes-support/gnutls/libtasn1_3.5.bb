@@ -11,7 +11,8 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=d32239bcb673463ab874e80d47fae504 \
 SRC_URI = "${GNU_MIRROR}/libtasn1/libtasn1-${PV}.tar.gz \
            file://libtasn1_fix_for_automake_1.12.patch \
            file://dont-depend-on-help2man.patch \
-	   file://libtasn1-CVE-2014-3468.patch"
+	   file://libtasn1-CVE-2014-3468.patch \
+	   file://libtasn1-CVE-2014-3469.patch"
 
 SRC_URI[md5sum] = "62c76352d0e17df1c082fe1c38bad5cf"
 SRC_URI[sha256sum] = "d7fcffbc08b6413533b817d4ede5c2eadcb3dcb21c71cc91de6ece25191519ed"
