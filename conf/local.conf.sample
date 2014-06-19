@@ -150,7 +150,7 @@ SDKMACHINE ?= "i686"
 #   - 'image-prelink' in order to prelink the filesystem image
 #   - 'image-swab' to perform host system intrusion detection
 # NOTE: if listing mklibs & prelink both, then make sure mklibs is before prelink
-USER_CLASSES ?= "buildstats buildstats-summary image-mklibs image-prelink"
+USER_CLASSES ?= "buildstats buildstats-summary image-mklibs"
 
 # To use mklibs, it must also be explicitly enabled for a given image. Note
 # that images built with mklibs will only run the binaries installed at image
