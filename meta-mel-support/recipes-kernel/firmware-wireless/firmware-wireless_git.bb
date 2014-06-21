@@ -36,7 +36,7 @@ LIC_FILES_CHKSUM = "\
 SRCREV = "c2c3df64df50d826d7649e03fbbe84ea99e5dbc8"
 PV = "0.0+git${SRCPV}"
 
-SRC_URI = "git://github.com/MentorEmbedded/firmware-wireless"
+SRC_URI = "git://github.com/MentorEmbedded/firmware-wireless;protocol=https"
 S = "${WORKDIR}/git"
 
 inherit allarch update-alternatives
