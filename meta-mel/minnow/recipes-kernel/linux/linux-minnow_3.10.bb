@@ -5,16 +5,22 @@ DEFAULT_PREFERENCE = "1"
 
 DEPENDS += "lzop-native bc-native"
 
+OVERRIDES .= "${@':minnow-rt' if '${RT_KERNEL_MINNOW}' == 'yes' else ''}"
+
+KERNEL_SRC_NAME ?= "linux-yocto-minnow-3.10.33-2596-g1c96dd8"
+KERNEL_SRC_NAME_minnow-rt ?= "linux-yocto-preempt-rt-minnow-3.10.35-3000-g4d20502"
+
 SRC_URI = "\
-    http://s3.amazonaws.com/portal.mentor.com/sources/ATP-2014.05/linux-yocto-minnow-3.10.33-2596-g1c96dd8.tar.xz \
+    http://s3.amazonaws.com/portal.mentor.com/sources/ATP-2014.05/${KERNEL_SRC_NAME}.tar.xz \
     file://defconfig \
 "
-PV = "3.10.33+git2596-g1c96dd8"
+PV = "3.10.33+git2596-1c96dd8"
+PV_minnow-rt = "3.10.35+git3000-4d20502"
 
 LICENSE = "GPLv2"
 LIC_FILES_CHKSUM = "file://COPYING;md5=d7810fab7487fb0aad327b76f1be7cd7"
 
-S = "${WORKDIR}/linux-yocto-minnow-3.10.33-2596-g1c96dd8"
+S = "${WORKDIR}/${KERNEL_SRC_NAME}"
 
 DEFCONFIG = "${WORKDIR}/defconfig"
 
