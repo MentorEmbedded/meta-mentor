@@ -14,6 +14,8 @@ SRC_URI = "\
     http://s3.amazonaws.com/portal.mentor.com/sources/ATP-2014.05/${KERNEL_SRC_NAME}.tar.xz \
     file://defconfig \
 "
+SRC_URI[md5sum] = "756ef78e8dce78dee0caae22433a6602"
+SRC_URI[sha256sum] = "ae066a56fad013f59c71de235af48da53aa44479ef88819ee50f440e298ea140"
 PV = "3.10.33+git2596-1c96dd8"
 PV_minnow-rt = "3.10.35+git3000-4d20502"
 

@@ -12,6 +12,8 @@ SRC_URI = "\
     ${KERNEL_SRC_URI} \
     file://defconfig \
 "
+SRC_URI[md5sum] = "2c3a4b2402478ed1f252c76e8b3043a7"
+SRC_URI[sha256sum] = "a483e77e287e5412985d729f1d6a993a9a175486504cd884de990470a32c1eff"
 S = "${WORKDIR}/${KERNEL_NAME}"
 
 LICENSE = "GPLv2"
