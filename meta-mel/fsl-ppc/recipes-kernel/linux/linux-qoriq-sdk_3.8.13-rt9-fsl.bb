@@ -13,7 +13,10 @@ PV = "3.8.13-rt9-fsl-${UPSTREAM_PR}"
 COMPATIBLE_MACHINE = "(p1010rdb|p4080ds)$"
 
 KERNEL_SRC_URI ?= "http://s3.amazonaws.com/portal.mentor.com/sources/ATP-2014.05/linux-qoriq-sdk-${PV}.tar.xz"
-SRC_URI = "${KERNEL_SRC_URI}"
+SRC_URI = "${KERNEL_SRC_URI} \
+           file://nbd.cfg \
+          "
+
 SRC_URI[md5sum] = "c9262f6b2f847e1b9019322797bb5205"
 SRC_URI[sha256sum] = "0437c160b2f74f56177a36f6fee8e28e1f03ebdd356430e7ab8a6a27d5e61e79"
 S = "${WORKDIR}/${BP}"
