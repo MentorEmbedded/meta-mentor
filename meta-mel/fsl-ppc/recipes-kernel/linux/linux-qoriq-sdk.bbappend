@@ -8,4 +8,5 @@ python () {
 }
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
-SRC_URI_append = " file://nbd.cfg"
+SRC_URI_append = " file://nbd.cfg \
+                   file://autofs.cfg"
