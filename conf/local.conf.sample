@@ -43,6 +43,8 @@ CORE_IMAGE_EXTRA_INSTALL = "oprofile"
 #  "debug-tweaks"    - make an image suitable for development
 #                      e.g. ssh root access has a blank password
 #  "x11-mini"        - minimal x11 setup, with window manager and terminal
+#  "splash"          - include a splashscreen (default: psplash, but the
+#                      particular package can be set with the SPLASH variable)
 #
 #  These are for particular roles/purposes:
 #
