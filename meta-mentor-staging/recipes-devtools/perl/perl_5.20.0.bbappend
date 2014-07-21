@@ -1,5 +1,3 @@
-PR .= ".1"
-
 REL_PERLLIB = "${@os.path.relpath(libdir, bindir)}/perl"
 
 do_install_append_class-nativesdk () {
