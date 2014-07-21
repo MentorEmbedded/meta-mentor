@@ -1,3 +1,5 @@
+DEPENDS += "libgcrypt"
+
 WPA_SUPPLICANT_TLS_LIB ?= "gnutls"
 
 do_configure_append_mel () {
