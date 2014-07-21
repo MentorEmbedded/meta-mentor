@@ -6,9 +6,5 @@ PACKAGECONFIG[3g] = "--enable-ofono, --disable-ofono,,ofono"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
-SRC_URI += "file://fix-stoping-interfaces-at-start.patch \
-            file://connman.service \
-            "
-do_install_append() {
-    cp -f ${WORKDIR}/connman.service ${D}${systemd_unitdir}/system/
-}
+SRC_URI += "file://0001-connman-implement-network-interface-management-techn.patch"
+
