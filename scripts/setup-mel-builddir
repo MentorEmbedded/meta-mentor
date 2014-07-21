@@ -290,6 +290,12 @@ scriptsdir="$(abspath $scriptsdir)"
 layerdir="${scriptsdir%/*}"
 
 setup_builddir "$@" || exit $?
+MEL_DISTRO="${MEL_DISTRO:-mel}"
 if [ -e $BUILDDIR/conf/local.conf ]; then
-    sed -i -e "s/^DISTRO.*/DISTRO = 'mel'/" $BUILDDIR/conf/local.conf
+    sed -i -e "s/^DISTRO.*/DISTRO = \'$MEL_DISTRO\'/" $BUILDDIR/conf/local.conf
+    if [ "$MEL_DISTRO" == "mel-lite" ]; then
+        sed -i -e 's@\(CORE_IMAGE_EXTRA_INSTALL.*\)oprofile\(.*\)@\1\2@' \
+               -e 's@\(EXTRA_IMAGE_FEATURES.*\)tools-profile\(.*\)@\1\2@' \
+                $BUILDDIR/conf/local.conf
+    fi
 fi

@@ -1,3 +1,10 @@
+# Ensure the path to the mel install doesn't affect checksums
+python sstate_config_handler () {
+    e.data.appendVar('BB_HASHBASE_WHITELIST', ' MELDIR')
+}
+sstate_config_handler[eventmask] = "bb.event.ConfigParsed"
+addhandler sstate_config_handler
+
 INHERIT += "sstate-mirror-sites"
 
 # We know RHEL 6 is the oldest distro we support, and that binaries built
