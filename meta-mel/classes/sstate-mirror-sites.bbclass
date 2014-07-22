@@ -1,6 +1,5 @@
 SSTATE_MIRRORS ?= ""
 SSTATE_MIRROR_SITES ?= ""
-SSTATE_MIRROR_SITES += "file://${SSTATE_DIR}"
 SSTATE_MIRROR_DISTROS ?= ""
 
 # Yield unique elements of an iterable
@@ -18,7 +17,9 @@ python sstate_reuse_setup() {
     d = e.data
 
     mirrors = d.getVar('SSTATE_MIRRORS', False).replace("\\n", "\n").split("\n")
+    nativelsbstring = d.getVar('NATIVELSBSTRING', True)
     distros = d.getVar('SSTATE_MIRROR_DISTROS', False).split()
+    distros = [di for di in distros if di != nativelsbstring]
     sites = d.getVar('SSTATE_MIRROR_SITES', False).split()
     for site in sites:
         # Support structured mirror
