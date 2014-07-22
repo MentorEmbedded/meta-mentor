@@ -6,6 +6,7 @@ import shutil
 import multiprocessing
 import re
 import bb
+import tempfile
 import oe.types
 
 
@@ -248,6 +249,7 @@ class RpmPkgsList(PkgsList):
     '''
     def _pkg_translate_smart_to_oe(self, pkg, arch):
         new_pkg = pkg
+        new_arch = arch
         fixed_arch = arch.replace('_', '-')
         found = 0
         for mlib in self.ml_prefix_list:
@@ -412,15 +414,21 @@ class DpkgPkgsList(PkgsList):
             output = tmp_output
         elif format == "deps":
             opkg_query_cmd = bb.utils.which(os.getenv('PATH'), "opkg-query-helper.py")
+            file_out = tempfile.NamedTemporaryFile()
+            file_out.write(output)
+            file_out.flush()
 
             try:
-                output = subprocess.check_output("echo -e '%s' | %s" %
-                                                 (output, opkg_query_cmd),
+                output = subprocess.check_output("cat %s | %s" %
+                                                 (file_out.name, opkg_query_cmd),
                                                  stderr=subprocess.STDOUT,
                                                  shell=True)
             except subprocess.CalledProcessError as e:
+                file_out.close()
                 bb.fatal("Cannot compute packages dependencies. Command '%s' "
                          "returned %d:\n%s" % (e.cmd, e.returncode, e.output))
+
+            file_out.close()
 
         return output
 
@@ -740,11 +748,15 @@ class RpmPM(PackageManager):
 
         channel_priority = 5
         platform_dir = os.path.join(self.etcrpm_dir, "platform")
+        sdkos = self.d.getVar("SDK_OS", True)
         with open(platform_dir, "w+") as platform_fd:
             platform_fd.write(platform + '\n')
             for pt in platform_extra:
                 channel_priority += 5
-                platform_fd.write(re.sub("-linux.*$", "-linux.*\n", pt))
+                if sdkos:
+                    tmp = re.sub("-%s$" % sdkos, "-%s\n" % sdkos, pt)
+                tmp = re.sub("-linux.*$", "-linux.*\n", tmp)
+                platform_fd.write(tmp)
 
         # Tell RPM that the "/" directory exist and is available
         bb.note("configuring RPM system provides")
@@ -1648,7 +1660,8 @@ class DpkgPM(PackageManager):
 
                 priority += 5
 
-            for pkg in self.d.getVar('PACKAGE_EXCLUDE', True).split():
+            pkg_exclude = self.d.getVar('PACKAGE_EXCLUDE', True) or ""
+            for pkg in pkg_exclude:
                 prefs_file.write(
                     "Package: %s\n"
                     "Pin: release *\n"
