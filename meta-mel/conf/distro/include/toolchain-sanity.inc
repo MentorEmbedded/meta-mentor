@@ -85,6 +85,13 @@ python toolchain_sanity_check () {
     except OSError:
         pass
 
+    lib_debugdir = bb.data.expand(os.path.join(toolchain_sysroot, 'lib64', '.debug'), d)
+    try:
+        if os.listdir(lib_debugdir):
+            return
+    except OSError:
+        pass
+
     bb.error("%s does not exist, or is empty" % lib_debugdir)
     bb.error('You need to install the debug info add-on via Sourcery CodeBench.')
     bb.fatal('Please refer to the trouble-shooting section of the Mentor Embedded Linux Users Manual')
