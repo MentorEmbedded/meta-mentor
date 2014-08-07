@@ -8,7 +8,6 @@ PR = "r0"
 
 RDEPENDS_${PN} += "\
     bonnie++ \
-    netperf \
     lmbench \
     iozone3 \
     iperf \
