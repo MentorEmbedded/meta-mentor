@@ -10,32 +10,30 @@ def iter_uniq(iterable):
             seen.add(i)
             yield i
 
-# Adjust mirrors so host-bound sstate packages can be fetched from them
+# Support use of native sstates from compatible distros
 python sstate_reuse_setup() {
-    if not isinstance(e, bb.event.ConfigParsed):
-        return
     d = e.data
 
     mirrors = d.getVar('SSTATE_MIRRORS', False).replace("\\n", "\n").split("\n")
-    nativelsbstring = d.getVar('NATIVELSBSTRING', True)
     distros = d.getVar('SSTATE_MIRROR_DISTROS', False).split()
-    distros = [di for di in distros if di != nativelsbstring]
+
+    # Fall back in SSTATE_DIR structure to our compatible distros
+    for distro in distros:
+        mirrors.append('file://${NATIVELSBSTRING} file://${SSTATE_DIR}/%s;downloadfilename=PATH' % distro)
+
     sites = d.getVar('SSTATE_MIRROR_SITES', False).split()
     for site in sites:
         # Support structured mirror
-        mirrors.append('file://.* %s/PATH' % site)
+        mirrors.append('file://.* %s/PATH;downloadfilename=PATH' % site)
 
-        # Fall back in structure to our compatible distros
+        # Fall back in mirror structure to our compatible distros
         for distro in distros:
-            mirrors.append('file://${NATIVELSBSTRING} %s/%s' % (site, distro))
+            mirrors.append('file://${NATIVELSBSTRING} %s/%s;downloadfilename=PATH' % (site, distro))
 
         # Support flattened mirror
-        mirrors.append('file://.* %s' % site)
-
-    # Fall back in structure to our compatible distros
-    for distro in distros:
-        mirrors.append('file://${NATIVELSBSTRING} file://${SSTATE_DIR}/%s' % distro)
+        mirrors.append('file://.* %s;downloadfilename=PATH' % site)
 
     d.setVar('SSTATE_MIRRORS', "\\n".join(iter_uniq(filter(None, mirrors))))
 }
+sstate_reuse_setup[eventmask] = "bb.event.ConfigParsed"
 addhandler sstate_reuse_setup
