@@ -104,10 +104,12 @@ configure_for_machine () {
     echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
     layersfile=$(mktemp setup-mel-builddir.XXXXXX)
 
+    layerpaths="*:*/*:$MELDIR/*:$MELDIR/*/*"
     # Convert layer paths to layer names for bb-determine-layers
     extralayernames=
     for layer in $extralayers; do
         if [ -d "$layer" ]; then
+            layerpaths="$layerpaths:$layer"
             layer="$(PATH="$OEROOT/scripts:$OEROOT/bitbake/bin:$PATH" $(dirname "$0")/bb-print-layer-data 2>/dev/null "$layer" | cut -d: -f1)"
         fi
         extralayernames="$extralayernames $layer"
@@ -117,11 +119,12 @@ configure_for_machine () {
     for layer in $updatelayers; do
         if [ -d "$layer" ]; then
             layer="$(PATH="$OEROOT/scripts:$OEROOT/bitbake/bin:$PATH" $(dirname "$0")/bb-print-layer-data 2>/dev/null "$layer" | cut -d: -f1)"
+            layerpaths="$layerpaths:$layer"
         fi
         updatelayernames="$updatelayernames $layer"
     done
 
-    $layerdir/scripts/bb-determine-layers -g "*:*/*:$MELDIR/*:$MELDIR/*/*" -l "core mel mel-support mentor-staging $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" "$@" $MACHINE >$layersfile
+    $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "core mel mel-support mentor-staging $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" "$@" $MACHINE >$layersfile
     if [ $? -ne 0 ]; then
         rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
