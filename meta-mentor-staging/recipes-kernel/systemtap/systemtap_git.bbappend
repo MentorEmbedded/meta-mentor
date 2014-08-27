@@ -1,5 +1,4 @@
 SRC_URI += " \
-    file://system_map_location.patch \
     file://define-em_aarch64-if-elf.h-doesnt.patch \
     file://tapset-linux-sendfile-syscall.patch \
 "
