@@ -27,7 +27,7 @@ sstate_write_isolated_preinst () {
     sstate_write_isolated
 }
 
-SSTATEPREINSTFUNCS += "sstate_write_isolated_preinst"
+SSTATEPREINSTFUNCS_append = " sstate_write_isolated_preinst"
 
 def cleansstate_isolated(d):
     if d.getVar('ISOLATED_SSTATE_DIR', True) != d.getVar('SSTATE_DIR', True):
@@ -66,6 +66,7 @@ python isolated_sstate_eventhandler() {
             bb.siggen.dump_this_task(fn, d)
 
         isolated_fn = fn.replace(sstate_dir + '/', isolated_sstate_dir + '/')
-        bb.utils.mkdirhier(os.path.dirname(isolated_fn))
-        os.symlink(fn, isolated_fn)
+        if not os.path.exists(isolated_fn):
+            bb.utils.mkdirhier(os.path.dirname(isolated_fn))
+            os.symlink(fn, isolated_fn)
 }
