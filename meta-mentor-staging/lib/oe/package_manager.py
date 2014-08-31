@@ -8,6 +8,7 @@ import re
 import bb
 import tempfile
 import oe.types
+import oe.utils
 
 
 # this can be used by all PM backends to create the index files in parallel
@@ -117,16 +118,7 @@ class RpmIndexer(Indexer):
             bb.note("There are no packages in %s" % self.deploy_dir)
             return
 
-        nproc = multiprocessing.cpu_count()
-        pool = bb.utils.multiprocessingpool(nproc)
-        results = list(pool.imap(create_index, index_cmds))
-        pool.close()
-        pool.join()
-
-        for result in results:
-            if result is not None:
-                return(result)
-
+        oe.utils.multiprocess_exec(index_cmds, create_index)
 
 class OpkgIndexer(Indexer):
     def write_index(self):
@@ -162,15 +154,7 @@ class OpkgIndexer(Indexer):
             bb.note("There are no packages in %s!" % self.deploy_dir)
             return
 
-        nproc = multiprocessing.cpu_count()
-        pool = bb.utils.multiprocessingpool(nproc)
-        results = list(pool.imap(create_index, index_cmds))
-        pool.close()
-        pool.join()
-
-        for result in results:
-            if result is not None:
-                return(result)
+        oe.utils.multiprocess_exec(index_cmds, create_index)
 
 
 class DpkgIndexer(Indexer):
@@ -211,15 +195,7 @@ class DpkgIndexer(Indexer):
             bb.note("There are no packages in %s" % self.deploy_dir)
             return
 
-        nproc = multiprocessing.cpu_count()
-        pool = bb.utils.multiprocessingpool(nproc)
-        results = list(pool.imap(create_index, index_cmds))
-        pool.close()
-        pool.join()
-
-        for result in results:
-            if result is not None:
-                return(result)
+        oe.utils.multiprocess_exec(index_cmds, create_index)
 
 
 class PkgsList(object):
@@ -829,6 +805,22 @@ class RpmPM(PackageManager):
         self._invoke_smart('config --set rpm-extra-macros._var=%s' %
                            self.d.getVar('localstatedir', True))
         cmd = 'config --set rpm-extra-macros._tmppath=/install/tmp'
+
+        prefer_color = self.d.getVar('RPM_PREFER_COLOR', True)
+        if prefer_color:
+            if prefer_color not in ['0', '1', '2', '3']:
+                bb.fatal("Invalid RPM_PREFER_COLOR: %s, it should be one of:\n"
+                        "\t1: ELF32 wins\n"
+                        "\t2: ELF64 wins\n"
+                        "\t3: ELF64 N32 wins (mips64 or mips64el only)" %
+                        prefer_color)
+            if prefer_color == "3" and self.d.getVar("TUNE_ARCH", True) not in \
+                                    ['mips64', 'mips64el']:
+                bb.fatal("RPM_PREFER_COLOR = \"3\" is for mips64 or mips64el "
+                         "only.")
+            self._invoke_smart('config --set rpm-extra-macros._prefer_color=%s'
+                        % prefer_color)
+
         self._invoke_smart(cmd)
 
         # Write common configuration for host and target usage
@@ -1661,7 +1653,7 @@ class DpkgPM(PackageManager):
                 priority += 5
 
             pkg_exclude = self.d.getVar('PACKAGE_EXCLUDE', True) or ""
-            for pkg in pkg_exclude:
+            for pkg in pkg_exclude.split():
                 prefs_file.write(
                     "Package: %s\n"
                     "Pin: release *\n"
