@@ -9,8 +9,3 @@ SIZEOF_POINTER_x86-64 = "4"
 
 # gcc 4.1 on CentOS 5.x hosts doesn't define __SIZEOF_POINTER__
 CFLAGS_append_class-native_mel = " -D__SIZEOF_POINTER__=${SIZEOF_POINTER}"
-
-EXTRA_OEMAKE_append_mel += "\
-    'CC=${CC} ${CFLAGS}' \
-    'LD=${LD} ${@LDFLAGS.replace('-Wl,', '').replace(',', '=')}' \
-"
