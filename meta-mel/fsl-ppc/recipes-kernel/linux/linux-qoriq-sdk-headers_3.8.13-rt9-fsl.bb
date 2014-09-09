@@ -12,7 +12,7 @@ RRECOMMENDS_${PN}-dbg = "linux-libc-headers-dev (= ${EXTENDPKGV})"
 
 UPSTREAM_PR = "1"
 PV = "3.8.13-rt9-fsl-${UPSTREAM_PR}"
-COMPATIBLE_MACHINE = "(p1010rdb|p4080ds)$"
+COMPATIBLE_MACHINE = "(p1010rdb|p4080ds|p2020rdb|p1020rdb)$"
 
 KERNEL_SRC_URI ?= "http://s3.amazonaws.com/portal.mentor.com/sources/ATP-2014.05/linux-qoriq-sdk-${PV}.tar.xz"
 SRC_URI = "${KERNEL_SRC_URI}"
