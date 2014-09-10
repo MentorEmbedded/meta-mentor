@@ -1,1 +1,2 @@
-IMAGE_INSTALL += " kernel-modules"
+IMAGE_INSTALL += " kernel-modules \
+                   dosfstools"
