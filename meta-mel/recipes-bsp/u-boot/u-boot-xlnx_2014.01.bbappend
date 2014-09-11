@@ -3,6 +3,7 @@ SRC_URI_append += " \
     file://ps7_init.h \
     file://ps7_init.c \
     file://uEnv.txt \
+    file://boot.bin \
 "
 
 do_configure_prepend () {
@@ -17,7 +18,7 @@ do_deploy_append () {
 	if [ -e ${WORKDIR}/fpga.bin ]; then
 		cp ${WORKDIR}/fpga.bin ${DEPLOYDIR}
 	fi
-	if [ -e ${B}/boot.bin ]; then
-		cp ${B}/boot.bin ${DEPLOYDIR}
+	if [ -e ${B}/mel-boot.bin ]; then
+		cp ${B}/mel-boot.bin ${DEPLOYDIR}
 	fi
 }
