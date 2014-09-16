@@ -8,23 +8,27 @@ layout.  However, u-boot.lds has not been updated to handle this.  Adding
 --bss-plt to LDFLAGS reverts to the old layout.
 
 Signed-off-by: Wade Farnsworth <wade_farnsworth@mentor.com>
+
+forward ported the patch to u-boot-qoriq_2014.01
+
+Signed-off-by: Fahad Usman <fahad_usman@mentor.com>
 ---
  arch/powerpc/config.mk |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/arch/powerpc/config.mk b/arch/powerpc/config.mk
-index b706281..1559985 100644
+index f75c3bf..b6a4993 100644
 --- a/arch/powerpc/config.mk
 +++ b/arch/powerpc/config.mk
-@@ -24,7 +24,7 @@
+@@ -8,7 +8,7 @@
  CROSS_COMPILE ?= ppc_8xx-
  
  CONFIG_STANDALONE_LOAD_ADDR ?= 0x40000
 -LDFLAGS_FINAL += --gc-sections
 +LDFLAGS_FINAL += --gc-sections --bss-plt
- PLATFORM_RELFLAGS += -fpic -mrelocatable -ffunction-sections -fdata-sections
- PLATFORM_CPPFLAGS += -DCONFIG_PPC -D__powerpc__
- PLATFORM_LDFLAGS  += -n
+ PLATFORM_RELFLAGS += -fpic -mrelocatable -ffunction-sections -fdata-sections \
+                                                                -meabi
+ PLATFORM_CPPFLAGS += -DCONFIG_PPC -D__powerpc__ -ffixed-r2
 -- 
 1.7.9.5
 
