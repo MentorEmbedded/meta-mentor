@@ -46,7 +46,7 @@ BINARY_ARTIFACTS_COMPRESSION ?= ""
 BINARY_ARTIFACTS_COMPRESSION[doc] = "Compression type for images, downloads and sstate artifacts.\
  Available: '.bz2' and '.gz'. No compression if empty"
 
-LAYERS_OWN_DOWNLOADS ?= ""
+LAYERS_OWN_DOWNLOADS ?= "${@' '.join(l for l in '${BBFILE_COLLECTIONS}'.split() if l.startswith('update-'))}"
 LAYERS_OWN_DOWNLOADS[doc] = "Names of layers whose downloads should be shipped inside the layer itself, self contained."
 
 # If we have an isolated set of shared state archives, use that, so as to
