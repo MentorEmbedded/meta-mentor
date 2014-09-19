@@ -46,6 +46,9 @@ BINARY_ARTIFACTS_COMPRESSION ?= ""
 BINARY_ARTIFACTS_COMPRESSION[doc] = "Compression type for images, downloads and sstate artifacts.\
  Available: '.bz2' and '.gz'. No compression if empty"
 
+LAYERS_OWN_DOWNLOADS ?= ""
+LAYERS_OWN_DOWNLOADS[doc] = "Names of layers whose downloads should be shipped inside the layer itself, self contained."
+
 # If we have an isolated set of shared state archives, use that, so as to
 # avoid archiving sstates which were unused.
 ARCHIVE_SSTATE_DIR = "${@ISOLATED_SSTATE_DIR \
@@ -237,6 +240,12 @@ do_prepare_release () {
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw downloads; then
+        rm -f deploy/*-downloads.tar
+
+        for layer in ${BBLAYERS}; do
+            ${@bb.utils.which('${BBPATH}', '../scripts/bb-print-layer-data')} "$layer/conf/layer.conf"
+        done 2>/dev/null | sed -n 's/^\([^:]*\):[^|]*|\([^|]*\)|.*/\1|\2/p' >layermap.txt
+
         if [ "${ARCHIVE_RELEASE_DL_TOPDIR}" != "${ARCHIVE_RELEASE_DL_DIR}" ]; then
             for dir in ${ARCHIVE_RELEASE_DL_TOPDIR}/*; do
                 name=$(basename $dir)
@@ -253,8 +262,22 @@ do_prepare_release () {
                     rm -f "$file"
                 done
                 cd - >/dev/null
-                release_tar "--transform=s,^downloads/$name,downloads," -chf \
-                        deploy/$name-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/$name
+                layerpath="$(sed -n "s/^$name|//p" layermap.txt)" || exit 1
+                layerroot="$(repo_root "$layerpath")"
+                layerbase="${layerroot##*/}"
+                if echo "${LAYERS_OWN_DOWNLOADS}" | grep -Eq "\<$name\>"; then
+                    layer_relpath="${layerpath#${layerroot}/}"
+                    if [ "$layer_relpath" = "$layerroot" ]; then
+                        layer_relpath=$layerbase
+                    else
+                        layer_relpath=$layerbase/$layer_relpath
+                    fi
+                    release_tar "--transform=s,^downloads/$name,$layer_relpath/downloads," -chf \
+                            deploy/$name-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/$name
+                else
+                    release_tar "--transform=s,^downloads/$name,downloads," -rhf \
+                            deploy/$layerbase-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/$name
+                fi
             done
         else
             mkdir -p downloads
