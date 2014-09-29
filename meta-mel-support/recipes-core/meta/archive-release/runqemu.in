@@ -1,4 +1,21 @@
 #!/bin/sh
 
 scriptdir="$(cd "$(dirname "$0")" && pwd)"
-exec "$scriptdir/../../poky/scripts/runqemu" "$(basename "${scriptdir%/*}")" "$scriptdir/##KERNEL##" "$scriptdir/##ROOTFS##" "$@"
+meldir="$(dirname "$(dirname "$scriptdir")")"
+
+if ! which bitbake >/dev/null 2>&1; then
+    echo >&2 "Unable to run bitbake, please source the setup script: . $meldir/meta-mentor/setup-environment"
+    exit 1
+fi
+
+eval $(bitbake -e | grep '^export PATH=')
+if ! which tunctl >/dev/null 2>&1; then
+    echo >&2 "Unable to find tunctl binary, building qemu-helper-native"
+    bitbake qemu-helper-native
+fi
+if ! which qemu-system-i386 >/dev/null 2>&1; then
+    echo >&2 "Unable to find qemu, building qemu-native"
+    bitbake qemu-native
+fi
+
+exec "$meldir/poky/scripts/runqemu" "$(basename "${scriptdir%/*}")" "$scriptdir/##KERNEL##" "$scriptdir/##ROOTFS##" "$@"
