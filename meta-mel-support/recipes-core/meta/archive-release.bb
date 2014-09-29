@@ -1,4 +1,5 @@
 DESCRIPTION = "Archive the artifacts for a ${DISTRO_NAME} release"
+SRC_URI_append_qemuall = "file://runqemu.in"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=3f40d7994397109285ec7b81fdeb3b58 \
                     file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
@@ -343,6 +344,22 @@ do_prepare_release () {
         {
             ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 -type l -iname "%s" || true' % pattern for pattern in DEPLOY_IMAGES.split())}
         } >>include
+
+        if echo "${OVERRIDES}" | tr ':' '\n' | grep -qx 'qemuall'; then
+            ext="$(echo "${IMAGE_EXTENSIONS}" | tr ' ' '\n' | grep -v '^tar' | head -n 1)"
+            if [ ! -e "${DEPLOY_DIR_IMAGE}/${RELEASE_IMAGE}-${MACHINE}.$ext" ]; then
+                bbfatal "Unable to find image for extension $ext, aborting"
+            fi
+            if [ -e "${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${MACHINE}.bin" ] || [ -e "${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}.bin" ]; then
+                kernel="${KERNEL_IMAGETYPE}.bin"
+            else
+                kernel="${KERNEL_IMAGETYPE}"
+            fi
+            sed -e "s/##ROOTFS##/${RELEASE_IMAGE}.$ext/; s/##KERNEL##/$kernel/" ${WORKDIR}/runqemu.in >runqemu
+            chmod +x runqemu
+            echo ./runqemu >>include
+            echo "--transform=s,./runqemu$,${MACHINE}/binary/runqemu," >>include
+        fi
         release_tar --files-from=include -rhf deploy/${MACHINE}.tar
 
         if [ ${BINARY_ARTIFACTS_COMPRESSION} = ".bz2" ]
@@ -372,9 +389,6 @@ python () {
         bb.build.addtask('do_prepare_release', '', 'do_archive_release_downloads_all', d)
 }
 
-do_fetch[noexec] = "1"
-do_unpack[noexec] = "1"
-do_patch[noexec] = "1"
 do_configure[noexec] = "1"
 do_compile[noexec] = "1"
 do_install[noexec] = "1"

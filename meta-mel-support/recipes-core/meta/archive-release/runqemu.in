@@ -1,0 +1,4 @@
+#!/bin/sh
+
+scriptdir="$(cd "$(dirname "$0")" && pwd)"
+exec "$scriptdir/../../poky/scripts/runqemu" "$(basename "${scriptdir%/*}")" "$scriptdir/##KERNEL##" "$scriptdir/##ROOTFS##" "$@"
