@@ -6,5 +6,7 @@ python () {
     d.setVar('SRC_URI', srcs)
 }
 
-KBRANCH_minnow = "${@base_conditional('RT_KERNEL_MINNOW', 'yes', 'standard/preempt-rt/minnow', 'standard/base', d)}"
-SRCREV_machine_pn-linux-yocto_minnow = "${@base_conditional('RT_KERNEL_MINNOW', 'yes', '713598d06311629f4e27c95e5e7835f329b28572', '21df0c8486e129a4087970a07b423c533ae05de7', d)}"
+RT_KERNEL_MINNOW ?= "no"
+LINUX_KERNEL_TYPE = "${@'preempt-rt' if '${RT_KERNEL_MINNOW}' == 'yes' else 'standard'}"
+KBRANCH_minnow = "${@'standard/preempt-rt/minnow' if '${RT_KERNEL_MINNOW}' == 'yes' else 'standard/base'}"
+SRCREV_machine_minnow = "${@'052e915a9234d13f54b52d3e4c59d9b6a087bc5c' if '${RT_KERNEL_MINNOW}' == 'yes' else 'aa677a2d02677ec92d59a8c36d001cf2f5cf3260'}"
