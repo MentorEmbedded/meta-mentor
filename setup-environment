@@ -67,9 +67,6 @@ else
     if [ $? -eq 0 ] && [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ]; then
         . $BUILDDIR/setup-environment
 
-        sed -i -e  '/# Change the following variable value to yes to enable real time kernel for minnow board/d' \
-               -e  '/RT_KERNEL_MINNOW/d' conf/local.conf
-
         sed -i -e  '/# Comment the following if you want to disable sdl in QEMU/d' \
                -e  '/PACKAGECONFIG_append_pn-qemu-native/d' \
                -e  '/PACKAGECONFIG_append_pn-nativesdk-qemu/d' \
@@ -98,11 +95,6 @@ else
         configured_layers | while read layer; do
             if [ -e $layer/post-setup-environment ]; then
               . $layer/post-setup-environment
-            fi
-            if echo "$layer" | grep -q "/meta-minnow$"; then
-                echo >>conf/local.conf
-                echo \# Change the following variable value to yes to enable real time kernel for minnow board >>conf/local.conf
-                echo RT_KERNEL_MINNOW = \"no\" >>conf/local.conf
             fi
             load_lconf_snippet "$layer" "conf/local.conf.append"
             load_lconf_snippet "$layer" "conf/local.conf.append.$SETUP_ENV_MACHINE"
