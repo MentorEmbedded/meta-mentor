@@ -70,18 +70,39 @@ else
         sed -i -e  '/# Change the following variable value to yes to enable real time kernel for minnow board/d' \
             -e  '/RT_KERNEL_MINNOW/d' conf/local.conf
 
-        CONFIGURED_LAYERS=`tac $BUILDDIR/conf/bblayers.conf | sed -n -e '/^"/,/^BBLAYERS = /{ /^BBLAYERS =/d; /^"/d; p;}' | awk {'print $1'}`
-        for layers in $CONFIGURED_LAYERS; do
-            if [ -e $layers/post-setup-environment ]; then
-                . $layers/post-setup-environment
+        configured_layers () {
+            tac $BUILDDIR/conf/bblayers.conf | \
+                sed -n -e '/^"/,/^BBLAYERS = /{ /^BBLAYERS =/d; /^"/d; p;}' | \
+                awk {'print $1'}
+        }
+
+        load_lconf_snippet () {
+            if [ ! -e "$1/$2" ]; then
+                return
             fi
-            if echo "$layers" | grep -q "/meta-minnow$"; then
+            (
+                lheadername="${1##*/}/$2"
+                printf '\n## Begin %s\n\n' "$lheadername"
+                cat "$1/$2"
+                printf '\n## End %s\n' "$lheadername"
+            ) >>conf/local.conf
+        }
+
+        sed -i -n -e ":out; /^## Begin /{ :loop; /^## End /{ d; b out; }; n; b loop; }; p;" conf/local.conf
+        configured_layers | while read layer; do
+            if [ -e $layer/post-setup-environment ]; then
+              . $layer/post-setup-environment
+            fi
+            if echo "$layer" | grep -q "/meta-minnow$"; then
                 echo >>conf/local.conf
                 echo \# Change the following variable value to yes to enable real time kernel for minnow board >>conf/local.conf
                 echo RT_KERNEL_MINNOW = \"no\" >>conf/local.conf
             fi
+            load_lconf_snippet "$layer" "conf/local.conf.append"
         done
-        unset CONFIGURED_LAYERS
+
+        unset load_lconf_snippet
+        unset configured_layers
     fi
     unset EXTRAMELLAYERS
     unset OPTIONALLAYERS
