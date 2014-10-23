@@ -63,34 +63,18 @@ else
         unset EXTRALAYERS
     fi
 
-    OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" EXCLUDEDLAYERS="$EXCLUDEDLAYERS" $layerdir/scripts/setup-mel-builddir "$@" && \
-        [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ] && \
+    OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" EXCLUDEDLAYERS="$EXCLUDEDLAYERS" $layerdir/scripts/setup-mel-builddir "$@"
+    if [ $? -eq 0 ] && [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ]; then
         . $BUILDDIR/setup-environment
-    unset EXTRAMELLAYERS
-    unset OPTIONALLAYERS
-    unset EXCLUDEDLAYERS
-    unset layerdir
-    if [ -e conf/local.conf ]; then
-       sed -i -e  '/# Change the following variable value to yes to enable real time kernel for minnow board/d' \
-              -e  '/RT_KERNEL_MINNOW/d' conf/local.conf
-       sed -i -e  '/# Comment the following if you want to disable sdl in QEMU/d' \
-              -e  '/PACKAGECONFIG_append_pn-qemu-native/d' \
-              -e  '/PACKAGECONFIG_append_pn-nativesdk-qemu/d' \
-              -e  '/ASSUME_PROVIDED += \"libsdl-native\"/d' conf/local.conf
 
-    fi
-    if [ -e "$BUILDDIR/conf/bblayers.conf" ]; then
-        CONFIGURED_LAYERS=`tac $BUILDDIR/conf/bblayers.conf | sed -n -e '/^"/,/^BBLAYERS = /{ /^BBLAYERS =/d; /^"/d; p;}' | awk {'print $1'}`
-        for layers in $CONFIGURED_LAYERS; do
-           if [ -e $layers/post-setup-environment ]; then
-             . $layers/post-setup-environment
-           fi
-           if echo "$layers" | grep -q "/meta-minnow$"; then
-                echo  >> conf/local.conf
-                echo \# Change the following variable value to yes to enable real time kernel for minnow board >> conf/local.conf
-                echo  RT_KERNEL_MINNOW = \'no\' >> conf/local.conf
-           fi
-        done
+        sed -i -e  '/# Change the following variable value to yes to enable real time kernel for minnow board/d' \
+               -e  '/RT_KERNEL_MINNOW/d' conf/local.conf
+
+        sed -i -e  '/# Comment the following if you want to disable sdl in QEMU/d' \
+               -e  '/PACKAGECONFIG_append_pn-qemu-native/d' \
+               -e  '/PACKAGECONFIG_append_pn-nativesdk-qemu/d' \
+               -e  '/ASSUME_PROVIDED += \"libsdl-native\"/d' conf/local.conf
+
         SETUP_ENV_MACHINE="$(sed -n -e 's/^MACHINE *?*= *"\(.*\)"/\1/p' "$BUILDDIR/conf/local.conf")"
         case "$SETUP_ENV_MACHINE" in
            qemu*)
@@ -101,6 +85,24 @@ else
               echo ASSUME_PROVIDED += \"libsdl-native\" >> conf/local.conf
         ;;
         esac
+        unset SETUP_ENV_MACHINE
 
+        CONFIGURED_LAYERS=`tac $BUILDDIR/conf/bblayers.conf | sed -n -e '/^"/,/^BBLAYERS = /{ /^BBLAYERS =/d; /^"/d; p;}' | awk {'print $1'}`
+        for layers in $CONFIGURED_LAYERS; do
+            if [ -e $layers/post-setup-environment ]; then
+                . $layers/post-setup-environment
+            fi
+            if echo "$layers" | grep -q "/meta-minnow$"; then
+                echo >>conf/local.conf
+                echo \# Change the following variable value to yes to enable real time kernel for minnow board >>conf/local.conf
+                echo RT_KERNEL_MINNOW = \"no\" >>conf/local.conf
+            fi
+        done
+
+        unset CONFIGURED_LAYERS
     fi
+    unset EXTRAMELLAYERS
+    unset OPTIONALLAYERS
+    unset EXCLUDEDLAYERS
+    unset layerdir
 fi
