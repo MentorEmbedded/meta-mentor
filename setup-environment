@@ -89,6 +89,7 @@ else
         }
 
         sed -i -n -e ":out; /^## Begin /{ :loop; /^## End /{ d; b out; }; n; b loop; }; p;" conf/local.conf
+        SETUP_ENV_MACHINE="$(sed -n -e 's/^MACHINE *?*= *"\(.*\)"/\1/p' "$BUILDDIR/conf/local.conf")"
         configured_layers | while read layer; do
             if [ -e $layer/post-setup-environment ]; then
               . $layer/post-setup-environment
@@ -99,8 +100,9 @@ else
                 echo RT_KERNEL_MINNOW = \"no\" >>conf/local.conf
             fi
             load_lconf_snippet "$layer" "conf/local.conf.append"
+            load_lconf_snippet "$layer" "conf/local.conf.append.$SETUP_ENV_MACHINE"
         done
-
+        unset SETUP_ENV_MACHINE
         unset load_lconf_snippet
         unset configured_layers
     fi
