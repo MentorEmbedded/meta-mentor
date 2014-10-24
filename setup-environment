@@ -73,6 +73,11 @@ else
     if [ -e conf/local.conf ]; then
        sed -i -e  '/# Change the following variable value to yes to enable real time kernel for minnow board/d' \
               -e  '/RT_KERNEL_MINNOW/d' conf/local.conf
+       sed -i -e  '/# Comment the following if you want to disable sdl in QEMU/d' \
+              -e  '/PACKAGECONFIG_append_pn-qemu-native/d' \
+              -e  '/PACKAGECONFIG_append_pn-nativesdk-qemu/d' \
+              -e  '/ASSUME_PROVIDED += \"libsdl-native\"/d' conf/local.conf
+
     fi
     if [ -e "$BUILDDIR/conf/bblayers.conf" ]; then
         CONFIGURED_LAYERS=`tac $BUILDDIR/conf/bblayers.conf | sed -n -e '/^"/,/^BBLAYERS = /{ /^BBLAYERS =/d; /^"/d; p;}' | awk {'print $1'}`
@@ -86,5 +91,16 @@ else
                 echo  RT_KERNEL_MINNOW = \'no\' >> conf/local.conf
            fi
         done
+        SETUP_ENV_MACHINE="$(sed -n -e 's/^MACHINE *?*= *"\(.*\)"/\1/p' "$BUILDDIR/conf/local.conf")"
+        case "$SETUP_ENV_MACHINE" in
+           qemu*)
+              echo  >> conf/local.conf
+              echo \# Following lines add dependency on sdl installed on host. Comment the following if you want to disable sdl in QEMU.>> conf/local.conf
+              echo PACKAGECONFIG_append_pn-qemu-native = \" sdl\" >> conf/local.conf
+              echo PACKAGECONFIG_append_pn-nativesdk-qemu = \" sdl\" >> conf/local.conf
+              echo ASSUME_PROVIDED += \"libsdl-native\" >> conf/local.conf
+        ;;
+        esac
+
     fi
 fi
