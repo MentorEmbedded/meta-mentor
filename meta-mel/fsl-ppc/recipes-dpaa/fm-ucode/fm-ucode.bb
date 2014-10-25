@@ -17,6 +17,7 @@ do_install () {
         cp -r ${S}/boot ${D}/
 }
 
+PROVIDES += "${PN}-image"
 PACKAGES += "${PN}-image"
 FILES_${PN}-image += "/boot"
 
