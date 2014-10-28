@@ -1,0 +1,5 @@
+case "$SETUP_ENV_MACHINE" in
+    qemu*)
+        load_lconf_snippet "$layer" "conf/local.conf.append.qemu"
+        ;;
+esac
