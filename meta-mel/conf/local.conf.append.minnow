@@ -1,0 +1,19 @@
+# Change the following variable value to yes to enable real time kernel for minnow board
+RT_KERNEL_MINNOW = "no"
+
+# Override preferred version of recipe to be used in case of MinnowBoard
+PREFERRED_VERSION_xserver-xorg_minnow = '1.14.4'
+
+# Ensure default Xorg X server is used for MinnowBoard
+XSERVER_minnow = "xserver-xorg xf86-input-evdev xf86-input-mouse xf86-input-keyboard xf86-video-fbdev"
+
+# Don't include the xorg.conf that makes use of EMGD
+BBMASK_append = "|/meta-minnow/recipes-graphics/xorg-xserver/xserver-xf86-config_0.1.bbappend"
+
+# Minnow has USB host, so we need vfat support for USB storage
+MACHINE_FEATURES_append_minnow = " vfat"
+
+# Override minnow's inclusion of linux-firmware in favor of a minimal subset
+# which holds just the wireless firmware
+MACHINE_EXTRA_RRECOMMENDS_remove_minnow = "linux-firmware"
+MACHINE_EXTRA_RRECOMMENDS_append_minnow = " firmware-wireless"
