@@ -1,0 +1,15 @@
+Create $(abs_builddir)/cpu before we try to create a symlink there
+
+Signed-off-by: Christopher Larson <chris_larson@mentor.com>
+Upstream-Status: Pending
+
+--- libvirt-1.2.8.orig/src/Makefile.am
++++ libvirt-1.2.8/src/Makefile.am
+@@ -1010,6 +1010,7 @@ libvirt_cpu_la_SOURCES = $(CPU_SOURCES)
+ libvirt_cpu_la_DEPENDENCIES = $(abs_builddir)/cpu/cpu_map.xml
+ 
+ $(abs_builddir)/cpu/cpu_map.xml:
++	mkdir -p $(abs_builddir)/cpu
+ 	$(AM_V_GEN)ln -s $(abs_srcdir)/cpu/cpu_map.xml $@
+ 
+ if WITH_VMX
