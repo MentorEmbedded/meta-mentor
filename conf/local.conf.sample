@@ -21,9 +21,10 @@ MACHINE ??= "qemux86"
 #TCLIBC = "uclibc"
 
 # The CORE_IMAGE_EXTRA_INSTALL variable allows extra individual packages to be
-# added to any of the "core" images (e.g. core-image-base,
-# core-image-minimal).
-CORE_IMAGE_EXTRA_INSTALL = "oprofile"
+# added to any of the images inheriting core-image.bbclass, including the
+# "core" images (e.g. core-image-base, core-image-minimal) as well as
+# console-image.
+#CORE_IMAGE_EXTRA_INSTALL += "bash"
 
 # The EXTRA_IMAGE_FEATURES variable allows groups of packages to be added to
 # the generated images. Some of these options are added to certain image types
