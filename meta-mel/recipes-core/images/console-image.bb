@@ -13,4 +13,4 @@ LICENSE = "MIT"
 inherit core-image
 
 IMAGE_FEATURES .= "${@base_contains('COMBINED_FEATURES', 'alsa', ' tools-audio', '', d)}"
-IMAGE_INSTALL += " quota"
+IMAGE_INSTALL += " quota connman"
