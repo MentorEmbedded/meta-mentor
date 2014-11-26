@@ -13,7 +13,7 @@ if ! which tunctl >/dev/null 2>&1; then
     echo >&2 "Unable to find tunctl binary, building qemu-helper-native.."
     bitbake qemu-helper-native
 fi
-if [ ! -e "$STAGING_BINDIR_NATIVE/qemu-system-arm" ] || [ ! -e "$STAGING_BINDIR_NATIVE/qemu-system-ppc" ]; then
+if [ ! -e "$STAGING_BINDIR_NATIVE/qemu-system-arm" ]; then
     echo >&2 "Building qemu-native.."
     bitbake qemu-native
 fi
