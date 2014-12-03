@@ -184,6 +184,9 @@ prepare_templates () {
 
     cp ${TEMPLATECONF}/conf-notes.txt .
     sed 's,^MACHINE ??=.*,MACHINE ??= "${MACHINE}",' ${TEMPLATECONF}/local.conf.sample >local.conf.sample
+    if [ -n "${DISTRO}" ]; then
+        sed -i 's,^DISTRO =.*,DISTRO = "${DISTRO}",' local.conf.sample
+    fi
     sed -i 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "$,' local.conf.sample
     if [ "${DISTRO}" == "mel-lite" ]; then
         sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/../../codebench-lite",' local.conf.sample
