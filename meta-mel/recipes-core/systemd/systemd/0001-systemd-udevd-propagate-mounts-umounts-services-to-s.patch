@@ -1,0 +1,31 @@
+From 11aa3ea6c7d4448c4cc1d07523079f3f4d3dc800 Mon Sep 17 00:00:00 2001
+From: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+Date: Fri, 28 Nov 2014 14:02:56 +0530
+Subject: [PATCH] systemd-udevd: propagate mounts/umounts services to system
+
+JIRA: SB-4128
+
+"MountFlags=slave" restricts the access of the mounted/unmounted
+directories.Other way to propagate the mount services to entire
+system is to share.
+
+MountFlags=shared will automount the media devices.
+
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ units/systemd-udevd.service.in |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/units/systemd-udevd.service.in b/units/systemd-udevd.service.in
+index f6acd6f..5f8e4c8 100644
+--- a/units/systemd-udevd.service.in
++++ b/units/systemd-udevd.service.in
+@@ -21,4 +21,4 @@ Sockets=systemd-udevd-control.socket systemd-udevd-kernel.socket
+ Restart=always
+ RestartSec=0
+ ExecStart=@rootlibexecdir@/systemd-udevd
+-MountFlags=slave
++MountFlags=shared
+-- 
+1.7.9.5
+
