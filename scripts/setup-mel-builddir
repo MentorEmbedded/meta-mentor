@@ -293,6 +293,9 @@ scriptsdir="$(abspath $scriptsdir)"
 layerdir="${scriptsdir%/*}"
 
 setup_builddir "$@" || exit $?
+if [ -e $layerdir/conf/mel-lite ]; then
+    MEL_DISTRO="mel-lite"
+fi
 MEL_DISTRO="${MEL_DISTRO:-mel}"
 if [ -e $BUILDDIR/conf/local.conf ]; then
     sed -i -e "s/^DISTRO.*/DISTRO = \'$MEL_DISTRO\'/" $BUILDDIR/conf/local.conf
