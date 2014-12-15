@@ -1,0 +1,328 @@
+diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.c alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.c
+--- alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.c	2014-06-11 15:15:24.667158523 +0200
++++ alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.c	2014-06-17 09:04:24.159541039 +0200
+@@ -565,6 +565,9 @@
+ 	}
+ 	switch (snd_pcm_state(dmix->spcm)) {
+ 	case SND_PCM_STATE_XRUN:
++		/*recover slave and update client state to xrun before returning POLLERR*/
++		snd_pcm_direct_slave_recover(dmix);
++		snd_pcm_direct_client_chk_xrun(dmix, pcm);
+ 	case SND_PCM_STATE_SUSPENDED:
+ 	case SND_PCM_STATE_SETUP:
+ 		events |= POLLERR;
+@@ -861,6 +864,83 @@
+ 
+ #undef COPY_SLAVE
+ 
++#define direct_sem_down_chk_ret(d, id) {\
++	int semerr = snd_pcm_direct_semaphore_down(d, DIRECT_IPC_SEM_CLIENT); \
++	if (semerr) {\
++		SNDERR("SEMDOWN FAILED with err %d", semerr);\
++		return semerr;\
++	}\
++}
++
++#define direct_sem_up_chk_ret(d, id) {\
++	int semerr = snd_pcm_direct_semaphore_up(d, DIRECT_IPC_SEM_CLIENT); \
++	if (semerr) {\
++		SNDERR("SEMUP FAILED with err %d", semerr);\
++		return semerr;\
++	}\
++}
++
++/*
++ * Recover slave on XRUN.
++ * Even if direct plugins disable xrun detection, there might be an xrun raised directly by some drivers.
++ * The first client recovers slave pcm.
++ * Each client needs to execute sw xrun handling afterwards
++ */
++int snd_pcm_direct_slave_recover(snd_pcm_direct_t *direct)
++{
++	int ret = 0;
++
++	direct_sem_down_chk_ret(direct, DIRECT_IPC_SEM_CLIENT);
++	if (snd_pcm_state(direct->spcm) != SND_PCM_STATE_XRUN) {
++		/*ignore... someone else already did recovery*/
++		direct_sem_up_chk_ret(direct, DIRECT_IPC_SEM_CLIENT);
++		return ret;
++	}
++
++	ret = snd_pcm_prepare(direct->spcm);
++	if (ret < 0) {
++		SNDERR("recover: unable to prepare slave");
++		direct_sem_up_chk_ret(direct, DIRECT_IPC_SEM_CLIENT);
++		return ret;
++	}
++
++	if (direct->type == SND_PCM_TYPE_DSHARE) {
++		const snd_pcm_channel_area_t *dst_areas;
++		dst_areas = snd_pcm_mmap_areas(direct->spcm);
++		snd_pcm_areas_silence(dst_areas, 0, direct->spcm->channels, direct->spcm->buffer_size, direct->spcm->format);
++	}
++
++	ret = snd_pcm_start(direct->spcm);
++	if (ret < 0) {
++		SNDERR("recover: unable to start slave");
++		direct_sem_up_chk_ret(direct, DIRECT_IPC_SEM_CLIENT);
++		return ret;
++	}
++	direct->shmptr->recoveries++;
++	direct_sem_up_chk_ret(direct, DIRECT_IPC_SEM_CLIENT);
++	return 0;
++}
++
++/*
++ * enter xrun state, if slave xrun occured
++ * @return: 0 - no xrun >0: xrun happened
++ */
++int snd_pcm_direct_client_chk_xrun(snd_pcm_direct_t *direct, snd_pcm_t *pcm)
++{
++	if (direct->shmptr->recoveries != direct->recoveries) {
++		/* no matter how many xruns we missed - so don't increment but just update to actual counter*/
++		direct->recoveries = direct->shmptr->recoveries;
++		pcm->fast_ops->drop(pcm);
++		/*trigger_tstamp update is missing in drop callbacks*/
++		gettimestamp(&direct->trigger_tstamp, pcm->monotonic);
++		/*no timer clear: if slave already entered xrun again the event is lost...*/
++		/*snd_pcm_direct_clear_timer_queue(direct);*/
++		direct->state = SND_PCM_STATE_XRUN;
++		return 1;
++	}
++	return 0;
++}
++
+ /*
+  * this function initializes hardware and starts playback operation with
+  * no stop threshold (it operates all time without xrun checking)
+@@ -1147,6 +1227,7 @@
+ 
+ 	dmix->timer_events = (1<<SND_TIMER_EVENT_MSUSPEND) |
+ 			     (1<<SND_TIMER_EVENT_MRESUME) |
++			     (1<<SND_TIMER_EVENT_MSTOP) |
+ 			     (1<<SND_TIMER_EVENT_STOP);
+ 
+ 	/*
+@@ -1279,6 +1360,7 @@
+ 	dmix->slave_buffer_size = spcm->buffer_size;
+ 	dmix->slave_period_size = dmix->shmptr->s.period_size;
+ 	dmix->slave_boundary = spcm->boundary;
++	dmix->recoveries = dmix->shmptr->recoveries;
+ 
+ 	ret = snd_pcm_mmap(spcm);
+ 	if (ret < 0) {
+diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.h alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.h
+--- alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.h	2014-06-11 15:15:24.675154188 +0200
++++ alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.h	2014-06-16 13:52:27.340832269 +0200
+@@ -66,6 +66,7 @@
+ 	char socket_name[256];			/* name of communication socket */
+ 	snd_pcm_type_t type;			/* PCM type (currently only hw) */
+ 	int use_server;
++	unsigned int recoveries;		/* no of executed recoveries on slave*/
+ 	struct {
+ 		unsigned int format;
+ 		snd_interval_t rate;
+@@ -155,6 +156,7 @@
+ 	int max_periods;		/* max periods (-1 = fixed periods, 0 = max buffer size) */
+ 	unsigned int channels;		/* client's channels */
+ 	unsigned int *bindings;
++	unsigned int recoveries;	/* mirror of executed recoveries on slave */
+ 	union {
+ 		struct {
+ 			int shmid_sum;			/* IPC global sum ring buffer memory identification */
+@@ -313,6 +315,8 @@
+ snd_pcm_chmap_query_t **snd_pcm_direct_query_chmaps(snd_pcm_t *pcm);
+ snd_pcm_chmap_t *snd_pcm_direct_get_chmap(snd_pcm_t *pcm);
+ int snd_pcm_direct_set_chmap(snd_pcm_t *pcm, const snd_pcm_chmap_t *map);
++int snd_pcm_direct_slave_recover(snd_pcm_direct_t *direct);
++int snd_pcm_direct_client_chk_xrun(snd_pcm_direct_t *direct, snd_pcm_t *pcm);
+ 
+ int snd_timer_async(snd_timer_t *timer, int sig, pid_t pid);
+ struct timespec snd_pcm_hw_fast_tstamp(snd_pcm_t *pcm);
+diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dmix.c alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dmix.c
+--- alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dmix.c	2014-06-11 15:15:24.667158523 +0200
++++ alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dmix.c	2014-06-16 12:33:26.624065480 +0200
+@@ -396,14 +396,21 @@
+ 	snd_pcm_direct_t *dmix = pcm->private_data;
+ 	snd_pcm_uframes_t slave_hw_ptr, old_slave_hw_ptr, avail;
+ 	snd_pcm_sframes_t diff;
++	int err;
+ 	
+ 	switch (snd_pcm_state(dmix->spcm)) {
+ 	case SND_PCM_STATE_DISCONNECTED:
+ 		dmix->state = SND_PCM_STATE_DISCONNECTED;
+ 		return -ENODEV;
++	case SND_PCM_STATE_XRUN:
++		if ((err = snd_pcm_direct_slave_recover(dmix)) <0)
++			return err;
++		break;
+ 	default:
+ 		break;
+ 	}
++	if (snd_pcm_direct_client_chk_xrun(dmix, pcm))
++		return -EPIPE;
+ 	if (dmix->slowptr)
+ 		snd_pcm_hwsync(dmix->spcm);
+ 	old_slave_hw_ptr = dmix->slave_hw_ptr;
+@@ -799,12 +806,16 @@
+ 
+ 	switch (snd_pcm_state(dmix->spcm)) {
+ 	case SND_PCM_STATE_XRUN:
+-		return -EPIPE;
++		if ((err = snd_pcm_direct_slave_recover(dmix)) < 0)
++			return err;
++		break;
+ 	case SND_PCM_STATE_SUSPENDED:
+ 		return -ESTRPIPE;
+ 	default:
+ 		break;
+ 	}
++	if (snd_pcm_direct_client_chk_xrun(dmix, pcm))
++		return -EPIPE;
+ 	if (! size)
+ 		return 0;
+ 	snd_pcm_mmap_appl_forward(pcm, size);
+@@ -812,8 +823,10 @@
+ 		if ((err = snd_pcm_dmix_start_timer(pcm, dmix)) < 0)
+ 			return err;
+ 	} else if (dmix->state == SND_PCM_STATE_RUNNING ||
+-		   dmix->state == SND_PCM_STATE_DRAINING)
+-		snd_pcm_dmix_sync_ptr(pcm);
++		   dmix->state == SND_PCM_STATE_DRAINING) {
++		if (( err = snd_pcm_dmix_sync_ptr(pcm)) < 0)
++			return err;
++	}
+ 	if (dmix->state == SND_PCM_STATE_RUNNING ||
+ 	    dmix->state == SND_PCM_STATE_DRAINING) {
+ 		/* ok, we commit the changes after the validation of area */
+@@ -829,10 +842,13 @@
+ static snd_pcm_sframes_t snd_pcm_dmix_avail_update(snd_pcm_t *pcm)
+ {
+ 	snd_pcm_direct_t *dmix = pcm->private_data;
++	int err;
+ 	
+ 	if (dmix->state == SND_PCM_STATE_RUNNING ||
+-	    dmix->state == SND_PCM_STATE_DRAINING)
+-		snd_pcm_dmix_sync_ptr(pcm);
++	    dmix->state == SND_PCM_STATE_DRAINING) {
++		if (( err = snd_pcm_dmix_sync_ptr(pcm)) < 0)
++			return err;
++	}
+ 	return snd_pcm_mmap_playback_avail(pcm);
+ }
+ 
+diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dshare.c alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dshare.c
+--- alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dshare.c	2014-06-11 15:15:24.675154188 +0200
++++ alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dshare.c	2014-06-16 12:34:57.954792442 +0200
+@@ -162,14 +162,21 @@
+ 	snd_pcm_direct_t *dshare = pcm->private_data;
+ 	snd_pcm_uframes_t slave_hw_ptr, old_slave_hw_ptr, avail;
+ 	snd_pcm_sframes_t diff;
++	int err;
+ 	
+ 	switch (snd_pcm_state(dshare->spcm)) {
+ 	case SND_PCM_STATE_DISCONNECTED:
+ 		dshare->state = SNDRV_PCM_STATE_DISCONNECTED;
+ 		return -ENODEV;
++	case SND_PCM_STATE_XRUN:
++		if ((err = snd_pcm_direct_slave_recover(dshare)) <0)
++			return err;
++		break;
+ 	default:
+ 		break;
+ 	}
++	if (snd_pcm_direct_client_chk_xrun(dshare, pcm))
++		return -EPIPE;
+ 	if (dshare->slowptr)
+ 		snd_pcm_hwsync(dshare->spcm);
+ 	old_slave_hw_ptr = dshare->slave_hw_ptr;
+@@ -490,12 +497,16 @@
+ 
+ 	switch (snd_pcm_state(dshare->spcm)) {
+ 	case SND_PCM_STATE_XRUN:
+-		return -EPIPE;
++		if ((err = snd_pcm_direct_slave_recover(dshare)) < 0)
++			return err;
++		break;
+ 	case SND_PCM_STATE_SUSPENDED:
+ 		return -ESTRPIPE;
+ 	default:
+ 		break;
+ 	}
++	if (snd_pcm_direct_client_chk_xrun(dshare, pcm))
++		return -EPIPE;
+ 	if (! size)
+ 		return 0;
+ 	snd_pcm_mmap_appl_forward(pcm, size);
+@@ -503,8 +514,10 @@
+ 		if ((err = snd_pcm_dshare_start_timer(dshare)) < 0)
+ 			return err;
+ 	} else if (dshare->state == SND_PCM_STATE_RUNNING ||
+-		   dshare->state == SND_PCM_STATE_DRAINING)
+-		snd_pcm_dshare_sync_ptr(pcm);
++		   dshare->state == SND_PCM_STATE_DRAINING) {
++		if ((err = snd_pcm_dshare_sync_ptr(pcm)) < 0)
++			return err;
++	}
+ 	if (dshare->state == SND_PCM_STATE_RUNNING ||
+ 	    dshare->state == SND_PCM_STATE_DRAINING) {
+ 		/* ok, we commit the changes after the validation of area */
+@@ -520,10 +533,13 @@
+ static snd_pcm_sframes_t snd_pcm_dshare_avail_update(snd_pcm_t *pcm)
+ {
+ 	snd_pcm_direct_t *dshare = pcm->private_data;
++	int err;
+ 	
+ 	if (dshare->state == SND_PCM_STATE_RUNNING ||
+-	    dshare->state == SND_PCM_STATE_DRAINING)
+-		snd_pcm_dshare_sync_ptr(pcm);
++	    dshare->state == SND_PCM_STATE_DRAINING) {
++		if ((err = snd_pcm_dshare_sync_ptr(pcm)) < 0)
++			return err;
++	}
+ 	return snd_pcm_mmap_playback_avail(pcm);
+ }
+ 
+diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dsnoop.c alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dsnoop.c
+--- alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dsnoop.c	2014-06-11 15:15:24.675154188 +0200
++++ alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dsnoop.c	2014-06-16 12:30:39.190452908 +0200
+@@ -132,14 +132,21 @@
+ 	snd_pcm_direct_t *dsnoop = pcm->private_data;
+ 	snd_pcm_uframes_t slave_hw_ptr, old_slave_hw_ptr, avail;
+ 	snd_pcm_sframes_t diff;
++	int err;
+ 	
+ 	switch (snd_pcm_state(dsnoop->spcm)) {
+ 	case SND_PCM_STATE_DISCONNECTED:
+ 		dsnoop->state = SNDRV_PCM_STATE_DISCONNECTED;
+ 		return -ENODEV;
++	case SND_PCM_STATE_XRUN:
++		if ((err = snd_pcm_direct_slave_recover(dsnoop)) <0)
++			return err;
++		break;
+ 	default:
+ 		break;
+ 	}
++	if (snd_pcm_direct_client_chk_xrun(dsnoop, pcm))
++		return -EPIPE;
+ 	if (dsnoop->slowptr)
+ 		snd_pcm_hwsync(dsnoop->spcm);
+ 	old_slave_hw_ptr = dsnoop->slave_hw_ptr;
+@@ -411,12 +418,16 @@
+ 
+ 	switch (snd_pcm_state(dsnoop->spcm)) {
+ 	case SND_PCM_STATE_XRUN:
+-		return -EPIPE;
++		if ((err = snd_pcm_direct_slave_recover(dsnoop)) <0)
++			return err;
++		break;
+ 	case SND_PCM_STATE_SUSPENDED:
+ 		return -ESTRPIPE;
+ 	default:
+ 		break;
+ 	}
++	if (snd_pcm_direct_client_chk_xrun(dsnoop, pcm))
++		return -EPIPE;
+ 	if (dsnoop->state == SND_PCM_STATE_RUNNING) {
+ 		err = snd_pcm_dsnoop_sync_ptr(pcm);
+ 		if (err < 0)
