@@ -1,0 +1,75 @@
+--- a/aplay/aplay.c	2014-10-29 18:36:25.505646735 +0530
++++ b/aplay/aplay.c	2014-10-29 19:05:20.739831887 +0530
+@@ -392,22 +392,14 @@
+ 		putchar('\n');
+ 	if (!quiet_mode)
+ 		fprintf(stderr, _("Aborted by signal %s...\n"), strsignal(sig));
+-	if (stream == SND_PCM_STREAM_CAPTURE) {
+-		if (fmt_rec_table[file_type].end) {
+-			fmt_rec_table[file_type].end(fd);
+-			fd = -1;
+-		}
+-		stream = -1;
+-	}
+-	if (fd > 1) {
+-		close(fd);
+-		fd = -1;
+-	}
+-	if (handle && sig != SIGABRT) {
++	if (handle)
+ 		snd_pcm_abort(handle);
++	if (sig == SIGABRT) {
++		/* do not call snd_pcm_close() and abort immediately */
+ 		handle = NULL;
++		prg_exit(EXIT_FAILURE);
+ 	}
+-	prg_exit(EXIT_FAILURE);
++	signal(sig, signal_handler);
+ }
+ 
+ /* call on SIGUSR1 signal. */
+@@ -1929,7 +1921,7 @@
+ 		count = chunk_size;
+ 	}
+ 	data = remap_data(data, count);
+-	while (count > 0 && !in_aborting) {
++	while (count > 0) {
+ 		if (test_position)
+ 			do_test_position();
+ 		check_stdin();
+@@ -1972,7 +1964,7 @@
+ 		count = chunk_size;
+ 	}
+ 	data = remap_datav(data, count);
+-	while (count > 0 && !in_aborting) {
++	while (count > 0) {
+ 		unsigned int channel;
+ 		void *bufs[channels];
+ 		size_t offset = result;
+@@ -2021,7 +2013,7 @@
+ 		count = chunk_size;
+ 	}
+ 
+-	while (count > 0 && !in_aborting) {
++	while (count > 0) {
+ 		if (test_position)
+ 			do_test_position();
+ 		check_stdin();
+@@ -2060,7 +2052,7 @@
+ 		count = chunk_size;
+ 	}
+ 
+-	while (count > 0 && !in_aborting) {
++	while (count > 0) {
+ 		unsigned int channel;
+ 		void *bufs[channels];
+ 		size_t offset = result;
+@@ -2104,7 +2096,7 @@
+ 	ssize_t result = count, r;
+ 	size_t size;
+ 
+-	while (count > 0 && !in_aborting) {
++	while (count > 0) {
+ 		size = count;
+ 		if (size > chunk_bytes - buffer_pos)
+ 			size = chunk_bytes - buffer_pos;
