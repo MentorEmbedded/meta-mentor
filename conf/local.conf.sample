@@ -264,7 +264,7 @@ BB_DISKMON_DIRS = "\
 
 # This may be used to abort the build when using an untested/unverified
 # version of the external toolchain.
-#CSL_VER_REQUIRED = "2012.03"
+#SOURCERY_VERSION_REQUIRED = "2012.03"
 
 # Uncomment to enable split-debug filesystem
 #SPLIT_DEBUG_FS = "true"

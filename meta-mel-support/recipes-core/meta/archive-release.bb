@@ -180,8 +180,6 @@ bb_layers () {
 bb_layers[vardepsexclude] += "layer%/ topdir##*/ layer#${topdir}/"
 
 prepare_templates () {
-    csl_version="$(echo ${CSL_VER_MAIN} | sed 's/-.*$//')"
-
     cp ${TEMPLATECONF}/conf-notes.txt .
     sed 's,^MACHINE ??=.*,MACHINE ??= "${MACHINE}",' ${TEMPLATECONF}/local.conf.sample >local.conf.sample
     sed -i 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "$,' local.conf.sample
@@ -190,8 +188,10 @@ prepare_templates () {
     else
         sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/../..",' local.conf.sample
     fi
-    if [ -n "$csl_version" ]; then
-        sed -i "s,^#*\(CSL_VER_REQUIRED =\).*,\1 \"$csl_version\"," local.conf.sample
+
+    sourcery_version="$(echo ${SOURCERY_VERSION} | sed 's/-.*$//')"
+    if [ -n "$sourcery_version" ]; then
+        sed -i "s,^#*\(SOURCERY_VERSION_REQUIRED =\).*,\1 \"$sourcery_version\"," local.conf.sample
     fi
     {
         echo
