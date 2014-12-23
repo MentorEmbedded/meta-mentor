@@ -116,7 +116,7 @@ echo "*         Press <ENTER> to confirm....                     *"
 echo "************************************************************"
 read junk
 
-for i in `ls -1 $device?`; do
+for i in `ls -1 $device?*`; do
  echo "unmounting device '$i'"
  umount $i 2>/dev/null
 done
@@ -139,29 +139,37 @@ if [ ! -b ${PARTITION1} ]; then
 fi
 
 # make partitions.
-if [ -b ${PARITION1} ]; then
+if [ -b ${PARTITION1} ]; then
 	mkfs.ext3 -L "rootfs" ${PARTITION1}
 else
 	echo "Cant find rootfs partition in /dev"
 fi
 
-echo "Copying filesystem on ${device}1"
+echo "Copying filesystem on ${PARTITION1}"
 execute "mkdir -p /tmp/sdk/$$/rootfs"
-execute "mount ${device}1 /tmp/sdk/$$/rootfs"
+execute "mount ${PARTITION1} /tmp/sdk/$$/rootfs"
 
 execute "dd if=${sdkdir}/uImage of=${device} bs=512 seek=2048"
 execute "dd if=${sdkdir}/${KERNEL_DEVICETREE} of=${device} bs=512 seek=1536"
 
 if [ ! -f $sdkdir/${ROOTFS_IMAGE} ]
 then
-	echo "ERROR: failed to find rootfs [${ROOTFS_IMAGE}] tar in $sdkdir"
-else
-	echo "Extracting filesystem [${ROOTFS_IMAGE}] on ${device}1 ..."
-	root_fs=`ls -1 $sdkdir/${ROOTFS_IMAGE}`
-	execute "tar xaf $root_fs -C /tmp/sdk/$$/rootfs"
+        ROOTFS_IMAGE=`echo $ROOTFS_IMAGE | sed "s:-${MACHINE}::"`
 fi
 
-echo "unmounting ${device}1"
+if [ ! -f $sdkdir/${ROOTFS_IMAGE} ]; then
+        echo "ERROR: failed to find rootfs [${ROOTFS_IMAGE}] tar in $sdkdir"
+        ROOTFS_IMAGE=
+        execute "umount /tmp/sdk/$$/root"
+        exit 1
+fi
+
+echo "Extracting filesystem [${ROOTFS_IMAGE}] on ${PARTITION1} ..."
+root_fs=`ls -1 $sdkdir/${ROOTFS_IMAGE}`
+execute "tar xaf $root_fs -C /tmp/sdk/$$/rootfs"
+
+sync
+echo "unmounting ${PARTITION1}"
 execute "umount /tmp/sdk/$$/rootfs"
 
 execute "rm -rf /tmp/sdk/$$"
