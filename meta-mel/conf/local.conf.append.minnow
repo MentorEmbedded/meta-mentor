@@ -2,7 +2,10 @@
 RT_KERNEL_MINNOW = "no"
 
 # Override preferred version of recipe to be used in case of MinnowBoard
-PREFERRED_VERSION_xserver-xorg_minnow = '1.14.4'
+PREFERRED_VERSION_xserver-xorg_minnow = "1.14.4"
+
+# Prefer our kernel recipe which uses a tarball rather than git
+PREFERRED_PROVIDER_virtual/kernel_minnow = "linux-minnow"
 
 # Ensure default Xorg X server is used for MinnowBoard
 XSERVER_minnow = "xserver-xorg xf86-input-evdev xf86-input-mouse xf86-input-keyboard xf86-video-fbdev"

@@ -29,9 +29,9 @@ else
         esac
     done
 
-    OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
+    OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private tracing-layer}"
     EXCLUDEDLAYERS="$EXCLUDEDLAYERS"
-
+    echo "$OPTIONALLAYERS"
     # Customer directory layers handling (e.g. <customername>-custom)
     if [ -e "$layerdir/../customer.conf" ] ; then
         for CUSTOMER in $(cat $layerdir/../customer.conf) ; do

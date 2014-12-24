@@ -90,6 +90,11 @@ class Rootfs(object):
         shutil.copytree(self.d.expand("${COREBASE}/scripts/postinst-intercepts"),
                         intercepts_dir)
 
+        # intercepts from meta-mentor override scripts from poky
+        cmd = 'cp %s/* %s/' % (self.d.expand("${COREBASE}/../meta-mentor/meta-mentor-staging/scripts/postinst-intercepts"), intercepts_dir)
+        subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+
+
         shutil.copy(self.d.expand("${COREBASE}/meta/files/deploydir_readme.txt"),
                     self.deploy_dir_image +
                     "/README_-_DO_NOT_DELETE_FILES_IN_THIS_DIRECTORY.txt")
