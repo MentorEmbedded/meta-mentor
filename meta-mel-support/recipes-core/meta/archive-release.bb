@@ -182,11 +182,14 @@ bb_layers[vardepsexclude] += "layer%/ topdir##*/ layer#${topdir}/"
 prepare_templates () {
     cp ${TEMPLATECONF}/conf-notes.txt .
     sed 's,^MACHINE ??=.*,MACHINE ??= "${MACHINE}",' ${TEMPLATECONF}/local.conf.sample >local.conf.sample
+    if [ -n "${DISTRO}" ]; then
+        sed -i 's,^DISTRO =.*,DISTRO = "${DISTRO}",' local.conf.sample
+    fi
     sed -i 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "$,' local.conf.sample
     if [ "${DISTRO}" == "mel-lite" ]; then
         sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/../../codebench-lite",' local.conf.sample
     else
-        sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/../..",' local.conf.sample
+        sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/../../codebench",' local.conf.sample
     fi
 
     sourcery_version="$(echo ${SOURCERY_VERSION} | sed 's/-.*$//')"
@@ -375,7 +378,7 @@ do_prepare_release () {
 
     mv deploy/* ${DEPLOY_DIR_RELEASE}/
 }
-addtask prepare_release before do_build after do_dump_headrevs
+addtask prepare_release before do_build after do_dump_headrevs do_patch
 
 do_prepare_release[dirs] =+ "${DEPLOY_DIR_RELEASE} ${MELDIR} ${S}"
 do_prepare_release[cleandirs] = "${S}"

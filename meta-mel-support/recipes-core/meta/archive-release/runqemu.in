@@ -8,13 +8,13 @@ if ! which bitbake >/dev/null 2>&1; then
     exit 1
 fi
 
-eval $(bitbake -e | grep '^export PATH=')
+eval $(bitbake -e | grep -E '^(export PATH|STAGING_BINDIR_NATIVE)=')
 if ! which tunctl >/dev/null 2>&1; then
-    echo >&2 "Unable to find tunctl binary, building qemu-helper-native"
+    echo >&2 "Unable to find tunctl binary, building qemu-helper-native.."
     bitbake qemu-helper-native
 fi
-if ! which qemu-system-i386 >/dev/null 2>&1; then
-    echo >&2 "Unable to find qemu, building qemu-native"
+if [ ! -e "$STAGING_BINDIR_NATIVE/qemu-system-arm" ]; then
+    echo >&2 "Building qemu-native.."
     bitbake qemu-native
 fi
 

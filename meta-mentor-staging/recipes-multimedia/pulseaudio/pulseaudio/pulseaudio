@@ -1,0 +1,71 @@
+#! /bin/sh -e
+
+DAEMON=/usr/bin/pulseaudio
+PIDDIR=/var/run/pulse
+PIDFILE=$PIDDIR/pid
+DAEMONUSER=pulse
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+test -x $DAEMON || exit 0
+
+DISALLOW_MODULE_LOADING=1
+test -f /etc/default/pulseaudio && . /etc/default/pulseaudio
+
+pulseaudio_start () {
+	echo "Starting system PulseAudio Daemon"
+	if [ ! -d $PIDDIR ]; then
+		mkdir -p $PIDDIR
+		chown $DAEMONUSER:$DAEMONUSER $PIDDIR
+	fi
+	start-stop-daemon -x $DAEMON -p $PIDFILE  --start -- --disallow-exit --disallow-module-loading=$DISALLOW_MODULE_LOADING --daemonize --log-target=syslog
+	status=$?
+	if [ -e /var/run/pulse/.esd_auth ]; then
+		chown pulse:pulse-access /var/run/pulse/.esd_auth
+		chmod 640 /var/run/pulse/.esd_auth
+	fi
+	if [ -e /var/run/pulse/.pulse-cookie ]; then
+		chown pulse:pulse-access /var/run/pulse/.pulse-cookie
+		chmod 640 /var/run/pulse/.pulse-cookie
+	fi
+	echo ${status}
+}
+
+pulseaudio_stop () {
+	echo "Stopping system PulseAudio Daemon"
+	start-stop-daemon -p $PIDFILE --stop --retry 5 || echo -n "...which is not running"
+	echo $?
+}
+
+case "$1" in
+	start|stop)
+		pulseaudio_${1}
+		;;
+	restart|force-reload)
+		if [ -s $PIDFILE ] && kill -0 $(cat $PIDFILE) >/dev/null 2>&1; then
+			pulseaudio_stop
+			pulseaudio_start
+		fi
+		;;
+	force-stop)
+		pulseaudio_stop
+		killall pulseaudio || true
+		sleep 2
+		killall -9 pulseaudio || true
+		;;
+	status)
+	        pidof ${DAEMON} >/dev/null          
+        	status=$?                             
+	        if [ $status -eq 0 ]; then             
+        	         echo "pulseaudio is running"  
+	        else                                                    
+        	        echo "pulseaudio is not running"
+	        fi                             
+        	exit $status                                                 
+                ;;                                                                
+        *)                         
+		echo "Usage: /etc/init.d/pulseaudio {start|stop|force-stop|restart|force-reload|status}"
+		exit 1
+		;;
+esac
+
+exit 0

@@ -1,0 +1,55 @@
+From c06dbf077459923066c96556678835cd1f55123a Mon Sep 17 00:00:00 2001
+From: Jaroslav Kysela <perex@perex.cz>
+Date: Fri, 13 Jun 2014 10:52:26 +0200
+Subject: [PATCH] aplay/arecord: Add more in_aborting checks to read/write
+ loops
+
+Reported-by: Sergey <sergemp@mail.ru>
+Signed-off-by: Jaroslav Kysela <perex@perex.cz>
+---
+ aplay/aplay.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/aplay/aplay.c b/aplay/aplay.c
+index 33a8ed5..7d1c16e 100644
+--- a/aplay/aplay.c
++++ b/aplay/aplay.c
+@@ -1921,7 +1921,7 @@ static ssize_t pcm_write(u_char *data, size_t count)
+ 		count = chunk_size;
+ 	}
+ 	data = remap_data(data, count);
+-	while (count > 0) {
++	while (count > 0 && !in_aborting) {
+ 		if (test_position)
+ 			do_test_position();
+ 		check_stdin();
+@@ -1964,7 +1964,7 @@ static ssize_t pcm_writev(u_char **data, unsigned int channels, size_t count)
+ 		count = chunk_size;
+ 	}
+ 	data = remap_datav(data, count);
+-	while (count > 0) {
++	while (count > 0 && !in_aborting) {
+ 		unsigned int channel;
+ 		void *bufs[channels];
+ 		size_t offset = result;
+@@ -2013,7 +2013,7 @@ static ssize_t pcm_read(u_char *data, size_t rcount)
+ 		count = chunk_size;
+ 	}
+ 
+-	while (count > 0) {
++	while (count > 0 && !in_aborting) {
+ 		if (test_position)
+ 			do_test_position();
+ 		check_stdin();
+@@ -2052,7 +2052,7 @@ static ssize_t pcm_readv(u_char **data, unsigned int channels, size_t rcount)
+ 		count = chunk_size;
+ 	}
+ 
+-	while (count > 0) {
++	while (count > 0 && !in_aborting) {
+ 		unsigned int channel;
+ 		void *bufs[channels];
+ 		size_t offset = result;
+-- 
+1.7.9.5
+

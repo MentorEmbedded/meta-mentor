@@ -1,0 +1,42 @@
+commit 00e77320a631119ca8fe0b52892bc12e8a9ea46f
+Author: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+Date:   Tue Nov 18 17:33:23 2014 +0100
+
+    Fix: UST subbuffers silently dropped on moderate trace traffic
+    
+    Well, it looks like we really screwed up on this one.
+    
+    lttng-tools commit 02b3d1769d5f8a33e4109b1e681141c9295dfda6 introduced
+    an important regression for lttng-ust tracing in the consumer daemon:
+    after reading a sub-buffer, a check has been added to see whether there
+    are more sub-buffers available to read, and if it is the case, it
+    ensures the wakeup pipe will be awakened again.
+    
+    The issue lies in the use of ustctl_put_next_subbuf() in this check.
+    This acts as if the sub-buffer has been read, when in reality it has not
+    been read. It therefore trashes the data contained by this sub-buffer.
+    
+    This check should use ustctl_put_subbuf(), which does not move the
+    consumer position.
+    
+    This is a severe bug, and the fix needs to be applied to stable-2.6,
+    stable-2.5, and stable-2.4.
+    
+    Fixes #861
+    
+    Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+    Signed-off-by: Jérémie Galarneau <jeremie.galarneau@efficios.com>
+
+diff --git a/src/common/ust-consumer/ust-consumer.c b/src/common/ust-consumer/ust-consumer.c
+index bff360e..bdace65 100644
+--- a/src/common/ust-consumer/ust-consumer.c
++++ b/src/common/ust-consumer/ust-consumer.c
+@@ -1881,7 +1881,7 @@ static int notify_if_more_data(struct lttng_consumer_stream *stream,
+ 		goto end;
+ 	}
+ 
+-	ret = ustctl_put_next_subbuf(ustream);
++	ret = ustctl_put_subbuf(ustream);
+ 	assert(!ret);
+ 
+ 	/* This stream still has data. Flag it and wake up the data thread. */

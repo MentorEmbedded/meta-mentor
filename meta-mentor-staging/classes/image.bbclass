@@ -155,17 +155,6 @@ python () {
 
     d.setVar('IMAGE_FEATURES', ' '.join(list(remain_features)))
 
-    # Ensure we have the vendor list for complementary package handling
-    ml_vendor_list = ""
-    multilibs = d.getVar('MULTILIBS', True) or ""
-    for ext in multilibs.split():
-        eext = ext.split(':')
-        if len(eext) > 1 and eext[0] == 'multilib':
-            localdata = bb.data.createCopy(d)
-            vendor = localdata.getVar("TARGET_VENDOR_virtclass-multilib-" + eext[1], False)
-            ml_vendor_list += " " + vendor
-    d.setVar('MULTILIB_VENDORS', ml_vendor_list)
-
     check_image_features(d)
     initramfs_image = d.getVar('INITRAMFS_IMAGE', True) or ""
     if initramfs_image != "":
@@ -196,7 +185,9 @@ IMAGE_LINGUAS ?= "de-de fr-fr en-gb"
 
 LINGUAS_INSTALL ?= "${@" ".join(map(lambda s: "locale-base-%s" % s, d.getVar('IMAGE_LINGUAS', True).split()))}"
 
-PSEUDO_PASSWD = "${IMAGE_ROOTFS}"
+# Prefer image, but use the fallback files for lookups if the image ones
+# aren't yet available.
+PSEUDO_PASSWD = "${IMAGE_ROOTFS}:${STAGING_DIR_NATIVE}"
 
 do_rootfs[dirs] = "${TOPDIR}"
 do_rootfs[lockfiles] += "${IMAGE_ROOTFS}.lock"
@@ -207,18 +198,17 @@ do_rootfs[cleandirs] += "${S}"
 do_rootfs[umask] = "022"
 
 # A hook function to support read-only-rootfs IMAGE_FEATURES
-# Currently, it only supports sysvinit system.
 read_only_rootfs_hook () {
 	# Tweak the mount option and fs_passno for rootfs in fstab
 	sed -i -e '/^[#[:space:]]*\/dev\/root/{s/defaults/ro/;s/\([[:space:]]*[[:digit:]]\)\([[:space:]]*\)[[:digit:]]$/\1\20/}' ${IMAGE_ROOTFS}/etc/fstab
 
 	if ${@bb.utils.contains("DISTRO_FEATURES", "sysvinit", "true", "false", d)}; then
-	        # Change the value of ROOTFS_READ_ONLY in /etc/default/rcS to yes
+		# Change the value of ROOTFS_READ_ONLY in /etc/default/rcS to yes
 		if [ -e ${IMAGE_ROOTFS}/etc/default/rcS ]; then
 			sed -i 's/ROOTFS_READ_ONLY=no/ROOTFS_READ_ONLY=yes/' ${IMAGE_ROOTFS}/etc/default/rcS
 		fi
-	        # Run populate-volatile.sh at rootfs time to set up basic files
-	        # and directories to support read-only rootfs.
+		# Run populate-volatile.sh at rootfs time to set up basic files
+		# and directories to support read-only rootfs.
 		if [ -x ${IMAGE_ROOTFS}/etc/init.d/populate-volatile.sh ]; then
 			${IMAGE_ROOTFS}/etc/init.d/populate-volatile.sh
 		fi
@@ -429,6 +419,7 @@ do_compile[noexec] = "1"
 do_install[noexec] = "1"
 do_populate_sysroot[noexec] = "1"
 do_package[noexec] = "1"
+do_package_qa[noexec] = "1"
 do_packagedata[noexec] = "1"
 do_package_write_ipk[noexec] = "1"
 do_package_write_deb[noexec] = "1"

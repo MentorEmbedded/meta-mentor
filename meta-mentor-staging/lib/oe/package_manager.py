@@ -17,10 +17,13 @@ def create_index(arg):
 
     try:
         bb.note("Executing '%s' ..." % index_cmd)
-        subprocess.check_output(index_cmd, stderr=subprocess.STDOUT, shell=True)
+        result = subprocess.check_output(index_cmd, stderr=subprocess.STDOUT, shell=True)
     except subprocess.CalledProcessError as e:
         return("Index creation command '%s' failed with return code %d:\n%s" %
                (e.cmd, e.returncode, e.output))
+
+    if result:
+        bb.note(result)
 
     return None
 
@@ -64,6 +67,9 @@ class RpmIndexer(Indexer):
                     localdata = bb.data.createCopy(self.d)
                     default_tune_key = "DEFAULTTUNE_virtclass-multilib-" + eext[1]
                     default_tune = localdata.getVar(default_tune_key, False)
+                    if default_tune is None:
+                        default_tune_key = "DEFAULTTUNE_ML_" + eext[1]
+                        default_tune = localdata.getVar(default_tune_key, False)
                     if default_tune:
                         localdata.setVar("DEFAULTTUNE", default_tune)
                         bb.data.update_data(localdata)
@@ -118,7 +124,10 @@ class RpmIndexer(Indexer):
             bb.note("There are no packages in %s" % self.deploy_dir)
             return
 
-        oe.utils.multiprocess_exec(index_cmds, create_index)
+        result = oe.utils.multiprocess_exec(index_cmds, create_index)
+        if result:
+            bb.fatal('%s' % ('\n'.join(result)))
+
 
 class OpkgIndexer(Indexer):
     def write_index(self):
@@ -154,7 +163,10 @@ class OpkgIndexer(Indexer):
             bb.note("There are no packages in %s!" % self.deploy_dir)
             return
 
-        oe.utils.multiprocess_exec(index_cmds, create_index)
+        result = oe.utils.multiprocess_exec(index_cmds, create_index)
+        if result:
+            bb.fatal('%s' % ('\n'.join(result)))
+
 
 
 class DpkgIndexer(Indexer):
@@ -167,6 +179,9 @@ class DpkgIndexer(Indexer):
             for a in sdk_pkg_archs.split():
                 if a not in pkg_archs:
                     arch_list.append(a)
+
+        all_mlb_pkg_arch_list = (self.d.getVar('ALL_MULTILIB_PACKAGE_ARCHS', True) or "").replace('-', '_').split()
+        arch_list.extend(arch for arch in all_mlb_pkg_arch_list if arch not in arch_list)
 
         apt_ftparchive = bb.utils.which(os.getenv('PATH'), "apt-ftparchive")
         gzip = bb.utils.which(os.getenv('PATH'), "gzip")
@@ -195,7 +210,10 @@ class DpkgIndexer(Indexer):
             bb.note("There are no packages in %s" % self.deploy_dir)
             return
 
-        oe.utils.multiprocess_exec(index_cmds, create_index)
+        result = oe.utils.multiprocess_exec(index_cmds, create_index)
+        if result:
+            bb.fatal('%s' % ('\n'.join(result)))
+
 
 
 class PkgsList(object):
@@ -843,6 +861,7 @@ class RpmPM(PackageManager):
                         % prefer_color)
 
         self._invoke_smart(cmd)
+        self._invoke_smart('config --set rpm-ignoresize=1')
 
         # Write common configuration for host and target usage
         self._invoke_smart('config --set rpm-nolinktos=1')
@@ -1264,9 +1283,9 @@ class OpkgPM(PackageManager):
 
                     with open(cfg_file_name, "w+") as cfg_file:
                         cfg_file.write("src/gz local-%s %s/%s" %
-                                       arch,
-                                       self.d.getVar('FEED_DEPLOYDIR_BASE_URI', True),
-                                       arch)
+                                       (arch,
+                                        self.d.getVar('FEED_DEPLOYDIR_BASE_URI', True),
+                                        arch))
 
     def _create_config(self):
         with open(self.config_file, "w+") as config_file:
@@ -1415,6 +1434,10 @@ class OpkgPM(PackageManager):
                     else:
                         status.write(line + "\n")
 
+                # Append a blank line after each package entry to ensure that it
+                # is separated from the following entry
+                status.write("\n")
+
     '''
     The following function dummy installs pkgs and returns the log of output.
     '''
@@ -1484,6 +1507,10 @@ class DpkgPM(PackageManager):
         self.apt_get_cmd = bb.utils.which(os.getenv('PATH'), "apt-get")
 
         self.apt_args = d.getVar("APT_ARGS", True)
+
+        self.all_arch_list = archs.split()
+        all_mlb_pkg_arch_list = (self.d.getVar('ALL_MULTILIB_PACKAGE_ARCHS', True) or "").replace('-', '_').split()
+        self.all_arch_list.extend(arch for arch in all_mlb_pkg_arch_list if arch not in self.all_arch_list)
 
         self._create_configs(archs, base_archs)
 
@@ -1642,8 +1669,8 @@ class DpkgPM(PackageManager):
         sources_conf = os.path.join("%s/etc/apt/sources.list"
                                     % self.target_rootfs)
         arch_list = []
-        archs = self.d.getVar('PACKAGE_ARCHS', True)
-        for arch in archs.split():
+
+        for arch in self.all_arch_list:
             if not os.path.exists(os.path.join(self.deploy_dir, arch)):
                 continue
             arch_list.append(arch)
@@ -1666,7 +1693,7 @@ class DpkgPM(PackageManager):
         bb.utils.mkdirhier(self.apt_conf_dir + "/apt.conf.d/")
 
         arch_list = []
-        for arch in archs.split():
+        for arch in self.all_arch_list:
             if not os.path.exists(os.path.join(self.deploy_dir, arch)):
                 continue
             arch_list.append(arch)
@@ -1695,15 +1722,25 @@ class DpkgPM(PackageManager):
                 sources_file.write("deb file:%s/ ./\n" %
                                    os.path.join(self.deploy_dir, arch))
 
+        base_arch_list = base_archs.split()
+        multilib_variants = self.d.getVar("MULTILIB_VARIANTS", True);
+        for variant in multilib_variants.split():
+            if variant == "lib32":
+                base_arch_list.append("i386")
+            elif variant == "lib64":
+                base_arch_list.append("amd64")
+
         with open(self.apt_conf_file, "w+") as apt_conf:
             with open(self.d.expand("${STAGING_ETCDIR_NATIVE}/apt/apt.conf.sample")) as apt_conf_sample:
                 for line in apt_conf_sample.read().split("\n"):
-                    line = re.sub("Architecture \".*\";",
-                                  "Architecture \"%s\";" % base_archs, line)
-                    line = re.sub("#ROOTFS#", self.target_rootfs, line)
-                    line = re.sub("#APTCONF#", self.apt_conf_dir, line)
-
-                    apt_conf.write(line + "\n")
+                    match_arch = re.match("  Architecture \".*\";$", line)
+                    if match_arch:
+                        for base_arch in base_arch_list:
+                            apt_conf.write("  Architecture \"%s\";\n" % base_arch)
+                    else:
+                        line = re.sub("#ROOTFS#", self.target_rootfs, line)
+                        line = re.sub("#APTCONF#", self.apt_conf_dir, line)
+                        apt_conf.write(line + "\n")
 
         target_dpkg_dir = "%s/var/lib/dpkg" % self.target_rootfs
         bb.utils.mkdirhier(os.path.join(target_dpkg_dir, "info"))
