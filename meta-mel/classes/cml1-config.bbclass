@@ -16,22 +16,14 @@ DEPENDS += "kern-tools-native"
 DEFCONFIG ?= "${WORKDIR}/defconfig"
 merge_fragment_pipeline = "cat"
 
-do_prepare_config () {
+do_configure_prepend () {
     if [ ! -e "${DEFCONFIG}" ]; then
         bbfatal "Configuration file '${DEFCONFIG}' does not exist"
     fi
 
     install_config
     merge_fragments ${B}/.config
-
-    # Sanity check in case do_configure wants to overwrite this
-    chmod -w ${B}/.config
 }
-
-do_prepare_config[dirs] = "${S}"
-do_prepare_config[depends] += "kern-tools-native:do_populate_sysroot"
-
-addtask prepare_config before do_configure after do_patch
 
 install_config () {
     cp -f ${DEFCONFIG} ${B}/.config
