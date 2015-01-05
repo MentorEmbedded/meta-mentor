@@ -10,6 +10,8 @@
 #
 # Note: due to bitbake's use of set -e, the filter must return success (0).
 
+# For merge_config.sh
+DEPENDS += "kern-tools-native"
 
 DEFCONFIG ?= "${WORKDIR}/defconfig"
 merge_fragment_pipeline = "cat"
