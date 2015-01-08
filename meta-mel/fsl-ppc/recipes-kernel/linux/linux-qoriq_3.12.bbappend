@@ -1,15 +1,15 @@
-# Support config fragments, and configure for lttng
-inherit cml1-config kernel-config-lttng
+def src_config_fragments(d):
+    sources = src_patches(d, True)
+    return [s for s in sources if s.endswith('.cfg')]
 
-DEFCONFIG = "${KERNEL_DEFCONFIG}"
+DELTA_KERNEL_DEFCONFIG += "${@' '.join(src_config_fragments(d))}"
 
-python () {
-    d.setVar("do_configure", 'kernel_do_configure')
-}
+SRC_URI_append = " file://nbd.cfg \
+                   file://autofs.cfg \
+                   file://lttng.cfg"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
-SRC_URI_append = " file://nbd.cfg \
-                   file://autofs.cfg"
+FILESEXTRAPATHS_append = ":${@os.path.dirname(bb.utils.which(BBPATH, 'files/lttng.cfg') or '')}"
 
 KERNEL_SRC_URI ?= "https://s3.amazonaws.com/portal.mentor.com/sources/MEL-2014.12/linux-qoriq-3.12.tar.xz"
 SRC_URI = "${KERNEL_SRC_URI} \
