@@ -17,7 +17,12 @@ DEFCONFIG ?= "${WORKDIR}/defconfig"
 merge_fragment_pipeline = "cat"
 
 do_configure_prepend () {
-    if [ ! -e "${DEFCONFIG}" ]; then
+    DEFCONFIG="${DEFCONFIG}"
+    if [ "${DEFCONFIG#/}" = "${DEFCONFIG}" ]; then
+        DEFCONFIG="${S}/${DEFCONFIG}"
+    fi
+
+    if [ ! -e "$DEFCONFIG" ]; then
         bbfatal "Configuration file '${DEFCONFIG}' does not exist"
     fi
 
@@ -26,7 +31,7 @@ do_configure_prepend () {
 }
 
 install_config () {
-    cp -f ${DEFCONFIG} ${B}/.config
+    cp -f $DEFCONFIG ${B}/.config
 }
 
 merge_fragments () {
