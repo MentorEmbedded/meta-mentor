@@ -16,3 +16,7 @@ python () {
         cfg = ''.join([before, indent, line, indent, merge, after])
         d.setVar('do_configure', cfg)
 }
+
+# Enable lttng config
+FILESEXTRAPATHS_append = ":${@os.path.dirname(bb.utils.which("${BBPATH}", 'files/lttng.cfg') or '')}"
+SRC_URI += "file://lttng.cfg"
