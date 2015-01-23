@@ -9,7 +9,8 @@ python () {
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 SRC_URI_append = " file://nbd.cfg \
-                   file://autofs.cfg"
+                   file://autofs.cfg \
+                   file://ext4.cfg"
 
 KERNEL_SRC_URI ?= "https://s3.amazonaws.com/portal.mentor.com/sources/MEL-2014.12/linux-qoriq-3.12.tar.xz"
 SRC_URI = "${KERNEL_SRC_URI} \
