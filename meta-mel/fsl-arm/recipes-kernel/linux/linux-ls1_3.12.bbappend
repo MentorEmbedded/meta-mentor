@@ -20,3 +20,6 @@ python () {
 # Enable lttng config
 FILESEXTRAPATHS_append = ":${@os.path.dirname(bb.utils.which("${BBPATH}", 'files/lttng.cfg') or '')}"
 SRC_URI += "file://lttng.cfg"
+
+# Enable systemd config
+SRC_URI += "${@base_contains('DISTRO_FEATURES', 'systemd', ' file://systemd.cfg', '', d)}"
