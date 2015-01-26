@@ -1,0 +1,18 @@
+Obey KERNEL_BUILD_PATH to find .config from a separate kernel builddir.
+
+Signed-off-by: Christopher Larson <chris_larson@mentor.com>
+Upstream-Status: Pending
+
+--- asfmodule.orig/Makefile
++++ asfmodule/Makefile
+@@ -9,7 +9,9 @@
+ TOPDIR := $(shell pwd)
+ export TOPDIR
+ 
+-include $(KERNEL_PATH)/.config
++KERNEL_BUILD_PATH ?= $(KERNEL_PATH)
++
++include $(KERNEL_BUILD_PATH)/.config
+ include asfconfig.mk
+ ifeq ($(CONFIG_AS_FASTPATH), y)
+ #------------------------------------------------------------------------------
