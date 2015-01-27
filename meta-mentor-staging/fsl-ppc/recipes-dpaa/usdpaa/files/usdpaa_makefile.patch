@@ -1,0 +1,12 @@
+diff -Naur a/Makefile b/Makefile
+--- a/Makefile	2014-10-27 19:42:09.211379807 +0500
++++ b/Makefile	2014-10-27 19:42:11.115379776 +0500
+@@ -47,7 +47,7 @@
+     $(ARCH)_SPEC_DEFINE	 :=
+     $(ARCH)_SPEC_INC_PATH:=
+     $(ARCH)_SPEC_LIB_PATH:=
+-    $(ARCH)_SPEC_CFLAGS	 := -mcpu=e500mc64 -m64
++    $(ARCH)_SPEC_CFLAGS	 := $(TARGET_CC_ARCH)
+     $(ARCH)_SPEC_LDFLAGS :=
+     LIBDIR               ?= lib64
+   else
