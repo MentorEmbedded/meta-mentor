@@ -1,0 +1,2 @@
+UBOOT_CONFIG_ls1021atwr = "sdcard"
+EXTRA_IMAGEDEPENDS += "virtual/bootloader"
