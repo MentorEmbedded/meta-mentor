@@ -5,5 +5,5 @@ UBOOT_CONFIG_ls1021atwr = "sdcard"
 UBOOT_BINARY_ls1021atwr = "u-boot-with-spl-pbl.bin"
 UBOOT_MAKE_TARGET_ls1021atwr = "u-boot-with-spl-pbl.bin"
 
-# Populate U-boot by default in ROOTFS.
+# Populate U-boot by default.
 EXTRA_IMAGEDEPENDS_append_ls1021atwr = " virtual/bootloader"
