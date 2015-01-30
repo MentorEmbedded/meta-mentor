@@ -10,9 +10,8 @@
 
 VERSION="0.1"
 
-: ${MACHINE:="p1010rdb"}
 : ${KERNEL_DEVICETREE:="uImage-p1010rdb-pa.dtb"}
-: ${sdkdir:="`pwd`/tmp/deploy/images/${MACHINE}"}
+: ${sdkdir:="`pwd`/tmp/deploy/images/"}
 
 execute ()
 {
@@ -42,8 +41,8 @@ Usage: `basename $1` <options> [ files for install partition ]
 
 Mandatory options:
   --device              SD/USB block device node (for example '/dev/sdd')
-  --sdk                 Location of images (for example '/home/user/mel/build/tmp/deploy/images/p1010rdb/').
-  --rootfs		Name of file-system image (for example 'console-image').
+  --sdk                 Location of directoty containing the images (for example '/home/user/mel/build/tmp/deploy/images/p1010rdb/').
+  --rootfs		Name of root file-system image file (for example 'console-image-p2020rdb.tar.bz2').
   --dtb                 Name of devicetree binary specific to the target platform (for example 'uImage-p1010rdb-pa.dtb').
 
 Optional options:
@@ -81,7 +80,7 @@ while [ $# -gt 0 ]; do
     --device) shift; device=$1; shift; ;;
     --sdk) shift; sdkdir=$1; shift; ;;
     --dtb) shift; KERNEL_DEVICETREE=$1; shift; ;;
-    --rootfs ) shift; ROOTFS_IMAGE="$1-${MACHINE}.tar.bz2"; shift; ;;
+    --rootfs ) shift; ROOTFS_IMAGE=$1; shift; ;;
     --version) version $0;;
     *) copy="$copy $1"; shift; ;;
   esac
@@ -143,6 +142,7 @@ if [ -b ${PARTITION1} ]; then
 	mkfs.ext3 -L "rootfs" ${PARTITION1}
 else
 	echo "Cant find rootfs partition in /dev"
+        exit 1
 fi
 
 echo "Copying filesystem on ${PARTITION1}"
@@ -151,11 +151,6 @@ execute "mount ${PARTITION1} /tmp/sdk/$$/rootfs"
 
 execute "dd if=${sdkdir}/uImage of=${device} bs=512 seek=2048"
 execute "dd if=${sdkdir}/${KERNEL_DEVICETREE} of=${device} bs=512 seek=1536"
-
-if [ ! -f $sdkdir/${ROOTFS_IMAGE} ]
-then
-        ROOTFS_IMAGE=`echo $ROOTFS_IMAGE | sed "s:-${MACHINE}::"`
-fi
 
 if [ ! -f $sdkdir/${ROOTFS_IMAGE} ]; then
         echo "ERROR: failed to find rootfs [${ROOTFS_IMAGE}] tar in $sdkdir"
