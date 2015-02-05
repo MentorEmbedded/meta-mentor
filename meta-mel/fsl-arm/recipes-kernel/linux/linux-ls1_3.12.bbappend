@@ -23,3 +23,7 @@ SRC_URI += "file://lttng.cfg"
 
 # Enable systemd config
 SRC_URI += "${@base_contains('DISTRO_FEATURES', 'systemd', ' file://systemd.cfg', '', d)}"
+
+# Enable kgdb config
+FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+SRC_URI += "file://kgdb.cfg"
