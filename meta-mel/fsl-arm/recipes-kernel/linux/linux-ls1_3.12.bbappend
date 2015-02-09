@@ -30,4 +30,5 @@ SRC_URI += "${@base_contains('DISTRO_FEATURES', 'systemd', ' file://systemd.cfg'
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 SRC_URI += "file://kgdb.cfg\
             configs.cfg\
+            autofs.cfg\
             "
