@@ -1,9 +1,2 @@
-# Override UBOOT-Config to build default u-boot image for SDCARD.
-UBOOT_CONFIG_ls1021atwr = "sdcard"
-
-# For LS1021 SDCARD boot we should use u-boot-with-spl-pbl.bin instead of u-boot.bin
-UBOOT_BINARY_ls1021atwr = "u-boot-with-spl-pbl.bin"
-UBOOT_MAKE_TARGET_ls1021atwr = "u-boot-with-spl-pbl.bin"
-
 # Populate U-boot by default.
 EXTRA_IMAGEDEPENDS_append_ls1021atwr = " virtual/bootloader"
