@@ -20,7 +20,7 @@ python () {
 # Enable lttng config
 FILESEXTRAPATHS_append = ":${@os.path.dirname(bb.utils.which("${BBPATH}", 'files/lttng.cfg') or '')}"
 SRC_URI += "file://lttng.cfg\
-            filesystems.cfg\
+            file://filesystems.cfg\
            "
 
 # Enable systemd config
@@ -29,6 +29,7 @@ SRC_URI += "${@base_contains('DISTRO_FEATURES', 'systemd', ' file://systemd.cfg'
 # Enable kgdb & config_proc config
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 SRC_URI += "file://kgdb.cfg\
-            configs.cfg\
-            autofs.cfg\
+            file://configs.cfg\
+            file://autofs.cfg\
+            file://unionfs-2.6_for_3.12.26.patch\
             "
