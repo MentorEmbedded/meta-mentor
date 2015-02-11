@@ -94,15 +94,15 @@ do_compile () {
         if [ "x${UBOOT_TARGET}" != "x" ]; then
             # some boards' nand image was named as u-boot-with-spl
             if [ "${UBOOT_TARGET}" = "u-boot-nand" ];then
-                if echo $board |egrep -q "(P1010RDB|P1020RDB|P1021RDB|P2020RDB|P1022DS|BSC913|C293)";then
+                if echo $board |egrep -q "(P1010RDB|P1020RDB-P[C|D]|P1021RDB|P2020RDB-PC|P1022DS|BSC913|C293)";then
                     UBOOT_SOURCE=u-boot-with-spl
                 fi
             elif [ "${UBOOT_TARGET}" = "u-boot-spi" ];then
-                if echo $board |egrep -q "(P1010RDB|P1020RDB|P1021RDB|P2020RDB|P1022DS)";then
+                if echo $board |egrep -q "(P1010RDB|P1020RDB-P[C|D]|P1021RDB|P2020RDB-PC|P1022DS)";then
                     UBOOT_SOURCE=u-boot-with-spl
                 fi
             elif [ "${UBOOT_TARGET}" = "u-boot-sd" ];then
-                if echo $board |egrep -q "(P1010RDB|P1020RDB|P1021RDB|P2020RDB|P1022DS)";then
+                if echo $board |egrep -q "(P1010RDB|P1020RDB-P[C|D]|P1021RDB|P2020RDB-PC|P1022DS)";then
                     UBOOT_SOURCE=u-boot-with-spl
                 fi
             fi
