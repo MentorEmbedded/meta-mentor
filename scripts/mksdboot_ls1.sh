@@ -188,7 +188,7 @@ execute "sudo tar -xvf $root_fs -C /tmp/sdk/$$/rootfs"
 sync
 
 execute "cp -f $sdkdir/u-boot.bin /tmp/sdk/$$/boot/"
-execute "cp -f $sdkdir/rcw/ls1021atwr/SSR_PPN_20/rcw_1000.bin /tmp/sdk/$$/boot/"
+execute "cp -f $sdkdir/rcw/ls1021atwr/RSR_PPS_70/rcw_1000.bin /tmp/sdk/$$/boot/"
 execute "cp -f $sdkdir/uImage /tmp/sdk/$$/boot/"
 execute "cp -f $sdkdir/$dtb /tmp/sdk/$$/boot/"
 
