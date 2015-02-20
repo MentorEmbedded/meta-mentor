@@ -7,13 +7,13 @@ SRC_URI_append = " file://pulseaudio.service \
 RDEPENDS_pulseaudio-server += "\
     pulseaudio-module-switch-on-port-available \
     pulseaudio-module-cli \
-    pulseaudio-module-bluetooth-discover \
     pulseaudio-module-esound-protocol-unix \
     pulseaudio-module-dbus-protocol \
     pulseaudio-module-echo-cancel \
+    \
+    ${@base_contains('DISTRO_FEATURES', 'bluez4', 'pulseaudio-module-bluetooth-discover', '', d)} \
+    ${@base_contains('DISTRO_FEATURES', 'bluez5', 'pulseaudio-module-bluez5-discover pulseaudio-module-bluez5-device', '', d)} \
 "
-
-RDEPENDS_pulseaudio-server += "${@base_contains('PACKAGECONFIG', 'bluez5', 'pulseaudio-module-bluez5-discover pulseaudio-module-bluez5-device', '', d )}"
 
 inherit update-rc.d systemd
 
