@@ -10,9 +10,6 @@
 
 VERSION="0.1"
 
-: ${KERNEL_DEVICETREE:="uImage-p1010rdb-pa.dtb"}
-: ${sdkdir:="`pwd`/tmp/deploy/images/"}
-
 execute ()
 {
     $* >/dev/null
