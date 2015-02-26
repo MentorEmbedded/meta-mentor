@@ -14,4 +14,5 @@ def map_xen_arch(a, d):
     elif re.match("aarch64.*", a):   return "arm64"
     elif a in valid_archs:           return a
     else:
-        bb.error("cannot map '%s' to a xen architecture" % a)
+        return "INVALID"
+
