@@ -1,2 +1,0 @@
-# Populate U-boot & rcw by default.
-EXTRA_IMAGEDEPENDS_append_ls1021atwr = " virtual/bootloader rcw"
