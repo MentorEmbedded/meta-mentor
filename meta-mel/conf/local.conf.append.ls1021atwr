@@ -1,0 +1,2 @@
+# LS1021atwr supports usb-audio & simple soundcard, alsa utils are required for playback/record operations
+MACHINE_FEATURES_append_ls1021atwr = " alsa"
