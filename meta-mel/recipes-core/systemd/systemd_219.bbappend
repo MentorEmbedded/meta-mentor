@@ -6,3 +6,8 @@ SRC_URI += "file://remove-links.patch \
             file://11-sd-cards-auto-mount.rules \
             file://0001-systemd-udevd-propagate-mounts-umounts-services-to-s.patch \
             "
+
+PACKAGECONFIG[defaultval] .= "${@' sysvcompat' if 'mel' in OVERRIDES.split(':') else ''}"
+
+EXTRA_OECONF := "${@oe_filter_out('--with-sysvrcnd=${sysconfdir}' if 'mel' in OVERRIDES.split(':') else '', EXTRA_OECONF, d)}"
+PACKAGECONFIG[sysvcompat] = "--with-sysvrcnd-path=${sysconfdir},--with-sysvinit-path= --with-sysvrcnd-path=,"
