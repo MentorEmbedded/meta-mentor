@@ -56,7 +56,7 @@ python toolchain_sanity_check () {
     toolchain_required_version = version(d.getVar('SOURCERY_VERSION_REQUIRED', True))
     if toolchain_required_version:
         sourcery_version = version(d.getVar('SOURCERY_VERSION', True))
-        if sourcery_version && sourcery_version != toolchain_required_version:
+        if sourcery_version and sourcery_version != toolchain_required_version:
             bb.fatal('Found toolchain version `%s`, expected `%s`. Please install the supported toolchain.' % ('-'.join(sourcery_version), '-'.join(toolchain_required_version)))
 }
 addhandler toolchain_sanity_check
