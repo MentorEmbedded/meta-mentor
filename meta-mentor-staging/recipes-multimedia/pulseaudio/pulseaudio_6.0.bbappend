@@ -26,6 +26,15 @@ RDEPENDS_pulseaudio-server += "\
     ${@base_contains('DISTRO_FEATURES', 'bluez5', 'pulseaudio-module-bluez5-discover pulseaudio-module-bluez5-device', '', d)} \
 "
 
+do_configure_prepend () {
+    # If this source isn't git, we don't want to run git-version-gen. It can
+    # cause problems otherwise if the entire build is occurring inside of a
+    # git repository
+    if [ ! -e "${S}/.git" ]; then
+        sed -i "s#m4_esyscmd(./git-version-gen .tarball-version)#${PV}#" "${S}/configure.ac"
+    fi
+}
+
 do_install_append () {
     install -d ${D}${sysconfdir}/init.d/
     install -m 0755 ${WORKDIR}/init ${D}${sysconfdir}/init.d/pulseaudio
