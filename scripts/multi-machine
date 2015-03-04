@@ -102,4 +102,5 @@ for machine; do
         bgrm $TMPDIR
     fi
     cd $topdir
+    sleep 1
 done

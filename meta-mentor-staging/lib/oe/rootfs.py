@@ -124,17 +124,18 @@ class Rootfs(object):
         if self.d.getVar('USE_DEVFS', True) != "1":
             self._create_devfs()
 
-        self._uninstall_uneeded()
+        self._uninstall_unneeded()
 
         self._insert_feed_uris()
 
         self._run_ldconfig()
 
-        self._generate_kernel_module_deps()
+        if self.d.getVar('USE_DEPMOD', True) != "0":
+            self._generate_kernel_module_deps()
 
         self._cleanup()
 
-    def _uninstall_uneeded(self):
+    def _uninstall_unneeded(self):
         # Remove unneeded init script symlinks
         delayed_postinsts = self._get_delayed_postinsts()
         if delayed_postinsts is None:
@@ -143,34 +144,39 @@ class Rootfs(object):
                                       self.d.getVar('IMAGE_ROOTFS', True),
                                       "run-postinsts", "remove"])
 
-        # Remove unneeded package-management related components
-        if bb.utils.contains("IMAGE_FEATURES", "package-management",
-                         True, False, self.d):
-            return
+        runtime_pkgmanage = bb.utils.contains("IMAGE_FEATURES", "package-management",
+                         True, False, self.d)
+        if not runtime_pkgmanage:
+            # Remove components that we don't need if we're not going to install
+            # additional packages at runtime
+            if delayed_postinsts is None:
+                installed_pkgs_dir = self.d.expand('${WORKDIR}/installed_pkgs.txt')
+                pkgs_to_remove = list()
+                with open(installed_pkgs_dir, "r+") as installed_pkgs:
+                    pkgs_installed = installed_pkgs.read().split('\n')
+                    for pkg_installed in pkgs_installed[:]:
+                        pkg = pkg_installed.split()[0]
+                        if pkg in ["update-rc.d",
+                                "base-passwd",
+                                self.d.getVar("ROOTFS_BOOTSTRAP_INSTALL", True)
+                                ]:
+                            pkgs_to_remove.append(pkg)
+                            pkgs_installed.remove(pkg_installed)
 
-        if delayed_postinsts is None:
-            installed_pkgs_dir = self.d.expand('${WORKDIR}/installed_pkgs.txt')
-            pkgs_to_remove = list()
-            with open(installed_pkgs_dir, "r+") as installed_pkgs:
-                pkgs_installed = installed_pkgs.read().split('\n')
-                for pkg_installed in pkgs_installed[:]:
-                    pkg = pkg_installed.split()[0]
-                    if pkg in ["update-rc.d",
-                               "base-passwd",
-                               self.d.getVar("ROOTFS_BOOTSTRAP_INSTALL", True)
-                               ]:
-                        pkgs_to_remove.append(pkg)
-                        pkgs_installed.remove(pkg_installed)
+                if len(pkgs_to_remove) > 0:
+                    self.pm.remove(pkgs_to_remove, False)
+                    # Update installed_pkgs.txt
+                    open(installed_pkgs_dir, "w+").write('\n'.join(pkgs_installed))
 
-            if len(pkgs_to_remove) > 0:
-                self.pm.remove(pkgs_to_remove, False)
-                # Update installed_pkgs.txt
-                open(installed_pkgs_dir, "w+").write('\n'.join(pkgs_installed))
+            else:
+                self._save_postinsts()
 
-        else:
-            self._save_postinsts()
+        post_uninstall_cmds = self.d.getVar("ROOTFS_POSTUNINSTALL_COMMAND", True)
+        execute_pre_post_process(self.d, post_uninstall_cmds)
 
-        self.pm.remove_packaging_data()
+        if not runtime_pkgmanage:
+            # Remove the package manager data files
+            self.pm.remove_packaging_data()
 
     def _run_intercepts(self):
         intercepts_dir = os.path.join(self.d.getVar('WORKDIR', True),
@@ -215,16 +221,17 @@ class Rootfs(object):
                                   'new', '-v'])
 
     def _generate_kernel_module_deps(self):
-        kernel_abi_ver_file = os.path.join(self.d.getVar('STAGING_KERNEL_DIR', True),
+        kernel_abi_ver_file = oe.path.join(self.d.getVar('PKGDATA_DIR', True), "kernel-depmod",
                                            'kernel-abiversion')
-        if os.path.exists(kernel_abi_ver_file):
-            kernel_ver = open(kernel_abi_ver_file).read().strip(' \n')
-            modules_dir = os.path.join(self.image_rootfs, 'lib', 'modules', kernel_ver)
+        if not os.path.exists(kernel_abi_ver_file):
+            bb.fatal("No kernel-abiversion file found (%s), cannot run depmod, aborting" % kernel_abi_ver_file)
 
-            bb.utils.mkdirhier(modules_dir)
+        kernel_ver = open(kernel_abi_ver_file).read().strip(' \n')
+        modules_dir = os.path.join(self.image_rootfs, 'lib', 'modules', kernel_ver)
 
-            self._exec_shell_cmd(['depmodwrapper', '-a', '-b', self.image_rootfs,
-                                  kernel_ver])
+        bb.utils.mkdirhier(modules_dir)
+
+        self._exec_shell_cmd(['depmodwrapper', '-a', '-b', self.image_rootfs, kernel_ver])
 
     """
     Create devfs:
@@ -358,7 +365,7 @@ class RpmRootfs(Rootfs):
         log_path = self.d.expand("${T}/log.do_rootfs")
         with open(log_path, 'r') as log:
             for line in log.read().split('\n'):
-                if 'log_check' in line:
+                if 'log_check' or 'NOTE:' in line:
                     continue
 
                 m = r.search(line)

@@ -53,16 +53,16 @@ case "$1" in
 		killall -9 pulseaudio || true
 		;;
 	status)
-	        pidof ${DAEMON} >/dev/null          
-        	status=$?                             
-	        if [ $status -eq 0 ]; then             
-        	         echo "pulseaudio is running"  
-	        else                                                    
-        	        echo "pulseaudio is not running"
-	        fi                             
-        	exit $status                                                 
-                ;;                                                                
-        *)                         
+	        pidof ${DAEMON} >/dev/null
+		status=$?
+	        if [ $status -eq 0 ]; then
+		         echo "pulseaudio is running"
+	        else
+		        echo "pulseaudio is not running"
+	        fi
+		exit $status
+                ;;
+        *)
 		echo "Usage: /etc/init.d/pulseaudio {start|stop|force-stop|restart|force-reload|status}"
 		exit 1
 		;;
