@@ -121,6 +121,10 @@ SSTATE_MIRROR_SITES += "file://${MELDIR}/cached-binaries"
 # The default value follows:
 #TMPDIR = "${TOPDIR}/tmp"
 
+# When we're using an external toolchain, we don't want to ship a newly built
+# toolchain inside the Yocto SDK.
+require conf/include/drop-toolchain-from-sdk.inc
+
 #
 # Package Management configuration
 #
