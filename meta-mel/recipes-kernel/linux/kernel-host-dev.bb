@@ -3,7 +3,7 @@
 # depend on a target recipe, otherwise we'd have to set SRC_URI rather than
 # pulling from STAGING_KERNEL_DIR.
 
-inherit linux-kernel-base kernel-arch
+inherit linux-kernel-base kernel-arch qoriq_build_64bit_kernel
 
 PN .= "-${@legitimize_package_name('${BUILD_ARCH}')}"
 KERNEL_VERSION = "${@get_kernelversion('${STAGING_KERNEL_DIR}')}"
