@@ -1,2 +1,2 @@
-# LS1021atwr supports usb-audio & simple soundcard, alsa utils are required for playback/record operations
-MACHINE_FEATURES_append_ls1021atwr = " alsa"
+# LS1021atwr supports usb-audio & simple soundcard, alsa utils are required for playback/record operations. Also we need to support vfat.
+MACHINE_FEATURES_append_ls1021atwr = " alsa vfat"
