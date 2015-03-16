@@ -1,2 +1,5 @@
 # LS1021atwr supports usb-audio & simple soundcard, alsa utils are required for playback/record operations. Also we need to support vfat.
 MACHINE_FEATURES_append_ls1021atwr = " alsa vfat"
+
+# In archive-release for ls1201atwr install rcw along with other image binaries.
+EXTRA_IMAGES_ARCHIVE_RELEASE = "rcw"
