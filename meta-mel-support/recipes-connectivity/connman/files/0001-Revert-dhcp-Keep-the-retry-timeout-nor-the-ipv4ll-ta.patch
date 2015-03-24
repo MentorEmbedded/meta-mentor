@@ -1,0 +1,33 @@
+From 151e6f654a1e4630125aae11b5f5466b43d643b7 Mon Sep 17 00:00:00 2001
+From: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+Date: Tue, 17 Mar 2015 17:55:37 +0530
+Subject: [PATCH] Revert "dhcp: Keep the retry timeout nor the ipv4ll task in
+ dhcp_invalidate"
+
+This reverts commit 42779cd63ce6d95923248e87d146173ebdd4c6f0.
+---
+ src/dhcp.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/src/dhcp.c b/src/dhcp.c
+index 09f462b..0e446e7 100644
+--- a/src/dhcp.c
++++ b/src/dhcp.c
+@@ -155,6 +155,14 @@ static void dhcp_invalidate(struct connman_dhcp *dhcp, bool callback)
+ 	__connman_ipconfig_set_gateway(dhcp->ipconfig, NULL);
+ 	__connman_ipconfig_set_prefixlen(dhcp->ipconfig, 0);
+ 
++	if (dhcp->timeout > 0) {
++		g_source_remove(dhcp->timeout);
++		dhcp->timeout = 0;
++	}
++
++	if (ipv4ll_running)
++		ipv4ll_stop_client(dhcp);
++
+ 	if (dhcp->callback && callback)
+ 		dhcp->callback(dhcp->ipconfig, dhcp->network,
+ 						false, dhcp->user_data);
+-- 
+1.9.1
+
