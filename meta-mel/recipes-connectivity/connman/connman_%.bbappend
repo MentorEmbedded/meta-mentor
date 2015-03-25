@@ -1,2 +1,3 @@
-VIRTUAL-RUNTIME_bluetooth-stack ?= "bluez4"
-PACKAGECONFIG[bluetooth] := "${@d.getVarFlag('PACKAGECONFIG', 'bluetooth').replace('bluez4', '${VIRTUAL-RUNTIME_bluetooth-stack}')}"
+# Use PACKAGECONFIG handling for rdepends
+RDEPENDS_${PN} = "dbus xuser-account"
+PACKAGECONFIG[bluetooth] = "--enable-bluetooth, --disable-bluetooth,virtual/libbluetooth,${VIRTUAL-RUNTIME_bluetooth-stack}"
