@@ -1,1 +1,1 @@
-PACKAGE_INSTALL_remove = "initramfs-live-install initramfs-live-install-efi"
+PACKAGE_INSTALL_remove_mel = "initramfs-live-install initramfs-live-install-efi"
