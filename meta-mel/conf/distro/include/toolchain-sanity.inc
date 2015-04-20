@@ -1,33 +1,3 @@
-# Work around bug in some versions regarding unaligned access
-TARGET_CC_ARCH_append_arm = " -mno-unaligned-access"
-TARGET_CC_KERNEL_ARCH_append_arm = " -mno-unaligned-access"
-
-python toolchain_kernel_fixup () {
-    d = e.data
-    if isinstance(e, bb.event.RecipeParsed) and oe.utils.inherits(d, 'kernel'):
-        import re
-        if d.getVar('TCMODE', True) == 'default':
-            return
-
-        toolchain_path = d.getVar('EXTERNAL_TOOLCHAIN', True)
-        if not toolchain_path:
-            return
-
-        # Work around kernel build error due to unused-but-set-variable + Werror
-        version = d.getVar('GCC_VERSION', False)
-        match = re.match('^([0-9]+\.[0-9]+)', version)
-        if match:
-            version = match.group(1)
-            num_version = [int(element) for element in version.split('.')]
-            if num_version >= [4, 6]:
-                d.appendVar('TARGET_CC_ARCH', ' -Wno-error=unused-but-set-variable')
-                d.appendVar('TARGET_CC_KERNEL_ARCH', ' -Wno-error=unused-but-set-variable')
-            if num_version >= [4, 7]:
-                d.appendVar('TARGET_CC_ARCH', ' -Wno-error=maybe-uninitialized')
-                d.appendVar('TARGET_CC_KERNEL_ARCH', ' -Wno-error=maybe-uninitialized')
-}
-addhandler toolchain_kernel_fixup
-
 python toolchain_sanity_check () {
     if not isinstance(e, bb.event.BuildStarted):
         return
