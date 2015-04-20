@@ -271,7 +271,7 @@ BB_DISKMON_DIRS = "\
 #SOURCERY_VERSION_REQUIRED = "2012.03"
 
 # Uncomment to enable split-debug filesystem
-#SPLIT_DEBUG_FS = "true"
+#IMAGE_GEN_DEBUGFS = "1"
 #
 # Use this to add extra packages to the split-debug filesystem
 #EXTRA_DEBUG_PACKAGES = "ltrace strace"
