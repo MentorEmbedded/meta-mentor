@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import contextlib
 import glob
 import optparse
 import os
@@ -28,7 +27,7 @@ def setup_command_import(command, relpath='../lib'):
     """Set up sys.path based on the location of a binary in the PATH """
     PATH = os.getenv('PATH').split(':')
     cmd_paths = [os.path.join(path, relpath)
-                for path in PATH if os.path.exists(os.path.join(path, command))]
+                 for path in PATH if os.path.exists(os.path.join(path, command))]
     if not cmd_paths:
         raise ImportError("Unable to locate bb, please ensure PATH is set correctly.")
 
@@ -44,23 +43,42 @@ def find(dir, **walkoptions):
             yield os.path.join(root, file)
 
 
-@contextlib.contextmanager
-def status(message, outfile=sys.stderr):
+class StatusDisplay(object):
     """Show the user what we're doing, and whether we succeed"""
-    outfile.write('{0}..'.format(message))
-    outfile.flush()
-    try:
-        yield
-    except KeyboardInterrupt:
-        outfile.write('.interrupted\n')
-        raise
-    except Terminate:
-        outfile.write('.terminated\n')
-        raise
-    except BaseException:
-        outfile.write('.failed\n')
-        raise
-    outfile.write('.done\n')
+
+    def __init__(self, message, output=None):
+        self.message = message
+        if output is None:
+            output = sys.stderr
+        self.output = output
+        self.finished = False
+
+    def __enter__(self):
+        self.output.write('{}..'.format(self.message))
+        self.output.flush()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.finished:
+            return
+
+        if not exc_type:
+            self.set_status('done')
+        elif isinstance(exc_value, KeyboardInterrupt):
+            self.set_status('interrupted')
+        elif isinstance(exc_value, Terminate):
+            self.set_status('terminated')
+        else:
+            self.set_status('failed')
+
+    def set_status(self, finishmessage):
+        if self.finished:
+            raise Exception("Status is already finished")
+        self.output.write('.' + finishmessage + '\n')
+        self.finished = True
+
+
+status = StatusDisplay
 
 
 def process_arguments(cmdline_args):
@@ -299,19 +317,31 @@ def print_layers(cmdline_opts):
         if priority_override is not None:
             layer.priority = priority_override
 
+    duplicates = defaultdict(set)
     with status('Resolving layer dependencies'):
         layers_by_name = {}
         for l in all_layers:
             if l.name in layers_by_name:
-                sys.exit("Error: multiple layer paths with the same name ('{0}')".format(l.name))
-            layers_by_name[l.name] = l
+                duplicates[l.name].add(layers_by_name[l.name].path)
+                duplicates[l.name].add(l.path)
+            else:
+                layers_by_name[l.name] = l
+
         missing_deps = resolve_dependencies(layers_by_name)
 
-    with status("Determining layers to include for MACHINE '{0}'".format(opts.machine)):
+    with status("Determining layers to include for MACHINE '{0}'".format(opts.machine)) as s:
         try:
             configured_layers, optional = get_configured_layers(all_layers, opts.layers, opts.optional_layers, opts.extra_layers, missing_deps, opts.machine)
         except Exception as exc:
             sys.exit('ERROR: {0}'.format(exc))
+        else:
+            configured_names = set(l.name for l in configured_layers)
+            configured_dupes = list((n, l) for n, l in duplicates.iteritems() if n in configured_names)
+            if configured_dupes:
+                s.set_status('failed (duplicate layers)')
+                for name, paths in configured_dupes:
+                    sys.stderr.write("Multiple layer paths found for layer name '{0}':\n{1}\n".format(name, '\n'.join('  ' + p for p in sorted(paths))))
+                sys.exit(1)
 
     for layer in optional:
         sys.stderr.write("Layer '{0}' was detected, including in configuration\n".format(layer.name))
