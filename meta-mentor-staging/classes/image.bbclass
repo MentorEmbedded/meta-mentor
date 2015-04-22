@@ -1,6 +1,6 @@
 inherit rootfs_${IMAGE_PKGTYPE}
 
-inherit populate_sdk_base
+inherit populate_sdk_ext
 
 TOOLCHAIN_TARGET_TASK += "${PACKAGE_INSTALL}"
 TOOLCHAIN_TARGET_TASK_ATTEMPTONLY += "${PACKAGE_INSTALL_ATTEMPTONLY}"
@@ -10,10 +10,8 @@ inherit gzipnative
 
 LICENSE = "MIT"
 PACKAGES = ""
-EXTRA_DEBUG_PACKAGES ?= ""
 DEPENDS += "${MLPREFIX}qemuwrapper-cross ${MLPREFIX}depmodwrapper-cross"
-RDEPENDS += "${PACKAGE_INSTALL} ${LINGUAS_INSTALL} \
-             ${EXTRA_DEBUG_PACKAGES}"
+RDEPENDS += "${PACKAGE_INSTALL} ${LINGUAS_INSTALL}"
 RRECOMMENDS += "${PACKAGE_INSTALL_ATTEMPTONLY}"
 
 INHIBIT_DEFAULT_DEPS = "1"
@@ -26,12 +24,8 @@ IMAGE_FEATURES ?= ""
 IMAGE_FEATURES[type] = "list"
 IMAGE_FEATURES[validitems] += "debug-tweaks read-only-rootfs empty-root-password allow-empty-password post-install-logging"
 
-# Default to installing debug packages into the split debug filesystem
-IMAGE_FEATURES_DEBUG ?= "dbg-pkgs"
-
-# Set to true to enable a separate debug filesystem
-SPLIT_DEBUG_FS ?= "false"
-SPLIT_DEBUG_FS[type] = "boolean"
+# Generate companion debugfs?
+IMAGE_GEN_DEBUGFS ?= "0"
 
 # rootfs bootstrap install
 ROOTFS_BOOTSTRAP_INSTALL = "${@bb.utils.contains("IMAGE_FEATURES", "package-management", "", "${ROOTFS_PKGMANAGE_BOOTSTRAP}",d)}"
@@ -46,7 +40,6 @@ SPLASH ?= "psplash"
 FEATURE_PACKAGES_splash = "${SPLASH}"
 
 IMAGE_INSTALL_COMPLEMENTARY = '${@complementary_globs("IMAGE_FEATURES", d)}'
-IMAGE_INSTALL_COMPLEMENTARY_DEBUG = '${@complementary_globs("IMAGE_FEATURES_DEBUG", d)}'
 
 def check_image_features(d):
     valid_features = (d.getVarFlag('IMAGE_FEATURES', 'validitems', True) or "").split()
@@ -86,10 +79,17 @@ LDCONFIGDEPEND ?= "ldconfig-native:do_populate_sysroot"
 LDCONFIGDEPEND_libc-uclibc = ""
 LDCONFIGDEPEND_libc-musl = ""
 
+# This is needed to have depmod data in PKGDATA_DIR,
+# but if you're building small initramfs image
+# e.g. to include it in your kernel, you probably
+# don't want this dependency, which is causing dependency loop
+KERNELDEPMODDEPEND ?= "virtual/kernel:do_packagedata"
+
 do_rootfs[depends] += " \
     makedevs-native:do_populate_sysroot virtual/fakeroot-native:do_populate_sysroot ${LDCONFIGDEPEND} \
     virtual/update-alternatives-native:do_populate_sysroot update-rc.d-native:do_populate_sysroot \
-    virtual/kernel:do_packagedata"
+    ${KERNELDEPMODDEPEND} \
+"
 do_rootfs[recrdeptask] += "do_packagedata"
 
 def command_variables(d):
@@ -107,11 +107,11 @@ python () {
 def rootfs_variables(d):
     from oe.rootfs import variable_depends
     variables = ['IMAGE_DEVICE_TABLES','BUILD_IMAGES_FROM_FEEDS','IMAGE_TYPEDEP_','IMAGE_TYPES_MASKED','IMAGE_ROOTFS_ALIGNMENT','IMAGE_OVERHEAD_FACTOR','IMAGE_ROOTFS_SIZE','IMAGE_ROOTFS_EXTRA_SPACE',
-                 'IMAGE_ROOTFS_MAXSIZE','IMAGE_NAME','IMAGE_LINK_NAME','IMAGE_MANIFEST','DEPLOY_DIR_IMAGE','RM_OLD_IMAGE','IMAGE_FSTYPES','IMAGE_INSTALL_COMPLEMENTARY','IMAGE_LINGUAS','SDK_OS', 'SPLIT_DEBUG_FS'
+                 'IMAGE_ROOTFS_MAXSIZE','IMAGE_NAME','IMAGE_LINK_NAME','IMAGE_MANIFEST','DEPLOY_DIR_IMAGE','RM_OLD_IMAGE','IMAGE_FSTYPES','IMAGE_INSTALL_COMPLEMENTARY','IMAGE_LINGUAS','SDK_OS',
                  'SDK_OUTPUT','SDKPATHNATIVE','SDKTARGETSYSROOT','SDK_DIR','SDK_VENDOR','SDKIMAGE_INSTALL_COMPLEMENTARY','SDK_PACKAGE_ARCHS','SDK_OUTPUT','SDKTARGETSYSROOT','MULTILIBRE_ALLOW_REP',
                  'MULTILIB_TEMP_ROOTFS','MULTILIB_VARIANTS','MULTILIBS','ALL_MULTILIB_PACKAGE_ARCHS','MULTILIB_GLOBAL_VARIANTS','BAD_RECOMMENDATIONS','NO_RECOMMENDATIONS','PACKAGE_ARCHS',
                  'PACKAGE_CLASSES','TARGET_VENDOR','TARGET_VENDOR','TARGET_ARCH','TARGET_OS','OVERRIDES','BBEXTENDVARIANT','FEED_DEPLOYDIR_BASE_URI','INTERCEPT_DIR','USE_DEVFS',
-                 'COMPRESSIONTYPES']
+                 'COMPRESSIONTYPES', 'IMAGE_GEN_DEBUGFS']
     variables.extend(command_variables(d))
     variables.extend(variable_depends(d))
     return " ".join(variables)
@@ -190,6 +190,8 @@ POSTINST_LOGFILE ?= "${localstatedir}/log/postinstall.log"
 # Set default target for systemd images
 SYSTEMD_DEFAULT_TARGET ?= '${@bb.utils.contains("IMAGE_FEATURES", "x11-base", "graphical.target", "multi-user.target", d)}'
 ROOTFS_POSTPROCESS_COMMAND += '${@bb.utils.contains("DISTRO_FEATURES", "systemd", "set_systemd_default_target; ", "", d)}'
+
+ROOTFS_POSTPROCESS_COMMAND += 'empty_var_volatile;'
 
 # some default locales
 IMAGE_LINGUAS ?= "de-de fr-fr en-gb"
@@ -387,6 +389,22 @@ set_systemd_default_target () {
 	fi
 }
 
+# If /var/volatile is not empty, we have seen problems where programs such as the
+# journal make assumptions based on the contents of /var/volatile. The journal
+# would then write to /var/volatile before it was mounted, thus hiding the
+# items previously written.
+#
+# This change is to attempt to fix those types of issues in a way that doesn't
+# affect users that may not be using /var/volatile.
+empty_var_volatile () {
+	if [ -e ${IMAGE_ROOTFS}/etc/fstab ]; then
+		match=`awk '$1 !~ "#" && $2 ~ /\/var\/volatile/{print $2}' ${IMAGE_ROOTFS}/etc/fstab 2> /dev/null`
+		if [ -n "$match" ]; then
+			find ${IMAGE_ROOTFS}/var/volatile -mindepth 1 -delete
+		fi
+	fi
+}
+
 # Turn any symbolic /sbin/init link into a file
 remove_init_link () {
 	if [ -h ${IMAGE_ROOTFS}/sbin/init ]; then
@@ -406,6 +424,7 @@ python write_image_manifest () {
     from oe.rootfs import image_list_installed_packages
     with open(d.getVar('IMAGE_MANIFEST', True), 'w+') as image_manifest:
         image_manifest.write(image_list_installed_packages(d, 'ver'))
+        image_manifest.write("\n")
 }
 
 # Can be use to create /etc/timestamp during image construction to give a reasonably 
@@ -452,16 +471,6 @@ do_package_write_deb[noexec] = "1"
 do_package_write_rpm[noexec] = "1"
 
 addtask rootfs before do_build
-
-fakeroot do_capture_debug() {
-	if ${@str(oe.data.typed_value('SPLIT_DEBUG_FS', d)).lower()} && [ -n "${IMAGE_ROOTFS}" ] && [ -d "${IMAGE_ROOTFS}dbg" ] ; then
-		tar czf ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}.debug.tar.gz -C ${IMAGE_ROOTFS}dbg .
-		[ "${IMAGE_NAME}" == "${IMAGE_LINK_NAME}" ] || ln -sf ${IMAGE_NAME}.debug.tar.gz ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.debug.tar.gz
-	fi
-}
-
-addtask capture_debug before do_build after do_rootfs
-
 # Allow the kernel to be repacked with the initramfs and boot image file as a single file
 do_bundle_initramfs[depends] += "virtual/kernel:do_bundle_initramfs"
 do_bundle_initramfs[nostamp] = "1"
