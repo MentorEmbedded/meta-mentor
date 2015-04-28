@@ -1,10 +1,10 @@
---- alsa-lib-1.0.27.2_orig/src/pcm/pcm_dshare.c	2014-06-17 13:55:04.000000000 +0530
-+++ alsa-lib-1.0.27.2/src/pcm/pcm_dshare.c	2014-06-18 11:57:30.265877698 +0530
-@@ -195,6 +195,7 @@ static int snd_pcm_dshare_sync_ptr(snd_p
+--- alsa-lib-1.0.29.orig/src/pcm/pcm_dshare.c	2015-04-28 08:20:44.662995477 -0700
++++ alsa-lib-1.0.29/src/pcm/pcm_dshare.c	2015-04-28 08:20:59.603077419 -0700
+@@ -195,6 +195,7 @@
  		dshare->avail_max = avail;
  	if (avail >= pcm->stop_threshold) {
  		snd_timer_stop(dshare->timer);
 +		do_silence(pcm);
- 		gettimestamp(&dshare->trigger_tstamp, pcm->monotonic);
+ 		gettimestamp(&dshare->trigger_tstamp, pcm->tstamp_type);
  		if (dshare->state == SND_PCM_STATE_RUNNING) {
  			dshare->state = SND_PCM_STATE_XRUN;
