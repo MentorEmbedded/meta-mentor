@@ -1,7 +1,6 @@
-diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.c alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.c
---- alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.c	2014-06-11 15:15:24.667158523 +0200
-+++ alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.c	2014-06-17 09:04:24.159541039 +0200
-@@ -565,6 +565,9 @@
+--- a/src/pcm/pcm_direct.c
++++ b/src/pcm/pcm_direct.c
+@@ -565,6 +565,9 @@ int snd_pcm_direct_poll_revents(snd_pcm_t *pcm, struct pollfd *pfds, unsigned in
  	}
  	switch (snd_pcm_state(dmix->spcm)) {
  	case SND_PCM_STATE_XRUN:
@@ -11,7 +10,7 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	case SND_PCM_STATE_SUSPENDED:
  	case SND_PCM_STATE_SETUP:
  		events |= POLLERR;
-@@ -861,6 +864,83 @@
+@@ -862,6 +865,83 @@ static void save_slave_setting(snd_pcm_direct_t *dmix, snd_pcm_t *spcm)
  
  #undef COPY_SLAVE
  
@@ -83,7 +82,7 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
 +		direct->recoveries = direct->shmptr->recoveries;
 +		pcm->fast_ops->drop(pcm);
 +		/*trigger_tstamp update is missing in drop callbacks*/
-+		gettimestamp(&direct->trigger_tstamp, pcm->monotonic);
++		gettimestamp(&direct->trigger_tstamp, pcm->tstamp_type);
 +		/*no timer clear: if slave already entered xrun again the event is lost...*/
 +		/*snd_pcm_direct_clear_timer_queue(direct);*/
 +		direct->state = SND_PCM_STATE_XRUN;
@@ -95,15 +94,7 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  /*
   * this function initializes hardware and starts playback operation with
   * no stop threshold (it operates all time without xrun checking)
-@@ -1147,6 +1227,7 @@
- 
- 	dmix->timer_events = (1<<SND_TIMER_EVENT_MSUSPEND) |
- 			     (1<<SND_TIMER_EVENT_MRESUME) |
-+			     (1<<SND_TIMER_EVENT_MSTOP) |
- 			     (1<<SND_TIMER_EVENT_STOP);
- 
- 	/*
-@@ -1279,6 +1360,7 @@
+@@ -1282,6 +1362,7 @@ int snd_pcm_direct_initialize_secondary_slave(snd_pcm_direct_t *dmix,
  	dmix->slave_buffer_size = spcm->buffer_size;
  	dmix->slave_period_size = dmix->shmptr->s.period_size;
  	dmix->slave_boundary = spcm->boundary;
@@ -111,10 +102,9 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  
  	ret = snd_pcm_mmap(spcm);
  	if (ret < 0) {
-diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.h alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.h
---- alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.h	2014-06-11 15:15:24.675154188 +0200
-+++ alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_direct.h	2014-06-16 13:52:27.340832269 +0200
-@@ -66,6 +66,7 @@
+--- a/src/pcm/pcm_direct.h
++++ b/src/pcm/pcm_direct.h
+@@ -66,6 +66,7 @@ typedef struct {
  	char socket_name[256];			/* name of communication socket */
  	snd_pcm_type_t type;			/* PCM type (currently only hw) */
  	int use_server;
@@ -122,7 +112,7 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	struct {
  		unsigned int format;
  		snd_interval_t rate;
-@@ -155,6 +156,7 @@
+@@ -155,6 +156,7 @@ struct snd_pcm_direct {
  	int max_periods;		/* max periods (-1 = fixed periods, 0 = max buffer size) */
  	unsigned int channels;		/* client's channels */
  	unsigned int *bindings;
@@ -130,7 +120,7 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	union {
  		struct {
  			int shmid_sum;			/* IPC global sum ring buffer memory identification */
-@@ -313,6 +315,8 @@
+@@ -313,6 +315,8 @@ int snd_pcm_direct_open_secondary_client(snd_pcm_t **spcmp, snd_pcm_direct_t *dm
  snd_pcm_chmap_query_t **snd_pcm_direct_query_chmaps(snd_pcm_t *pcm);
  snd_pcm_chmap_t *snd_pcm_direct_get_chmap(snd_pcm_t *pcm);
  int snd_pcm_direct_set_chmap(snd_pcm_t *pcm, const snd_pcm_chmap_t *map);
@@ -139,10 +129,9 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  
  int snd_timer_async(snd_timer_t *timer, int sig, pid_t pid);
  struct timespec snd_pcm_hw_fast_tstamp(snd_pcm_t *pcm);
-diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dmix.c alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dmix.c
---- alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dmix.c	2014-06-11 15:15:24.667158523 +0200
-+++ alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dmix.c	2014-06-16 12:33:26.624065480 +0200
-@@ -396,14 +396,21 @@
+--- a/src/pcm/pcm_dmix.c
++++ b/src/pcm/pcm_dmix.c
+@@ -396,14 +396,21 @@ static int snd_pcm_dmix_sync_ptr(snd_pcm_t *pcm)
  	snd_pcm_direct_t *dmix = pcm->private_data;
  	snd_pcm_uframes_t slave_hw_ptr, old_slave_hw_ptr, avail;
  	snd_pcm_sframes_t diff;
@@ -164,7 +153,7 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	if (dmix->slowptr)
  		snd_pcm_hwsync(dmix->spcm);
  	old_slave_hw_ptr = dmix->slave_hw_ptr;
-@@ -799,12 +806,16 @@
+@@ -801,12 +808,16 @@ static snd_pcm_sframes_t snd_pcm_dmix_mmap_commit(snd_pcm_t *pcm,
  
  	switch (snd_pcm_state(dmix->spcm)) {
  	case SND_PCM_STATE_XRUN:
@@ -182,7 +171,7 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	if (! size)
  		return 0;
  	snd_pcm_mmap_appl_forward(pcm, size);
-@@ -812,8 +823,10 @@
+@@ -814,8 +825,10 @@ static snd_pcm_sframes_t snd_pcm_dmix_mmap_commit(snd_pcm_t *pcm,
  		if ((err = snd_pcm_dmix_start_timer(pcm, dmix)) < 0)
  			return err;
  	} else if (dmix->state == SND_PCM_STATE_RUNNING ||
@@ -195,7 +184,7 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	if (dmix->state == SND_PCM_STATE_RUNNING ||
  	    dmix->state == SND_PCM_STATE_DRAINING) {
  		/* ok, we commit the changes after the validation of area */
-@@ -829,10 +842,13 @@
+@@ -831,10 +844,13 @@ static snd_pcm_sframes_t snd_pcm_dmix_mmap_commit(snd_pcm_t *pcm,
  static snd_pcm_sframes_t snd_pcm_dmix_avail_update(snd_pcm_t *pcm)
  {
  	snd_pcm_direct_t *dmix = pcm->private_data;
@@ -211,10 +200,9 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	return snd_pcm_mmap_playback_avail(pcm);
  }
  
-diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dshare.c alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dshare.c
---- alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dshare.c	2014-06-11 15:15:24.675154188 +0200
-+++ alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dshare.c	2014-06-16 12:34:57.954792442 +0200
-@@ -162,14 +162,21 @@
+--- a/src/pcm/pcm_dshare.c
++++ b/src/pcm/pcm_dshare.c
+@@ -162,14 +162,21 @@ static int snd_pcm_dshare_sync_ptr(snd_pcm_t *pcm)
  	snd_pcm_direct_t *dshare = pcm->private_data;
  	snd_pcm_uframes_t slave_hw_ptr, old_slave_hw_ptr, avail;
  	snd_pcm_sframes_t diff;
@@ -236,7 +224,7 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	if (dshare->slowptr)
  		snd_pcm_hwsync(dshare->spcm);
  	old_slave_hw_ptr = dshare->slave_hw_ptr;
-@@ -490,12 +497,16 @@
+@@ -486,12 +493,16 @@ static snd_pcm_sframes_t snd_pcm_dshare_mmap_commit(snd_pcm_t *pcm,
  
  	switch (snd_pcm_state(dshare->spcm)) {
  	case SND_PCM_STATE_XRUN:
@@ -254,7 +242,7 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	if (! size)
  		return 0;
  	snd_pcm_mmap_appl_forward(pcm, size);
-@@ -503,8 +514,10 @@
+@@ -499,8 +510,10 @@ static snd_pcm_sframes_t snd_pcm_dshare_mmap_commit(snd_pcm_t *pcm,
  		if ((err = snd_pcm_dshare_start_timer(dshare)) < 0)
  			return err;
  	} else if (dshare->state == SND_PCM_STATE_RUNNING ||
@@ -267,7 +255,7 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	if (dshare->state == SND_PCM_STATE_RUNNING ||
  	    dshare->state == SND_PCM_STATE_DRAINING) {
  		/* ok, we commit the changes after the validation of area */
-@@ -520,10 +533,13 @@
+@@ -516,10 +529,13 @@ static snd_pcm_sframes_t snd_pcm_dshare_mmap_commit(snd_pcm_t *pcm,
  static snd_pcm_sframes_t snd_pcm_dshare_avail_update(snd_pcm_t *pcm)
  {
  	snd_pcm_direct_t *dshare = pcm->private_data;
@@ -283,10 +271,9 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	return snd_pcm_mmap_playback_avail(pcm);
  }
  
-diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dsnoop.c alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dsnoop.c
---- alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dsnoop.c	2014-06-11 15:15:24.675154188 +0200
-+++ alsa-lib/1.0.27.2-r0.1/alsa-lib-1.0.27.2/src/pcm/pcm_dsnoop.c	2014-06-16 12:30:39.190452908 +0200
-@@ -132,14 +132,21 @@
+--- a/src/pcm/pcm_dsnoop.c
++++ b/src/pcm/pcm_dsnoop.c
+@@ -132,14 +132,21 @@ static int snd_pcm_dsnoop_sync_ptr(snd_pcm_t *pcm)
  	snd_pcm_direct_t *dsnoop = pcm->private_data;
  	snd_pcm_uframes_t slave_hw_ptr, old_slave_hw_ptr, avail;
  	snd_pcm_sframes_t diff;
@@ -308,7 +295,7 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	if (dsnoop->slowptr)
  		snd_pcm_hwsync(dsnoop->spcm);
  	old_slave_hw_ptr = dsnoop->slave_hw_ptr;
-@@ -411,12 +418,16 @@
+@@ -407,12 +414,16 @@ static snd_pcm_sframes_t snd_pcm_dsnoop_mmap_commit(snd_pcm_t *pcm,
  
  	switch (snd_pcm_state(dsnoop->spcm)) {
  	case SND_PCM_STATE_XRUN:
@@ -326,3 +313,6 @@ diff -Nur -x '*.[aod]' -x '*.*~' alsa-lib_d10/1.0.27.2-r0.1/alsa-lib-1.0.27.2/sr
  	if (dsnoop->state == SND_PCM_STATE_RUNNING) {
  		err = snd_pcm_dsnoop_sync_ptr(pcm);
  		if (err < 0)
+-- 
+2.2.1
+
