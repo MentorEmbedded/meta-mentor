@@ -1,0 +1,37 @@
+Add an argument to avoid the autodetected dependency on valgrind headers, to
+avoid a race encountered in our builds.
+
+Signed-off-by: Christopher Larson <kergoth@gmail.com>
+Upstream-Status: Pending
+
+diff --git a/configure.ac b/configure.ac
+index 600e203..e9f7c36 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1288,7 +1288,22 @@ AC_DEFINE_UNQUOTED(TELINIT, ["$TELINIT"], [Path to telinit])
+ 
+ AC_SUBST(TELINIT)
+ 
+-AC_CHECK_HEADERS_ONCE([valgrind/memcheck.h valgrind/valgrind.h])
++AC_ARG_WITH([valgrind],
++        [AS_HELP_STRING([--without-valgrind], [Disable valgrind support (default: test)])])
++
++AS_IF([test "x$with_valgrind" != "xno"], [
++       AC_CHECK_HEADER([valgrind/valgrind.h], [have_valgrind=yes], [have_valgrind=no])
++       AC_CHECK_HEADER([valgrind/memcheck.h], [have_valgrind_memcheck=yes], [have_valgrind_memcheck=no])
++
++       AS_IF([test "$with_valgrind" = "yes"], [
++              AS_IF([test "$have_valgrind" != "yes"], [
++                     AC_MSG_ERROR([*** valgrind support requested but valgrind/valgrind.h not found])
++                     ])
++              AS_IF([test "$have_valgrind_memcheck" != "yes"], [
++                     AC_MSG_ERROR([*** valgrind support requested but valgrind/memcheck.h not found])
++                     ])
++              ])
++])
+ 
+ # ------------------------------------------------------------------------------
+ have_myhostname=no
+-- 
+2.2.1
+
