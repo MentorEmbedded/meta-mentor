@@ -203,71 +203,63 @@ def resolve_dependencies(layers_by_name):
     return missing_dependencies
 
 
+class MissingDeps(Exception):
+    def __init__(self, layer, deps):
+        self.layer = layer
+        self.deps = deps
+        Exception.__init__(self)
+
+    def __str__(self):
+        return 'Layer `{}` has missing dependencies: {}'.format(self.layer, ', '.join(self.deps))
+
+
 def get_configured_layers(all_layers, base_layer_names, optional_layer_names, extra_layer_names, missing_deps, machine):
-    optional = set()
-    extra = set()
-    configured_layers = set()
-    machine_layers = set()
+    configured_layers, optional = set(), set()
+
+    def layer_and_deps(layer, seen):
+        if layer.missingdeps:
+            raise MissingDeps(layer.name, layer.missingdeps)
+        if layer in seen:
+            return
+        seen.add(layer)
+
+        for d in layer.depends:
+            for _d in layer_and_deps(d, seen):
+                yield _d
+        yield layer
+
+    def add_layer(layer, configured_layers, seen):
+        configured_layers |= set(layer_and_deps(layer, seen))
+
+    seen = set()
+    layers_by_name = dict((l.name, l) for l in all_layers)
     for layer in all_layers:
         if os.path.exists(os.path.join(layer.path, 'conf', 'machine',
                                        '{0}.conf'.format(machine))):
-            machine_layers.add(layer)
-            if layer.name in optional_layer_names:
-                optional_layer_names.remove(layer.name)
-            if layer.name in extra_layer_names:
-                extra_layer_names.remove(layer.name)
-            configured_layers.add(layer)
-            for dep in layer.depends:
-                configured_layers.add(dep)
-        elif layer.name in base_layer_names:
-            for dep in layer.depends:
-                configured_layers.add(dep)
-            configured_layers.add(layer)
-        elif layer.name in optional_layer_names:
-            optional.add(layer)
-            configured_layers.add(layer)
-        elif layer.name in extra_layer_names:
-            extra.add(layer)
+            add_layer(layer, configured_layers, seen)
 
+    for base_name in base_layer_names:
+        if base_name not in layers_by_name:
+            raise Exception("Requested base layer `{}` not found".format(base_name))
+        add_layer(layers_by_name[base_name], configured_layers, seen)
 
-    if not machine_layers:
-        raise Exception("No layer found for machine '{0}'".format(machine))
+    for optional_name in optional_layer_names:
+        if optional_name in layers_by_name:
+            optional_layer = layers_by_name[optional_name]
+            optional.add(optional_layer)
+            try:
+                add_layer(optional_layer, configured_layers, seen)
+            except MissingDeps:
+                pass
 
-    missing_extras = set(extra_layer_names) - set(l.name for l in extra)
-    if missing_extras:
-        raise Exception("Unable to locate requested extra layers: {0}".format(" ".join(missing_extras)))
-
-    for base_layer_name in base_layer_names:
-        for layer in configured_layers:
-            if layer.name == base_layer_name:
-                break
-        else:
-            raise Exception("Unable to locate base layer named '{0}'".format(base_layer_name))
-
-    for layer in list(optional):
-        if not layer.missingdeps:
-            # Add available dependencies of optional layers
-            for dep in layer.depends:
-                if dep not in configured_layers:
-                    configured_layers.add(dep)
-                    optional.add(dep)
+    for extra_name in extra_layer_names:
+        layer = layers_by_name[extra_name]
+        with_deps = set(layer_and_deps(layer, seen))
+        with_deps.remove(layer)
+        if any(dep not in configured_layers for dep in with_deps):
             continue
-
-        # Don't include optional layers with missing dependencies
-        configured_layers.remove(layer)
-        optional.remove(layer)
-
-    for layer in list(extra):
-        for dep in layer.depends:
-            if dep not in configured_layers:
-                extra.remove(layer)
-                break
         else:
             configured_layers.add(layer)
-
-    for layer in list(configured_layers):
-        if layer in missing_deps:
-            raise Exception("Missing layer dependencies for '{0}': {1}".format(layer.name, ', '.join(missing_deps[layer])))
 
     return configured_layers, optional
 
