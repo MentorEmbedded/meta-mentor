@@ -20,7 +20,7 @@ index 48afb63..c41ac4f 100644
  Type=dbus
  BusName=net.connman
  Restart=on-failure
--ExecStart=@prefix@/sbin/connmand -n
+-ExecStart=@sbindir@/connmand -n
 +EnvironmentFile=-/tmp/connman.env
 +ExecStartPre=/bin/sh -c "if grep 'nfsroot\|ip=' /proc/cmdline; then ETH_IFACE=$(ip addr | grep 'eth[0-9]:' | grep 'UP' | sed -e 's,\(eth[0-9]\)\(.*\),\1,' -e 's,^.*: ,,' ); NET_ADDR=$(cat /proc/cmdline | sed -ne 's/^.*ip=\([^ :]*\).*$/\1/p'); echo -e 'OPT=-I '$ETH_IFACE'\nOPT2='$ETH_IFACE'\nNET_ADDR='$NET_ADDR' ' > /tmp/connman.env; fi "
 +ExecStart=/bin/sh -c "if [ \"$NET_ADDR\" = \"off\" ] || [ \"$NET_ADDR\" = \"none\" ]; then /usr/sbin/connmand -n; else /usr/sbin/connmand -n $OPT; fi"
