@@ -1,4 +1,5 @@
-license_create_manifest_append () {
+license_create_manifest[postfuncs] += "deploy_license_manifest"
+deploy_license_manifest () {
     cp ${LICENSE_MANIFEST} ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}.license_manifest
     rm -f ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.license_manifest
     ln -s ${IMAGE_NAME}.license_manifest ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.license_manifest
