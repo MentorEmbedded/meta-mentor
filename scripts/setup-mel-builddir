@@ -98,6 +98,7 @@ configure_for_machine () {
         set --
     fi
 
+
     sed -i -e"s/^#*MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
     sed -n -i -e "s|##COREBASE##|$OEROOT|g" -e '/^BBLAYERS /{ :start; /\\$/{n; b start}; d; }; p' $BUILDDIR/conf/bblayers.conf
 
@@ -270,6 +271,9 @@ setup_builddir () {
     fi
 
     if [ -n "$MACHINE" ]; then
+        if [ -e "$layerdir/pre-setup.$MACHINE" ]; then
+            . "$layerdir/pre-setup.$MACHINE"
+        fi
         PATH="$OEROOT/scripts:$OEROOT/bitbake/bin:$PATH" configure_for_machine "$BUILDDIR/conf"
     fi
 
