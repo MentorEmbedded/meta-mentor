@@ -124,6 +124,8 @@ done
 
 execute "dd if=/dev/zero of=$device oflag=sync bs=1M count=1"
 
+echo "copying SD-card u-boot for $machine"
+execute "dd if=$sdkdir/u-boot-ls1-sd.bin of=$device bs=512 seek=8"
 
 cat << END | fdisk $device
 n
@@ -187,10 +189,12 @@ root_fs=`ls -1 $sdkdir/${ROOTFS_IMAGE}`
 execute "sudo tar -xvf $root_fs -C /tmp/sdk/$$/rootfs"
 sync
 
-execute "cp -f $sdkdir/u-boot.bin /tmp/sdk/$$/boot/"
+execute "cp -f $sdkdir/u-boot-ls1-nor.bin /tmp/sdk/$$/boot/"
 execute "cp -f $sdkdir/rcw/ls1021atwr/RSR_PPS_70/rcw_1000.bin /tmp/sdk/$$/boot/"
 execute "cp -f $sdkdir/uImage /tmp/sdk/$$/boot/"
 execute "cp -f $sdkdir/$dtb /tmp/sdk/$$/boot/"
+execute "cp -f $sdkdir/boot/iram_Type_A_LS1021a_r1.0.bin   /tmp/sdk/$$/boot/"
+sync
 
 echo "unmounting ${device}1,${device}2"
 execute "umount /tmp/sdk/$$/boot"
