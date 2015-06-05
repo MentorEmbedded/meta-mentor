@@ -1,0 +1,94 @@
+From 2b85ae048970b7faa7505fd0cd4746541d1b09eb Mon Sep 17 00:00:00 2001
+From: Rex Dieter <rdieter@math.unl.edu>
+Date: Wed, 22 Jan 2014 09:41:35 -0600
+Subject: daemon: consolidate startup scripts
+
+simplify pulseaudio autostart into one, avoid needless extra
+work for kde, and avoid possible startup races.
+
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 857fda3..59f0bcd 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -95,12 +95,10 @@ EXTRA_DIST = \
+ 		depmod.py \
+ 		daemon/esdcompat.in \
+ 		daemon/start-pulseaudio-x11.in \
+-		daemon/start-pulseaudio-kde.in \
+ 		utils/padsp.in \
+ 		utils/qpaeq \
+ 		modules/module-defs.h.m4 \
+ 		daemon/pulseaudio.desktop.in \
+-		daemon/pulseaudio-kde.desktop.in \
+ 		map-file \
+ 		daemon/pulseaudio-system.conf \
+ 		modules/echo-cancel/adrian-license.txt
+diff --git a/src/daemon/pulseaudio-kde.desktop.in b/src/daemon/pulseaudio-kde.desktop.in
+deleted file mode 100644
+index f0bfa8f..0000000
+--- a/src/daemon/pulseaudio-kde.desktop.in
++++ /dev/null
+@@ -1,10 +0,0 @@
+-[Desktop Entry]
+-Version=1.0
+-_Name=PulseAudio Sound System KDE Routing Policy
+-_Comment=Start the PulseAudio Sound System with KDE Routing Policy
+-Exec=start-pulseaudio-kde
+-Terminal=false
+-Type=Application
+-Categories=
+-GenericName=
+-OnlyShowIn=KDE;
+diff --git a/src/daemon/start-pulseaudio-kde.in b/src/daemon/start-pulseaudio-kde.in
+deleted file mode 100755
+index c319e7d..0000000
+--- a/src/daemon/start-pulseaudio-kde.in
++++ /dev/null
+@@ -1,30 +0,0 @@
+-#!/bin/sh
+-
+-# This file is part of PulseAudio.
+-#
+-# PulseAudio is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU Lesser General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# PulseAudio is distributed in the hope that it will be useful, but
+-# WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+-# General Public License for more details.
+-#
+-# You should have received a copy of the GNU Lesser General Public License
+-# along with PulseAudio; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+-# USA.
+-
+-set -e
+-
+-[ -z "$PULSE_SERVER" ]
+-
+-@PA_BINARY@ --start "$@"
+-
+-if [ x"$DISPLAY" != x ] ; then
+-
+-    @PACTL_BINARY@ load-module module-device-manager "do_routing=1" > /dev/null
+-
+-fi
+diff --git a/src/daemon/start-pulseaudio-x11.in b/src/daemon/start-pulseaudio-x11.in
+index 391a6d3..620e50f 100755
+--- a/src/daemon/start-pulseaudio-x11.in
++++ b/src/daemon/start-pulseaudio-x11.in
+@@ -26,6 +26,10 @@ if [ x"$DISPLAY" != x ] ; then
+     @PACTL_BINARY@ load-module module-x11-publish "display=$DISPLAY" > /dev/null
+     @PACTL_BINARY@ load-module module-x11-cork-request "display=$DISPLAY" > /dev/null
+ 
++    if [ x"$KDE_FULL_SESSION" = x"true" ]; then
++       @PACTL_BINARY@ load-module module-device-manager "do_routing=1" > /dev/null
++    fi
++
+     if [ x"$SESSION_MANAGER" != x ] ; then
+ 	@PACTL_BINARY@ load-module module-x11-xsmp "display=$DISPLAY session_manager=$SESSION_MANAGER" > /dev/null
+     fi
+-- 
+cgit v0.10.2

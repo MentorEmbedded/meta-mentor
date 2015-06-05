@@ -3,6 +3,12 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 SRC_URI_append = " file://pulseaudio.service \
 		           file://pulseaudio \
 			"
+# These patches are already included in version 5.99.1
+# in PA upstream so should be dropped after an upgrade.
+SRC_URI_append = " file://consolidate-startup-scripts.patch \
+		   file://remove-kde-references.patch \
+		   file://avoid-specifically-starting-PA-rely-on-autospawn.patch \
+"
 
 RDEPENDS_pulseaudio-server += "\
     pulseaudio-module-switch-on-port-available \
