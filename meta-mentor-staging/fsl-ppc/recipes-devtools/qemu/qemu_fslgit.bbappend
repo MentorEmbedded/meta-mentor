@@ -1,8 +1,8 @@
-# Older qemu doesn't have this configure option
-python kill_vte () {
-    cfg = e.data.getVarFlag('PACKAGECONFIG', 'gtk+')
-    cfg = cfg.replace('--disable-vte', '').replace('--enable-vte', '').replace(' libvte', '')
-    e.data.setVarFlag('PACKAGECONFIG', 'gtk+', cfg)
+# Older qemu don't support all the configure options which the current
+# qemu.inc will pass.
+python kill_unsupported_configs () {
+    e.data.delVarFlag('PACKAGECONFIG', 'gtk+')
+    e.data.delVarFlag('PACKAGECONFIG', 'glx')
 }
-kill_vte[eventmask] = 'bb.event.RecipePreFinalise'
-addhandler kill_vte
+kill_unsupported_configs[eventmask] = 'bb.event.RecipePreFinalise'
+addhandler kill_unsupported_configs
