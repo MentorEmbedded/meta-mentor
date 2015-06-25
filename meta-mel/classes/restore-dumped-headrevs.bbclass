@@ -19,9 +19,6 @@ DUMP_HEADREVS_DB ?= '${COREBASE}/saved_persist_data.db'
 DUMP_HEADREVS_STAMP ?= '${STAMP}.restored_headrevs'
 
 python restore_dumped_headrevs() {
-    if not isinstance(e, bb.event.ConfigParsed):
-        return
-
     stamp_path = e.data.getVar('DUMP_HEADREVS_STAMP', True)
     dump_db_path = e.data.getVar('DUMP_HEADREVS_DB', True)
     if not os.path.exists(stamp_path) and os.path.exists(dump_db_path):
@@ -29,4 +26,5 @@ python restore_dumped_headrevs() {
         bb.utils.mkdirhier(os.path.dirname(stamp_path))
         open(stamp_path, 'w').close()
 }
+restore_dumped_headrevs[eventmask] = "bb.event.ConfigParsed"
 addhandler restore_dumped_headrevs

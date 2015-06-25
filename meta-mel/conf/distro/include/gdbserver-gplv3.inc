@@ -8,8 +8,6 @@ INCOMPATIBLE_LICENSE_pn-external-sourcery-toolchain = ""
 ROOTFS_POSTPROCESS_COMMAND_append = " check_for_gdbserver;"
 
 python adjust_packagegroup_gdbserver () {
-    if not isinstance(e, bb.event.ConfigParsed):
-        return
     d = e.data
 
     if 'GPLv3' in (d.getVar('INCOMPATIBLE_LICENSE', True) or ''):
@@ -19,6 +17,7 @@ python adjust_packagegroup_gdbserver () {
             pkggroup.remove('gdbserver')
             d.setVar('FEATURE_PACKAGES_codebench-debug', ' '.join(pkggroup))
 }
+adjust_packagegroup_gdbserver[eventmask] = "bb.event.ConfigParsed"
 addhandler adjust_packagegroup_gdbserver
 
 check_for_gdbserver () {
