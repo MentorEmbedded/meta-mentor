@@ -30,9 +30,6 @@ def get_layer_rootdir(layerpath, d):
     return layerpath
 
 python define_layerpath_data() {
-    if not isinstance(e, bb.event.ConfigParsed):
-        return
-
     for layerpath in oe.data.typed_value('BBLAYERS', e.data):
         layerconf = os.path.join(layerpath, 'conf', 'layer.conf')
 
@@ -45,6 +42,7 @@ python define_layerpath_data() {
             e.data.setVarFlag('LAYERPATHS', layername, layerpath)
             e.data.setVarFlag('BBFILE_PATTERNS', layername, d.getVar('BBFILE_PATTERN_%s' % layername, False))
 }
+define_layerpath_data[eventmask] = "bb.event.ConfigParsed"
 addhandler define_layerpath_data
 
 RECIPE_LAYERNAME = "${@get_file_layer(FILE, d)}"
