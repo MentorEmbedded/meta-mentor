@@ -19,6 +19,7 @@ SRC_URI += "file://kgdb.cfg \
             file://autofs.cfg \
             file://filesystems.cfg \
             file://unionfs-2.6_for_3.12.26.patch \
+            file://6lowpan.cfg \
             "
 
 S = "${WORKDIR}/${BP}"
