@@ -13,7 +13,8 @@ LIC_FILES_CHKSUM = " \
 
 PV = "2014.07+fslgit"
 INHIBIT_DEFAULT_DEPS = "1"
-DEPENDS = "boot-format-native libgcc ${@base_contains('TCMODE', 'external-fsl', '', 'virtual/${TARGET_PREFIX}gcc', d)}"
+TOOLCHAIN ?= "external-fsl"
+DEPENDS = "boot-format-native libgcc ${@base_contains('TCMODE', '${TOOLCHAIN}', '', 'virtual/${TARGET_PREFIX}gcc', d)}"
 
 inherit deploy
 
@@ -22,7 +23,7 @@ SRC_URI = "git://git.freescale.com/ppc/sdk/u-boot.git;nobranch=1 \
 SRCREV = "659b6a23a8b1f3026200bc6352dbacef53f4dcb1"
 
 python () {
-    if d.getVar("TCMODE", True) == "external-fsl":
+    if d.getVar("TCMODE", True) == d.getVar("TOOLCHAIN", True):
         return
 
     ml = d.getVar("MULTILIB_VARIANTS", True)
