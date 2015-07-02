@@ -12,7 +12,7 @@ python () {
     except ValueError:
         return
     else:
-        merge = 'merge_config.sh -m "${S}/.config" ${FRAGMENTS}\n'
+        merge = 'merge_config.sh -m "${B}/.config" ${FRAGMENTS}\n'
         cfg = ''.join([before, indent, line, indent, merge, after])
         d.setVar('do_configure', cfg)
 }
