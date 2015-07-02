@@ -64,6 +64,7 @@ DEPLOY_IMAGES = "\
     ${RELEASE_IMAGE}-${MACHINE}.license_manifest \
     ${RELEASE_IMAGE}-${MACHINE}.license_manifest.csv \
     ${KERNEL_IMAGETYPE}* \
+    ${EXTRA_IMAGES_ARCHIVE_RELEASE} \
 "
 DEPLOY_IMAGES[doc] = "List of files from DEPLOY_DIR_IMAGE which will be archived"
 
@@ -345,7 +346,7 @@ do_prepare_release () {
         echo "--transform=s,-${MACHINE},,i" >include
         echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
         {
-            ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 -type l -iname "%s" || true' % pattern for pattern in DEPLOY_IMAGES.split())}
+            ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1  -iname "%s" || true' % pattern for pattern in DEPLOY_IMAGES.split())}
         } >>include
 
         if echo "${OVERRIDES}" | tr ':' '\n' | grep -qx 'qemuall'; then

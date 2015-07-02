@@ -1,0 +1,14 @@
+Upstream-Status: Already fixed in FSL SDK 1.7
+
+diff --git a/include/configs/p1_p2_rdb_pc.h b/include/configs/p1_p2_rdb_pc.h
+index d20a3ab..120813b 100644
+--- a/include/configs/p1_p2_rdb_pc.h
++++ b/include/configs/p1_p2_rdb_pc.h
+@@ -480,6 +480,7 @@
+ 	| OR_FCM_EHTR)
+ #else
+ #define CONFIG_SYS_NAND_OR_PRELIM	(OR_AM_32KB	/* small page */ \
++	| OR_FCM_PGS	/* Large Page*/ \
+ 	| OR_FCM_CSCT \
+ 	| OR_FCM_CST \
+ 	| OR_FCM_CHT \
