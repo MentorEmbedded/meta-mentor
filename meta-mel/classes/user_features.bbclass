@@ -11,11 +11,9 @@ USER_FEATURES_HANDLED_VARS = "DISTRO_FEATURES_LIBC DISTRO_FEATURES"
 USER_FEATURES_HANDLED_VARS[type] = "list"
 
 python process_user_features () {
-    l = e.data.createCopy()
-    l.finalize()
-    oe_import(l)
+    oe_import(d)
 
-    user_features = oe.data.typed_value('USER_FEATURES', l)
+    user_features = oe.data.typed_value('USER_FEATURES', d)
     if not user_features:
         return
 
@@ -30,18 +28,18 @@ python process_user_features () {
     # know which variable it belongs in, so add it there rather than
     # DISTRO_FEATURES. Also remove from all the vars, not just
     # DISTRO_FEATURES.
-    for var in oe.data.typed_value('USER_FEATURES_HANDLED_VARS', l):
+    for var in oe.data.typed_value('USER_FEATURES_HANDLED_VARS', d):
         defvar = var + '_DEFAULT'
-        if to_add and defvar in l:
+        if to_add and defvar in d:
             defvalue = set((l.getVar(defvar, True) or '').split())
             to_add_here = set(a for a in to_add if a in defvalue)
             to_add -= to_add_here
-            e.data.appendVar(var, ' ' + ' '.join(to_add_here))
+            d.appendVar(var, ' ' + ' '.join(to_add_here))
 
-        e.data.setVar(var + '_remove', ' '.join(to_remove))
+        d.setVar(var + '_remove', ' '.join(to_remove))
 
     if to_add:
-        e.data.appendVar('DISTRO_FEATURES', ' ' + ' '.join(to_add))
+        d.appendVar('DISTRO_FEATURES', ' ' + ' '.join(to_add))
 }
 process_user_features[eventmask] = "bb.event.ConfigParsed"
 addhandler process_user_features

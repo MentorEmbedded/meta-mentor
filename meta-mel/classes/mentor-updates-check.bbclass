@@ -5,9 +5,6 @@ UPDATES_CHECK_LAYERS[type] = "list"
 check_for_updates () {
     import glob
 
-    d = e.data.createCopy()
-    d.finalize()
-
     layerpaths = []
     for pattern in oe.data.typed_value('UPDATES_CHECK_LAYERS', d):
         layerpaths.extend(glob.glob(pattern))

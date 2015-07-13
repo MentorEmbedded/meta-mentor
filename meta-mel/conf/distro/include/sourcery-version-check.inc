@@ -1,9 +1,6 @@
 python sourcery_version_check () {
-    if e.data.getVar('TCMODE', True) == 'default':
+    if d.getVar('TCMODE', True) == 'default':
         return
-
-    d = e.data.createCopy()
-    d.finalize()
 
     sourcery_version = d.getVar('SOURCERY_VERSION', True)
     if not sourcery_version or sourcery_version == 'UNKNOWN':
