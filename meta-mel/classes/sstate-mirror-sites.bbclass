@@ -15,14 +15,17 @@ python sstate_reuse_setup() {
     d = e.data
 
     mirrors = d.getVar('SSTATE_MIRRORS', False).replace("\\n", "\n").split("\n")
-    distros = d.getVar('SSTATE_MIRROR_DISTROS', False).split()
+    distros = d.getVar('SSTATE_MIRROR_DISTROS', True).split()
 
     # Fall back in SSTATE_DIR structure to our compatible distros
     for distro in distros:
         mirrors.append('file://${NATIVELSBSTRING} file://${SSTATE_DIR}/%s;downloadfilename=PATH' % distro)
 
-    sites = d.getVar('SSTATE_MIRROR_SITES', False).split()
+    sites = d.getVar('SSTATE_MIRROR_SITES', True).split()
     for site in sites:
+        if not site.strip():
+            continue
+
         # Support structured mirror
         mirrors.append('file://.* %s/PATH;downloadfilename=PATH' % site)
 
