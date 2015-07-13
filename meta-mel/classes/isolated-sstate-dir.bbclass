@@ -44,7 +44,6 @@ python do_cleansstate_append() {
 addhandler isolated_sstate_eventhandler
 isolated_sstate_eventhandler[eventmask] = "bb.build.TaskSucceeded"
 python isolated_sstate_eventhandler() {
-    d = e.data
     sstate_dir = d.getVar('SSTATE_DIR', True)
     isolated_sstate_dir = d.getVar('ISOLATED_SSTATE_DIR', True)
     if sstate_dir == isolated_sstate_dir:

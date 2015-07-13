@@ -12,8 +12,6 @@ def iter_uniq(iterable):
 
 # Support use of native sstates from compatible distros
 python sstate_reuse_setup() {
-    d = e.data
-
     mirrors = d.getVar('SSTATE_MIRRORS', False).replace("\\n", "\n").split("\n")
     distros = d.getVar('SSTATE_MIRROR_DISTROS', True).split()
 

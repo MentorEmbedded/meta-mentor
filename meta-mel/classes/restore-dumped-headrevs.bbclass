@@ -19,10 +19,10 @@ DUMP_HEADREVS_DB ?= '${COREBASE}/saved_persist_data.db'
 DUMP_HEADREVS_STAMP ?= '${STAMP}.restored_headrevs'
 
 python restore_dumped_headrevs() {
-    stamp_path = e.data.getVar('DUMP_HEADREVS_STAMP', True)
-    dump_db_path = e.data.getVar('DUMP_HEADREVS_DB', True)
+    stamp_path = d.getVar('DUMP_HEADREVS_STAMP', True)
+    dump_db_path = d.getVar('DUMP_HEADREVS_DB', True)
     if not os.path.exists(stamp_path) and os.path.exists(dump_db_path):
-        restore_headrevs(e.data, dump_db_path)
+        restore_headrevs(d, dump_db_path)
         bb.utils.mkdirhier(os.path.dirname(stamp_path))
         open(stamp_path, 'w').close()
 }

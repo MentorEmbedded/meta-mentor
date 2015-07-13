@@ -30,17 +30,17 @@ def get_layer_rootdir(layerpath, d):
     return layerpath
 
 python define_layerpath_data() {
-    for layerpath in oe.data.typed_value('BBLAYERS', e.data):
+    for layerpath in oe.data.typed_value('BBLAYERS', d):
         layerconf = os.path.join(layerpath, 'conf', 'layer.conf')
 
-        d = bb.data.init()
-        d.setVar('LAYERDIR', layerpath)
-        d = bb.parse.handle(layerconf, d)
-        d.expandVarref('LAYERDIR')
+        l = bb.data.init()
+        l.setVar('LAYERDIR', layerpath)
+        l = bb.parse.handle(layerconf, l)
+        l.expandVarref('LAYERDIR')
 
-        for layername in d.getVar('BBFILE_COLLECTIONS', True).split():
-            e.data.setVarFlag('LAYERPATHS', layername, layerpath)
-            e.data.setVarFlag('BBFILE_PATTERNS', layername, d.getVar('BBFILE_PATTERN_%s' % layername, False))
+        for layername in l.getVar('BBFILE_COLLECTIONS', True).split():
+            d.setVarFlag('LAYERPATHS', layername, layerpath)
+            d.setVarFlag('BBFILE_PATTERNS', layername, l.getVar('BBFILE_PATTERN_%s' % layername, False))
 }
 define_layerpath_data[eventmask] = "bb.event.ConfigParsed"
 addhandler define_layerpath_data
