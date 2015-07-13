@@ -1,0 +1,5 @@
+# Enable 64bit kenrel build support for t4240rdb-64b machine
+BUILD_64BIT_KERNEL_t4240rdb-64b = "1"
+
+#Conditionally set TOOLCHAIN variable to external-sourcery
+TOOLCHAIN = "${@base_contains("TCMODE", "external-sourcery", "external-sourcery", "",d)}"

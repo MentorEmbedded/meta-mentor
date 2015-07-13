@@ -6,7 +6,9 @@ DELTA_KERNEL_DEFCONFIG += "${@' '.join(src_config_fragments(d))}"
 
 SRC_URI_append = " file://nbd.cfg \
                    file://autofs.cfg \
-                   file://lttng.cfg"
+                   file://lttng.cfg \
+                   file://autofs.cfg \
+                   file://ext4.cfg"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 FILESEXTRAPATHS_append = ":${@os.path.dirname(bb.utils.which(BBPATH, 'files/lttng.cfg') or '')}"
