@@ -100,7 +100,7 @@ def append_srcfiles(destlayer, rd, files, use_workdir=False, use_machine=False, 
 
 
 def kernel_set_defconfig(args):
-    rd = _parse_recipe('virtual/kernel', tinfoil)
+    rd = _parse_recipe(args.recipe, tinfoil)
     if not rd:
         return 1
 
@@ -118,7 +118,7 @@ def kernel_set_defconfig(args):
 
 
 def kernel_add_dts(args):
-    rd = _parse_recipe('virtual/kernel', tinfoil)
+    rd = _parse_recipe(args.recipe, tinfoil)
     if not rd:
         return 1
 
@@ -128,12 +128,12 @@ def kernel_add_dts(args):
 
     dtbs = (os.path.basename(dts.replace('dts', 'dtb')) for dts in args.dts_files)
     extralines = ['KERNEL_DEVICETREE += {0}'.format(' '.join(dtbs))]
-    files = dict((dts, os.path.join('arch/${{ARCH}}/boot/dts/{0}'.format(dts))) for dts in args.dts_files)
+    files = dict((dts, os.path.join('arch/${{ARCH}}/boot/dts/{0}'.format(os.path.basename(dts)))) for dts in args.dts_files)
     return append_srcfiles(args.destlayer, rd, files, use_workdir=False, use_machine=True, extralines=extralines)
 
 
 def kernel_add_fragments(args):
-    rd = _parse_recipe('virtual/kernel', tinfoil)
+    rd = _parse_recipe(args.recipe, tinfoil)
     if not rd:
         return 1
 
@@ -172,7 +172,7 @@ def get_next_fragment_name(src_uri):
 
 
 def kernel_set_configs(args):
-    rd = _parse_recipe('virtual/kernel', tinfoil)
+    rd = _parse_recipe(args.recipe, tinfoil)
     if not rd:
         return 1
 
@@ -208,22 +208,25 @@ def existing_path(filepath):
 
 
 def register_command(subparsers):
-    parser = subparsers.add_parser('kernel_set_defconfig', help='Override the defconfig used for the kernel.')
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument('-r', '--recipe', help='Specify the kernel recipe to operate against (default: virtual/kernel)', default='virtual/kernel')
+
+    parser = subparsers.add_parser('kernel_set_defconfig', help='Override the defconfig used for the kernel.', parents=[common])
     parser.add_argument('destlayer', metavar='DESTLAYER', help='Base directory of the destination layer to write the bbappend to', type=layer)
     parser.add_argument('defconfig', metavar='DEFCONFIG', help='File path to the defconfig to be used', type=existing_path)
     parser.set_defaults(func=kernel_set_defconfig, parserecipes=True)
 
-    parser = subparsers.add_parser('kernel_add_dts', help='Add/replace device tree files in the kernel.')
+    parser = subparsers.add_parser('kernel_add_dts', help='Add/replace device tree files in the kernel.', parents=[common])
     parser.add_argument('destlayer', metavar='DESTLAYER', help='Base directory of the destination layer to write the bbappend to', type=layer)
     parser.add_argument('dts_files', metavar='DTS_FILE', nargs='+', help='File path to a .dts', type=existing_path)
     parser.set_defaults(func=kernel_add_dts, parserecipes=True)
 
-    parser = subparsers.add_parser('kernel_add_fragments', help='Add configuration fragments to the kernel.')
+    parser = subparsers.add_parser('kernel_add_fragments', help='Add configuration fragments to the kernel.', parents=[common])
     parser.add_argument('destlayer', metavar='DESTLAYER', help='Base directory of the destination layer to write the bbappend to', type=layer)
     parser.add_argument('fragments', metavar='FRAGMENT', nargs='+', help='File path to a configuration fragment (.cfg)', type=existing_path)
     parser.set_defaults(func=kernel_add_fragments, parserecipes=True)
 
-    parser = subparsers.add_parser('kernel_set_configs', help='Set kernel configuration parameters. Generates and includes kernel config fragments for you.')
+    parser = subparsers.add_parser('kernel_set_configs', help='Set kernel configuration parameters. Generates and includes kernel config fragments for you.', parents=[common])
     parser.add_argument('-n', '--name', metavar='NAME', help='Name of the fragment to be generated (without .cfg)')
     parser.add_argument('destlayer', metavar='DESTLAYER', help='Base directory of the destination layer to write the bbappend to', type=layer)
     parser.add_argument('config_lines', metavar='CONFIG_LINE', nargs='+', help='Kernel configuration line (e.g. CONFIG_FOO=y)')
