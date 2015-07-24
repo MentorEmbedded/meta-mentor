@@ -8,8 +8,6 @@ INCOMPATIBLE_LICENSE_pn-external-sourcery-toolchain = ""
 ROOTFS_POSTPROCESS_COMMAND_append = " check_for_gdbserver;"
 
 python adjust_packagegroup_gdbserver () {
-    d = e.data
-
     if 'GPLv3' in (d.getVar('INCOMPATIBLE_LICENSE', True) or ''):
         if not d.getVar('ALLOW_GPLV3_GDBSERVER', True):
             # Remove installation of gdbserver from codebench-debug

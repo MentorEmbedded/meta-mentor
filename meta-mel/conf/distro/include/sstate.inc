@@ -1,6 +1,4 @@
 python sstate_config_handler () {
-    d = e.data
-
     # Ensure the path to the mel install doesn't affect checksums
     d.appendVar('BB_HASHBASE_WHITELIST', ' MELDIR')
 
