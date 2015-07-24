@@ -64,7 +64,7 @@ else
 
     OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" EXCLUDEDLAYERS="$EXCLUDEDLAYERS" $layerdir/scripts/setup-mel-builddir "$@"
     if [ $? -eq 0 ] && [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ]; then
-        . $BUILDDIR/setup-environment
+        . $BUILDDIR/setup-environment >/dev/null 2>&1
 
         configured_layers () {
             tac $BUILDDIR/conf/bblayers.conf | \
@@ -93,6 +93,7 @@ else
             load_lconf_snippet "$layer" "conf/local.conf.append"
             load_lconf_snippet "$layer" "conf/local.conf.append.$SETUP_ENV_MACHINE"
         done
+        . $BUILDDIR/setup-environment
         unset SETUP_ENV_MACHINE
         unset load_lconf_snippet
         unset configured_layers
