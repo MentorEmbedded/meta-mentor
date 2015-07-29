@@ -31,7 +31,7 @@ python process_user_features () {
     for var in oe.data.typed_value('USER_FEATURES_HANDLED_VARS', d):
         defvar = var + '_DEFAULT'
         if to_add and defvar in d:
-            defvalue = set((l.getVar(defvar, True) or '').split())
+            defvalue = set((d.getVar(defvar, True) or '').split())
             to_add_here = set(a for a in to_add if a in defvalue)
             to_add -= to_add_here
             d.appendVar(var, ' ' + ' '.join(to_add_here))
