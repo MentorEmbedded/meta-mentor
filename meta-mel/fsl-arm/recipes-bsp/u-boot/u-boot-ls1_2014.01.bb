@@ -34,6 +34,7 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 COMPATIBLE_MACHINE = "(ls102xa)"
 
 UBOOT_CONFIGS = "ls1021atwr_nor_config,u-boot-ls1-nor\
+                 ls1021atwr_lpuart_config,u-boot-ls1-lpuart\
                  ls1021atwr_sdcard_config,u-boot-ls1-sd"
 
 do_compile () {
