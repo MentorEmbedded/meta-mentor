@@ -12,12 +12,6 @@ INITSCRIPT_PARAMS_${PN}-server = "defaults"
 
 RDEPENDS_pulseaudio-module-systemd-login += "systemd"
 RDEPENDS_pulseaudio-server += "\
-    pulseaudio-module-switch-on-port-available \
-    pulseaudio-module-cli \
-    pulseaudio-module-esound-protocol-unix \
-    pulseaudio-module-dbus-protocol \
-    pulseaudio-module-echo-cancel \
-    \
     ${@base_contains('PACKAGECONFIG', 'systemd', 'pulseaudio-module-systemd-login', '', d)} \
     ${@base_contains('PACKAGECONFIG', 'bluez4', 'pulseaudio-module-bluetooth-discover', '', d)} \
     ${@base_contains('PACKAGECONFIG', 'bluez5', 'pulseaudio-module-bluez5-discover pulseaudio-module-bluez5-device', '', d)} \
