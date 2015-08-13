@@ -19,8 +19,8 @@ RDEPENDS_pulseaudio-server += "\
     pulseaudio-module-echo-cancel \
     \
     ${@base_contains('PACKAGECONFIG', 'systemd', 'pulseaudio-module-systemd-login', '', d)} \
-    ${@base_contains('DISTRO_FEATURES', 'bluez4', 'pulseaudio-module-bluetooth-discover', '', d)} \
-    ${@base_contains('DISTRO_FEATURES', 'bluez5', 'pulseaudio-module-bluez5-discover pulseaudio-module-bluez5-device', '', d)} \
+    ${@base_contains('PACKAGECONFIG', 'bluez4', 'pulseaudio-module-bluetooth-discover', '', d)} \
+    ${@base_contains('PACKAGECONFIG', 'bluez5', 'pulseaudio-module-bluez5-discover pulseaudio-module-bluez5-device', '', d)} \
 "
 
 do_install_append () {
