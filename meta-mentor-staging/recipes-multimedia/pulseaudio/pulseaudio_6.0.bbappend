@@ -4,14 +4,11 @@ SRC_URI += "file://init"
 
 inherit update-rc.d
 
-systemd_userunitdir ?= "${systemd_unitdir}/user"
-EXTRA_OECONF += "--with-systemduserunitdir=${systemd_userunitdir}"
+EXTRA_OECONF += "--with-systemduserunitdir=${systemd_user_unitdir}"
 
 INITSCRIPT_PACKAGES = "${PN}-server"
 INITSCRIPT_NAME_${PN}-server = "pulseaudio"
 INITSCRIPT_PARAMS_${PN}-server = "defaults"
-
-FILES_${PN}-server += "${systemd_userunitdir}/pulseaudio.*"
 
 RDEPENDS_pulseaudio-module-systemd-login += "systemd"
 RDEPENDS_pulseaudio-server += "\
@@ -25,15 +22,6 @@ RDEPENDS_pulseaudio-server += "\
     ${@base_contains('DISTRO_FEATURES', 'bluez4', 'pulseaudio-module-bluetooth-discover', '', d)} \
     ${@base_contains('DISTRO_FEATURES', 'bluez5', 'pulseaudio-module-bluez5-discover pulseaudio-module-bluez5-device', '', d)} \
 "
-
-do_configure_prepend () {
-    # If this source isn't git, we don't want to run git-version-gen. It can
-    # cause problems otherwise if the entire build is occurring inside of a
-    # git repository
-    if [ ! -e "${S}/.git" ]; then
-        sed -i "s#m4_esyscmd(./git-version-gen .tarball-version)#${PV}#" "${S}/configure.ac"
-    fi
-}
 
 do_install_append () {
     install -d ${D}${sysconfdir}/init.d/
