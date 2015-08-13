@@ -1,7 +1,7 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
-
-do_install_append_mel () {
-        sed -i 's/; resample-method.*/resample-method \= speex-fixed-3/' ${D}/etc/pulse/daemon.conf
+do_compile_append_mel () {
+    # Work around a toolchain issue with the default resampler (speex-float-N)
+    # by using speex-fixed-N.
+    set_cfg_value src/daemon.conf resample-method speex-fixed-3
 }
 
 RDEPENDS_pulseaudio-server += "\
