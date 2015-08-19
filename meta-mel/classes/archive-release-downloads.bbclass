@@ -58,10 +58,19 @@ python do_archive_release_downloads () {
         elif local.endswith('/'):
             local = local[:-1]
 
-        if u.mirrortarball:
-            tarball_path = os.path.join(dl_dir, u.mirrortarball)
-            if os.path.exists(tarball_path):
-                local = tarball_path
+        if hasattr(u, 'mirrortarballs'):
+            tarballs = u.mirrortarballs
+        elif u.mirrortarball:
+            tarballs = [u.mirrortarball]
+        else:
+            continue
+
+        for tarball in tarballs:
+            if tarball:
+                tarball_path = os.path.join(dl_dir, tarball)
+                if os.path.exists(tarball_path):
+                    local = tarball_path
+                    break
 
         oe.path.symlink(local, os.path.join(sources_dir, os.path.basename(local)), force=True)
 }
