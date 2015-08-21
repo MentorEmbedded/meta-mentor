@@ -117,7 +117,7 @@ git_tar () {
     shift
     name=`basename $repo`
     if [ -e $repo/.git ]; then
-        if [ "${@oe.data.typed_value('RELEASE_USE_TAGS', d)}" == "True" ]; then
+        if [ "${@oe.data.typed_value('RELEASE_USE_TAGS', d)}" = "True" ]; then
             version=$(git --git-dir=$repo/.git describe --tags)
         else
             version=$(git --git-dir=$repo/.git rev-list HEAD | wc -l)
@@ -189,7 +189,7 @@ prepare_templates () {
         sed -i 's,^DISTRO =.*,DISTRO = "${DISTRO}",' local.conf.sample
     fi
     sed -i 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "$,' local.conf.sample
-    if [ "${DISTRO}" == "mel-lite" ]; then
+    if [ "${DISTRO}" = "mel-lite" ]; then
         sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/../../codebench-lite",' local.conf.sample
     else
         sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/../../codebench",' local.conf.sample
