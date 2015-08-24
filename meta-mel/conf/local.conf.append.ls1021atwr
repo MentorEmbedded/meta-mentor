@@ -3,3 +3,7 @@ MACHINE_FEATURES_append_ls1021atwr = " alsa vfat"
 
 # In archive-release for ls1201atwr install rcw  and boot along with other image binaries.
 EXTRA_IMAGES_ARCHIVE_RELEASE = "rcw boot"
+
+# Do not build/deploy pulseaudio for networking board TWR-LS1021A
+DISTRO_FEATURES_remove = "pulseaudio"
+RDEPENDS_packagegroup-base-bluetooth_remove = "pulseaudio pulseaudio-server"
