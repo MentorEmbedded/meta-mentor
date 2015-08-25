@@ -7,3 +7,13 @@ EXTRA_IMAGES_ARCHIVE_RELEASE = "rcw boot"
 # Do not build/deploy pulseaudio for networking board TWR-LS1021A
 DISTRO_FEATURES_remove = "pulseaudio"
 RDEPENDS_packagegroup-base-bluetooth_remove = "pulseaudio pulseaudio-server"
+
+# Add file names to go into Boot directory of Sd-card used by wic
+IMAGE_BOOT_FILES =  "uImage\
+                     uImage-ls1021a-twr.dtb\
+                     u-boot-nor.bin\
+                     u-boot-lpuart.bin\
+                     rcw/ls1021atwr/SSR_PPN_20/rcw_1000.bin\
+                     rcw/ls1021atwr/SSR_PPN_20/rcw_1000_lpuart.bin\
+                    "
+
