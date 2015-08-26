@@ -1,0 +1,63 @@
+From 4b439453f97c08913cf5ed3bd93ce67a981edaf6 Mon Sep 17 00:00:00 2001
+From: Hannes Frederic Sowa <hannes@stressinduktion.org>
+Date: Wed, 23 Oct 2013 20:05:27 +0200
+Subject: [PATCH 18/18] net: make net_get_random_once irq safe
+
+I initial build non irq safe version of net_get_random_once because I
+would liked to have the freedom to defer even the extraction process of
+get_random_bytes until the nonblocking pool is fully seeded.
+
+I don't think this is a good idea anymore and thus this patch makes
+net_get_random_once irq safe. Now someone using net_get_random_once does
+not need to care from where it is called.
+
+Cc: David S. Miller <davem@davemloft.net>
+Cc: Eric Dumazet <edumazet@google.com>
+Signed-off-by: Hannes Frederic Sowa <hannes@stressinduktion.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ include/linux/net.h | 1 -
+ net/core/utils.c    | 7 ++++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/include/linux/net.h b/include/linux/net.h
+index 03a0a8d..dd489cf 100644
+--- a/include/linux/net.h
++++ b/include/linux/net.h
+@@ -267,7 +267,6 @@ bool __net_get_random_once(void *buf, int nbytes, bool *done,
+ #define ___NET_RANDOM_STATIC_KEY_INIT STATIC_KEY_INIT_FALSE
+ #endif /* HAVE_JUMP_LABEL */
+ 
+-/* BE CAREFUL: this function is not interrupt safe */
+ #define net_get_random_once(buf, nbytes)				\
+ 	({								\
+ 		bool ___ret = false;					\
+diff --git a/net/core/utils.c b/net/core/utils.c
+index bf09371..2f737bf 100644
+--- a/net/core/utils.c
++++ b/net/core/utils.c
+@@ -370,16 +370,17 @@ bool __net_get_random_once(void *buf, int nbytes, bool *done,
+ 			   struct static_key *done_key)
+ {
+ 	static DEFINE_SPINLOCK(lock);
++	unsigned long flags;
+ 
+-	spin_lock_bh(&lock);
++	spin_lock_irqsave(&lock, flags);
+ 	if (*done) {
+-		spin_unlock_bh(&lock);
++		spin_unlock_irqrestore(&lock, flags);
+ 		return false;
+ 	}
+ 
+ 	get_random_bytes(buf, nbytes);
+ 	*done = true;
+-	spin_unlock_bh(&lock);
++	spin_unlock_irqrestore(&lock, flags);
+ 
+ 	__net_random_once_disable_jump(done_key);
+ 
+-- 
+1.9.1
+

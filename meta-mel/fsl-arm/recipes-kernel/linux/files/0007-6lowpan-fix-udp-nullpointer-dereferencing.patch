@@ -1,0 +1,49 @@
+From 2bf8711ffefc42381ca3427d23735e49d09ae04d Mon Sep 17 00:00:00 2001
+From: Alexander Aring <alex.aring@gmail.com>
+Date: Mon, 7 Oct 2013 22:56:20 +0200
+Subject: [PATCH 07/18] 6lowpan: fix udp nullpointer dereferencing
+
+Sometimes a nullpointer dereferencing occurs because of using a wrong
+pointer arithmetic in udp_uncompression.
+
+This patch changes "**(hc06_ptr + 3)" to the right one "*(*hc06_ptr +
+3)". Dereferencing like "**(hc06_ptr + 3)" works in a random case only.
+
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ net/ieee802154/6lowpan.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/net/ieee802154/6lowpan.c b/net/ieee802154/6lowpan.c
+index 0dfdc82..c73018f0 100644
+--- a/net/ieee802154/6lowpan.c
++++ b/net/ieee802154/6lowpan.c
+@@ -333,7 +333,7 @@ lowpan_compress_udp_header(u8 **hc06_ptr, struct sk_buff *skb)
+ 				LOWPAN_NHC_UDP_4BIT_PORT)) {
+ 		pr_debug("UDP header: both ports compression to 4 bits\n");
+ 		**hc06_ptr = LOWPAN_NHC_UDP_CS_P_11;
+-		**(hc06_ptr + 1) = /* subtraction is faster */
++		*(*hc06_ptr + 1) = /* subtraction is faster */
+ 		   (u8)((uh->dest - LOWPAN_NHC_UDP_4BIT_PORT) +
+ 		       ((uh->source & LOWPAN_NHC_UDP_4BIT_PORT) << 4));
+ 		*hc06_ptr += 2;
+@@ -342,14 +342,14 @@ lowpan_compress_udp_header(u8 **hc06_ptr, struct sk_buff *skb)
+ 		pr_debug("UDP header: remove 8 bits of dest\n");
+ 		**hc06_ptr = LOWPAN_NHC_UDP_CS_P_01;
+ 		memcpy(*hc06_ptr + 1, &uh->source, 2);
+-		**(hc06_ptr + 3) = (u8)(uh->dest - LOWPAN_NHC_UDP_8BIT_PORT);
++		*(*hc06_ptr + 3) = (u8)(uh->dest - LOWPAN_NHC_UDP_8BIT_PORT);
+ 		*hc06_ptr += 4;
+ 	} else if ((uh->source & LOWPAN_NHC_UDP_8BIT_MASK) ==
+ 			LOWPAN_NHC_UDP_8BIT_PORT) {
+ 		pr_debug("UDP header: remove 8 bits of source\n");
+ 		**hc06_ptr = LOWPAN_NHC_UDP_CS_P_10;
+ 		memcpy(*hc06_ptr + 1, &uh->dest, 2);
+-		**(hc06_ptr + 3) = (u8)(uh->source - LOWPAN_NHC_UDP_8BIT_PORT);
++		*(*hc06_ptr + 3) = (u8)(uh->source - LOWPAN_NHC_UDP_8BIT_PORT);
+ 		*hc06_ptr += 4;
+ 	} else {
+ 		pr_debug("UDP header: can't compress\n");
+-- 
+1.9.1
+
