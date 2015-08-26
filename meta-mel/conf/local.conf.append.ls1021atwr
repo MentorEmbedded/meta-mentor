@@ -16,3 +16,5 @@ IMAGE_BOOT_FILES =  "uImage\
                      rcw/ls1021atwr/SSR_PPN_20/rcw_1000_lpuart.bin\
                     "
 
+# Install all available kernel modules
+MACHINE_EXTRA_RRECOMMENDS_append_ls1021atwr = " kernel-modules"
