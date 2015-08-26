@@ -1,0 +1,51 @@
+From 0b741aa837175069b801b4ea97e8ba3c641d9c9d Mon Sep 17 00:00:00 2001
+From: Daniel Borkmann <dborkman@redhat.com>
+Date: Mon, 6 Jan 2014 01:45:50 +0100
+Subject: [PATCH 13/18] net: 6lowpan: fix lowpan_header_create non-compression
+ memcpy call
+
+In function lowpan_header_create(), we invoke the following code
+construct:
+
+  struct ipv6hdr *hdr;
+  ...
+  hdr = ipv6_hdr(skb);
+  ...
+  if (...)
+    memcpy(hc06_ptr + 1, &hdr->flow_lbl[1], 2);
+  else
+    memcpy(hc06_ptr, &hdr, 4);
+
+Where the else path of the condition, that is, non-compression
+path, calls memcpy() with a pointer to struct ipv6hdr *hdr as
+source, thus two levels of indirection. This cannot be correct,
+and likely only one level of pointer was intended as source
+buffer for memcpy() here.
+
+Fixes: 44331fe2aa0d ("IEEE802.15.4: 6LoWPAN basic support")
+Signed-off-by: Daniel Borkmann <dborkman@redhat.com>
+Cc: Alexander Smirnov <alex.bluesman.smirnov@gmail.com>
+Cc: Dmitry Eremin-Solenikov <dbaryshkov@gmail.com>
+Cc: Werner Almesberger <werner@almesberger.net>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ net/ieee802154/6lowpan.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/ieee802154/6lowpan.c b/net/ieee802154/6lowpan.c
+index 8e70ee8..16451c3 100644
+--- a/net/ieee802154/6lowpan.c
++++ b/net/ieee802154/6lowpan.c
+@@ -543,7 +543,7 @@ static int lowpan_header_create(struct sk_buff *skb,
+ 			hc06_ptr += 3;
+ 		} else {
+ 			/* compress nothing */
+-			memcpy(hc06_ptr, &hdr, 4);
++			memcpy(hc06_ptr, hdr, 4);
+ 			/* replace the top byte with new ECN | DSCP format */
+ 			*hc06_ptr = tmp;
+ 			hc06_ptr += 4;
+-- 
+1.9.1
+

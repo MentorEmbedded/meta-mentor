@@ -25,7 +25,6 @@ SRC_URI += "\
     file://configs.cfg \
     file://autofs.cfg \
     file://filesystems.cfg \
-    file://6lowpan.cfg \
 "
 
 # Enable lttng config
@@ -34,3 +33,27 @@ SRC_URI += "file://lttng.cfg"
 
 # Enable systemd config
 SRC_URI += "${@base_contains('DISTRO_FEATURES', 'systemd', ' file://systemd.cfg', '', d)}"
+
+SRC_URI += "${@bb.utils.contains('BBFILE_COLLECTIONS', 'mel-iot', " ${6LOWPAN_PATCHES}", '', d)}"
+
+6LOWPAN_PATCHES = "\
+	file://0001-6lowpan-add-Werners-atusb-driver.patch \
+	file://0002-6lowpan-add-frag-information-struct.patch \
+	file://0003-6lowpan-fix-fragmentation-on-sending-side.patch \
+	file://0004-net-add-ieee802154_6lowpan-namespace.patch \
+	file://0005-6lowpan-handling-6lowpan-fragmentation-via-inet_frag.patch \
+	file://0006-6lowpan-handle-return-value-on-lowpan_process_data.patch \
+	file://0007-6lowpan-fix-udp-nullpointer-dereferencing.patch \
+	file://0008-6lowpan-fix-udp-compress-ordering.patch \
+	file://0009-6lowpan-fix-udp-byte-ordering.patch \
+	file://0010-6lowpan-add-udp-warning-for-elided-checksum.patch \
+	file://0011-6lowpan-udp-use-lowpan_fetch_skb-function.patch \
+	file://0012-6lowpan-udp-use-subtraction-on-both-conditions.patch \
+	file://0013-net-6lowpan-fix-lowpan_header_create-non-compression.patch \
+	file://0014-ieee802154-space-prohibited-before-that-close-parent.patch \
+	file://0015-6lowpan-switch-to-standard-IPV6_MIN_MTU-value.patch \
+	file://0016-net-introduce-new-macro-net_get_random_once.patch \
+	file://0017-net-fix-build-warnings-because-of-net_get_random_onc.patch \
+	file://0018-net-make-net_get_random_once-irq-safe.patch \
+	file://6lowpan.cfg \
+	"

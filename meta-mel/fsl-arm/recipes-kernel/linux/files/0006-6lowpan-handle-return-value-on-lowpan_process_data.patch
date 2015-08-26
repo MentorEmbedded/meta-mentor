@@ -1,0 +1,36 @@
+From 45d0704d4c12698d718d00fe23fee7038acf5637 Mon Sep 17 00:00:00 2001
+From: Alexander Aring <alex.aring@gmail.com>
+Date: Tue, 3 Dec 2013 15:39:41 +0100
+Subject: [PATCH 06/18] 6lowpan: handle return value on lowpan_process_data
+
+Signed-off-by: Alexander Aring <alex.aring@gmail.com>
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ net/ieee802154/6lowpan.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/net/ieee802154/6lowpan.c b/net/ieee802154/6lowpan.c
+index d9a36ec..0dfdc82 100644
+--- a/net/ieee802154/6lowpan.c
++++ b/net/ieee802154/6lowpan.c
+@@ -1209,7 +1209,7 @@ static int lowpan_rcv(struct sk_buff *skb, struct net_device *dev,
+ 		skb_reset_network_header(local_skb);
+ 		skb_set_transport_header(local_skb, sizeof(struct ipv6hdr));
+ 
+-		lowpan_give_skb_to_devices(local_skb);
++		ret = lowpan_give_skb_to_devices(local_skb);
+ 
+ 		kfree_skb(local_skb);
+ 		kfree_skb(skb);
+@@ -1219,7 +1219,7 @@ static int lowpan_rcv(struct sk_buff *skb, struct net_device *dev,
+ 			local_skb = skb_clone(skb, GFP_ATOMIC);
+ 			if (!local_skb)
+ 				goto drop;
+-			lowpan_process_data(local_skb);
++			ret = lowpan_process_data(local_skb);
+ 
+ 			kfree_skb(skb);
+ 			break;
+-- 
+1.9.1
+
