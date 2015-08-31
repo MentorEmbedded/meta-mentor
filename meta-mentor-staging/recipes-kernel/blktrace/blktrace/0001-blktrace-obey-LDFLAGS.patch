@@ -1,0 +1,33 @@
+From fac33becf0977ed9cf9d1caf31812ddaac5d29f1 Mon Sep 17 00:00:00 2001
+From: Abdur Rehman <abdur_rehman@mentor.com>
+Date: Fri, 28 Aug 2015 20:09:29 +0500
+Subject: [PATCH] blktrace: obey LDFLAGS
+
+Signed-off-by: Abdur Rehman <abdur_rehman@mentor.com>
+---
+ iowatcher/Makefile |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/iowatcher/Makefile b/iowatcher/Makefile
+index 7b5101c..7dba284 100644
+--- a/iowatcher/Makefile
++++ b/iowatcher/Makefile
+@@ -1,5 +1,6 @@
+ C      = gcc
+ CFLAGS  = -Wall -O0 -g -W
++LDFLAGS =
+ ALL_CFLAGS = $(CFLAGS) -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+ 
+ PROGS = iowatcher
+@@ -19,7 +20,7 @@ all: $(ALL)
+ 	$(CC) -o $*.o -c $(ALL_CFLAGS) $<
+ 
+ iowatcher: blkparse.o plot.o main.o tracers.o mpstat.o fio.o
+-	$(CC) $(ALL_CFLAGS) -o $@ $(filter %.o,$^) -lm
++	$(CC) $(ALL_CFLAGS) -o $@ $(filter %.o,$^) -lm $(LDFLAGS)
+ 
+ depend:
+ 	@$(CC) -MM $(ALL_CFLAGS) *.c 1> .depend
+-- 
+1.7.9.5
+
