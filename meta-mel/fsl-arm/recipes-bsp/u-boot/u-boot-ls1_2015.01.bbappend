@@ -1,7 +1,9 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
-# Fix crash issues and kernel lockup issues with GCC-4.9.x
-SRC_URI += "file://0001-ls102xa-LS1021-ARM-Generic-Timer-CompareValue-Set-64.patch"
+# Fix crash issues and kernel lockup issues with GCC-4.9.x & Add GCC5 support
+SRC_URI += "file://0001-ls102xa-LS1021-ARM-Generic-Timer-CompareValue-Set-64.patch \
+	    file://gcc5.patch \
+	   "
 
 UBOOT_CONFIG_append = " lpuart"
 
