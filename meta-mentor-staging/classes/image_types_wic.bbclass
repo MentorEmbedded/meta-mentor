@@ -9,3 +9,5 @@ IMAGE_CMD_wic () {
 	mv $out/build/$(basename "${wks%.wks}")*.direct $out.rootfs.wic
 	rm -rf $out/
 }
+
+IMAGE_CMD_wic[file-checksums] = "${IMAGE_WKS_FILE}"
