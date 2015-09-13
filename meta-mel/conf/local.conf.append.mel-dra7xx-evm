@@ -1,0 +1,4 @@
+# For DRA7xx MEL only has Wayland, no X11. 
+
+USER_FEATURES += "~x11"
+USER_FEATURES += "wayland"
