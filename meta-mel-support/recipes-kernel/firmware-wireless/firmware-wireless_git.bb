@@ -46,27 +46,27 @@ do_compile() {
 }
 
 do_install() {
-	install -d  ${D}${base_libdir}/firmware/
+	install -d  ${D}${nonarch_base_libdir}/firmware/
 	for dir in */; do
-	    cp -rf $dir/* ${D}${base_libdir}/firmware/
+	    cp -rf $dir/* ${D}${nonarch_base_libdir}/firmware/
 	done
-	rm -f ${D}${base_libdir}/firmware/LICENSE* ${D}${base_libdir}/firmware/COPYRIGHT \
-	      ${D}${base_libdir}/firmware/defines
+	rm -f ${D}${nonarch_base_libdir}/firmware/LICENSE* ${D}${nonarch_base_libdir}/firmware/COPYRIGHT \
+	      ${D}${nonarch_base_libdir}/firmware/defines
 
 	# Avoid Makefile to be deplyed
-	rm -f ${D}${base_libdir}/firmware/Makefile
+	rm -f ${D}${nonarch_base_libdir}/firmware/Makefile
 
 	# Remove carl9170 firmware sources
-	rm -rf ${D}${base_libdir}/firmware/carl9170fw
+	rm -rf ${D}${nonarch_base_libdir}/firmware/carl9170fw
 
 	# Libertas sd8686
-	ln -sf libertas/sd8686_v9.bin ${D}${base_libdir}/firmware/sd8686.bin
-	ln -sf libertas/sd8686_v9_helper.bin ${D}${base_libdir}/firmware/sd8686_helper.bin
+	ln -sf libertas/sd8686_v9.bin ${D}${nonarch_base_libdir}/firmware/sd8686.bin
+	ln -sf libertas/sd8686_v9_helper.bin ${D}${nonarch_base_libdir}/firmware/sd8686_helper.bin
 
 	# fixup wl12xx location, after 2.6.37 the kernel searches a different location for it
-	( cd ${D}${base_libdir}/firmware ; ln -sf ti-connectivity/* . )
+	( cd ${D}${nonarch_base_libdir}/firmware ; ln -sf ti-connectivity/* . )
 
 	chmod -R g-ws ${D}
 }
 
-FILES_${PN} += "${base_libdir}/firmware/*"
+FILES_${PN} += "${nonarch_base_libdir}/firmware/*"
