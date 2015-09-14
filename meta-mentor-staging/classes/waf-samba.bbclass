@@ -28,12 +28,14 @@ do_configure() {
 
     libdir_qemu="${STAGING_DIR_HOST}/${libdir}"
     base_libdir_qemu="${STAGING_DIR_HOST}/${base_libdir}"
-    oldest_kernel_qemu=${OLDEST_KERNEL}
 
     CROSS_EXEC="${qemu_binary} \
-                -r ${oldest_kernel_qemu} \
                 -L ${STAGING_DIR_HOST} \
                 -E LD_LIBRARY_PATH=${libdir_qemu}:${base_libdir_qemu}"
+
+    if [ ${qemu_binary} != "qemuwrapper" ]; then
+        CROSS_EXEC="${CROSS_EXEC} ${QEMU_OPTIONS}"
+    fi
 
     export BUILD_SYS=${BUILD_SYS}
     export HOST_SYS=${HOST_SYS}
