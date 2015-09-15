@@ -16,16 +16,15 @@ Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
  units/systemd-udevd.service.in |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/units/systemd-udevd.service.in b/units/systemd-udevd.service.in
-index f6acd6f..5f8e4c8 100644
---- a/units/systemd-udevd.service.in
-+++ b/units/systemd-udevd.service.in
-@@ -21,4 +21,4 @@ Sockets=systemd-udevd-control.socket systemd-udevd-kernel.socket
+Index: git/units/systemd-udevd.service.in
+===================================================================
+--- git.orig/units/systemd-udevd.service.in	2015-09-14 11:18:31.364305816 -0700
++++ git/units/systemd-udevd.service.in	2015-09-14 11:18:40.296351938 -0700
+@@ -21,6 +21,6 @@
  Restart=always
  RestartSec=0
  ExecStart=@rootlibexecdir@/systemd-udevd
 -MountFlags=slave
 +MountFlags=shared
--- 
-1.7.9.5
-
+ KillMode=mixed
+ WatchdogSec=1min
