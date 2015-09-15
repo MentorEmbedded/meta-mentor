@@ -27,6 +27,22 @@ SRC_URI += "\
     file://filesystems.cfg \
 "
 
+# GCC-5.x updates to fix the build issue
+FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+SRC_URI += "\
+	file://0001-ftrace-Make-CALLER_ADDRx-macros-more-generic.patch \
+	file://0002-arm-ftrace-fix-ftrace_return_addr-to-ftrace_return_a.patch \
+	file://0003-ARM-8158-1-LLVMLinux-use-static-inline-in-ARM-ftrace.patch \
+	file://0004-ARM-LLVMLinux-Change-extern-inline-to-static-inline-.patch \
+	file://0005-i2c-imx-Fix-format-warning-for-dev_dbg.patch \
+	file://0006-crypto-caam-fix-RNG-buffer-cache-alignment.patch \
+	file://0007-crypto-ixp4xx-Remove-bogus-BUG_ON-on-scattered-dst-b.patch \
+	file://0008-crypto-caam-regs.h-remove-redefinitions-of-bit-setti.patch \
+	file://0009-Input-lifebook-use-static-inline-instead-of-inline-i.patch \
+	file://0010-Input-trackpoint-use-static-inline-instead-of-inline.patch \
+	file://0011-Input-fsp_detect-use-static-inline-instead-of-inline.patch \
+"
+
 # Enable lttng config
 FILESEXTRAPATHS_append = ":${@os.path.dirname(bb.utils.which("${BBPATH}", 'files/lttng.cfg') or '')}"
 SRC_URI += "file://lttng.cfg"

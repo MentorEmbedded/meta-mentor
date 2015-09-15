@@ -1,0 +1,47 @@
+From b78c8d2fd0dfb9b5ce609c232e68ee9d881f0243 Mon Sep 17 00:00:00 2001
+From: Chen Gang <gang.chen.5i5j@gmail.com>
+Date: Sun, 9 Nov 2014 13:31:11 -0800
+Subject: [PATCH 09/11] Input: lifebook - use "static inline" instead of
+ "inline" in lifebook.h
+
+For functions defined in header files we should use static inline rather
+than inline, which breaks under the latest upstream gcc (which is really
+gcc issue, but static inline is better suited regardless).
+
+The related error (with allmodconfig under tile):
+
+    MODPOST 4002 modules
+  ERROR: "lifebook_detect" [drivers/input/mouse/psmouse.ko] undefined!
+
+Signed-off-by: Chen Gang <gang.chen.5i5j@gmail.com>
+Signed-off-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ drivers/input/mouse/lifebook.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/input/mouse/lifebook.h b/drivers/input/mouse/lifebook.h
+index 4c4326c..0baf02a 100644
+--- a/drivers/input/mouse/lifebook.h
++++ b/drivers/input/mouse/lifebook.h
+@@ -16,14 +16,14 @@ void lifebook_module_init(void);
+ int lifebook_detect(struct psmouse *psmouse, bool set_properties);
+ int lifebook_init(struct psmouse *psmouse);
+ #else
+-inline void lifebook_module_init(void)
++static inline void lifebook_module_init(void)
+ {
+ }
+-inline int lifebook_detect(struct psmouse *psmouse, bool set_properties)
++static inline int lifebook_detect(struct psmouse *psmouse, bool set_properties)
+ {
+ 	return -ENOSYS;
+ }
+-inline int lifebook_init(struct psmouse *psmouse)
++static inline int lifebook_init(struct psmouse *psmouse)
+ {
+ 	return -ENOSYS;
+ }
+-- 
+1.9.1
+

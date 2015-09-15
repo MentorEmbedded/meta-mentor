@@ -1,0 +1,31 @@
+From 53d4eb91ff997c56fb115f54c773c6bcc2c7ce26 Mon Sep 17 00:00:00 2001
+From: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+Date: Wed, 9 Sep 2015 13:52:46 +0530
+Subject: [PATCH 08/11] crypto/caam/regs.h: remove redefinitions of bit setting
+
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ drivers/crypto/caam/regs.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/crypto/caam/regs.h b/drivers/crypto/caam/regs.h
+index 72193f8..e7f6f43 100644
+--- a/drivers/crypto/caam/regs.h
++++ b/drivers/crypto/caam/regs.h
+@@ -83,11 +83,13 @@
+ #endif
+ #endif
+ 
++#if 0
+ #ifdef CONFIG_ARM
+ /* These are common macros for Power, put here for ARMs */
+ #define setbits32(_addr, _v) writel((readl(_addr) | (_v)), (_addr))
+ #define clrbits32(_addr, _v) writel((readl(_addr) & ~(_v)), (_addr))
+ #endif
++#endif
+ 
+ #ifndef CONFIG_64BIT
+ #ifdef __BIG_ENDIAN
+-- 
+1.9.1
+

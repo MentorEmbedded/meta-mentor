@@ -1,0 +1,33 @@
+From 7bbbe9538e42915ec48e645624fc4c2ae3c634ee Mon Sep 17 00:00:00 2001
+From: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+Date: Wed, 9 Sep 2015 14:21:53 +0530
+Subject: [PATCH 10/11] Input: trackpoint - use "static inline" instead of
+ "inline" in trackpoint.h
+
+This fixes the following error:
+
+  LD      init/built-in.o
+drivers/built-in.o: In function `psmouse_extensions':
+/opt/git-repos/fsl-ppc-sdk/linux/drivers/input/mouse/psmouse-base.c:866: undefined reference to `trackpoint_detect'
+
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ drivers/input/mouse/trackpoint.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/input/mouse/trackpoint.h b/drivers/input/mouse/trackpoint.h
+index ecd0547..693735c 100644
+--- a/drivers/input/mouse/trackpoint.h
++++ b/drivers/input/mouse/trackpoint.h
+@@ -147,7 +147,7 @@ struct trackpoint_data
+ #ifdef CONFIG_MOUSE_PS2_TRACKPOINT
+ int trackpoint_detect(struct psmouse *psmouse, bool set_properties);
+ #else
+-inline int trackpoint_detect(struct psmouse *psmouse, bool set_properties)
++static inline int trackpoint_detect(struct psmouse *psmouse, bool set_properties)
+ {
+ 	return -ENOSYS;
+ }
+-- 
+1.9.1
+

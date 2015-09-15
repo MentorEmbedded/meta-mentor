@@ -1,0 +1,37 @@
+From 4c7c71f8ed2b6e090249838bc0213d6704690612 Mon Sep 17 00:00:00 2001
+From: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+Date: Wed, 9 Sep 2015 15:27:31 +0530
+Subject: [PATCH 11/11] Input: fsp_detect - use "static inline" instead of
+ "inline" in sentelic.h
+
+This fixes the following error:
+
+/opt/git-repos/fsl-ppc-sdk/linux/drivers/input/mouse/psmouse-base.c:866: undefined reference to `fsp_detect'
+make: *** [vmlinux] Error 1
+
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ drivers/input/mouse/sentelic.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/input/mouse/sentelic.h b/drivers/input/mouse/sentelic.h
+index aa697ec..42df9e3 100644
+--- a/drivers/input/mouse/sentelic.h
++++ b/drivers/input/mouse/sentelic.h
+@@ -123,11 +123,11 @@ struct fsp_data {
+ extern int fsp_detect(struct psmouse *psmouse, bool set_properties);
+ extern int fsp_init(struct psmouse *psmouse);
+ #else
+-inline int fsp_detect(struct psmouse *psmouse, bool set_properties)
++static inline int fsp_detect(struct psmouse *psmouse, bool set_properties)
+ {
+ 	return -ENOSYS;
+ }
+-inline int fsp_init(struct psmouse *psmouse)
++static inline int fsp_init(struct psmouse *psmouse)
+ {
+ 	return -ENOSYS;
+ }
+-- 
+1.9.1
+
