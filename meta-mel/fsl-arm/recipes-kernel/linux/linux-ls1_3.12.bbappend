@@ -36,11 +36,10 @@ SRC_URI += "\
 	file://0004-ARM-LLVMLinux-Change-extern-inline-to-static-inline-.patch \
 	file://0005-i2c-imx-Fix-format-warning-for-dev_dbg.patch \
 	file://0006-crypto-caam-fix-RNG-buffer-cache-alignment.patch \
-	file://0007-crypto-ixp4xx-Remove-bogus-BUG_ON-on-scattered-dst-b.patch \
-	file://0008-crypto-caam-regs.h-remove-redefinitions-of-bit-setti.patch \
 	file://0009-Input-lifebook-use-static-inline-instead-of-inline-i.patch \
 	file://0010-Input-trackpoint-use-static-inline-instead-of-inline.patch \
 	file://0011-Input-fsp_detect-use-static-inline-instead-of-inline.patch \
+	file://0001-kernel-use-the-gnu89-standard-explicitly.patch \
 "
 
 # Enable lttng config
