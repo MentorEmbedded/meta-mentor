@@ -27,9 +27,18 @@ def configured_update_layers(d):
             update_layers.add(layer)
     return ' '.join(update_layers)
 
+def configured_mx6_layers(d):
+    """Return the mx6 layers to be archived as individual tarballs"""
+    mx6_layers = set()
+    for layer in d.getVar('BBLAYERS', True).split():
+        basename = os.path.basename(layer)
+        if 'mx6' in basename:
+            mx6_layers.add(layer)
+    return ' '.join(mx6_layers)
+
 # Sub-layers to archive individually, rather than grabbing the entire
 # repository they're in
-SUBLAYERS_INDIVIDUAL_ONLY ?= ""
+SUBLAYERS_INDIVIDUAL_ONLY ?= "${@configured_mx6_layers(d)}"
 SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL ?= "${@configured_update_layers(d)}"
 
 DUMP_HEADREVS_DB ?= ""
