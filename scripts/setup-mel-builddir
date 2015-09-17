@@ -270,11 +270,17 @@ setup_builddir () {
         MACHINE=$(sed -n 's/^MACHINE ?*= "\([^"]*\)"/\1/p' $BUILDDIR/conf/local.conf)
     fi
 
+    if [ -d "$MELDIR/bitbake" ]; then
+        BITBAKEDIR="$MELDIR/bitbake"
+    else
+        BITBAKEDIR="$OEROOT/bitbake"
+    fi
+
     if [ -n "$MACHINE" ]; then
         if [ -e "$layerdir/pre-setup.$MACHINE" ]; then
             . "$layerdir/pre-setup.$MACHINE"
         fi
-        PATH="$OEROOT/scripts:$OEROOT/bitbake/bin:$PATH" configure_for_machine "$BUILDDIR/conf"
+        PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" configure_for_machine "$BUILDDIR/conf"
     fi
 
     cat >$BUILDDIR/setup-environment <<END
@@ -286,7 +292,7 @@ else
     BUILDDIR="\$(pwd)"
 fi
 export TEMPLATECONF="$TEMPLATECONF"
-. $OEROOT/oe-init-build-env \$BUILDDIR
+. $OEROOT/oe-init-build-env "\$BUILDDIR" "$BITBAKEDIR"
 export BB_ENV_EXTRAWHITE="\$BB_ENV_EXTRAWHITE GIT_SSL_CAINFO MGLS_LICENSE_FILE LM_LICENSE_FILE"
 unset TEMPLATECONF
 END

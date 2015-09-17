@@ -229,6 +229,7 @@ do_prepare_release () {
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw bitbake; then
+        bitbake_dir="$(which bitbake)"
         found_bitbake=0
         bb_layers | while read path _; do
             case "$bitbake_dir" in
