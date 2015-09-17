@@ -4,7 +4,7 @@ LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=3f40d7994397109285ec7b81fdeb3b58 \
                     file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
 INHIBIT_DEFAULT_DEPS = "1"
-DEPENDS += "${RELEASE_IMAGE}"
+DEPENDS += "${@bb.utils.contains_any('RELEASE_ARTIFACTS', 'images downloads sstate', '${RELEASE_IMAGE}', '', d)}"
 PROVIDES += "mel-release"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 PACKAGES = ""
@@ -27,9 +27,18 @@ def configured_update_layers(d):
             update_layers.add(layer)
     return ' '.join(update_layers)
 
+def configured_mx6_layers(d):
+    """Return the mx6 layers to be archived as individual tarballs"""
+    mx6_layers = set()
+    for layer in d.getVar('BBLAYERS', True).split():
+        basename = os.path.basename(layer)
+        if 'mx6' in basename:
+            mx6_layers.add(layer)
+    return ' '.join(mx6_layers)
+
 # Sub-layers to archive individually, rather than grabbing the entire
 # repository they're in
-SUBLAYERS_INDIVIDUAL_ONLY ?= ""
+SUBLAYERS_INDIVIDUAL_ONLY ?= "${@configured_mx6_layers(d)}"
 SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL ?= "${@configured_update_layers(d)}"
 
 DUMP_HEADREVS_DB ?= ""
@@ -124,7 +133,7 @@ git_tar () {
         fi
         git --git-dir=$repo/.git archive --format=tar --prefix="$name/" HEAD | bzip2 >deploy/${name}_${version}.tar.bz2
     else
-        release_tar $repo "$@" "--transform=s,^$repo,$name," -cjf deploy/$name.tar.bz2
+        release_tar $repo "$@" -cjf deploy/$name.tar.bz2
     fi
 }
 
@@ -169,9 +178,9 @@ bb_layers () {
             layer_relpath=$repo_name/$layer_relpath
         fi
 
-        if echo "${SUBLAYERS_INDIVIDUAL_ONLY}" | grep -w "$layer"; then
+        if echo "${SUBLAYERS_INDIVIDUAL_ONLY}" | grep -qw "$layer"; then
             printf "%s %s\n" "$layer" "$layer_relpath"
-        elif echo "${SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL}" | grep -w "$layer"; then
+        elif echo "${SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL}" | grep -qw "$layer"; then
             printf "%s %s\n" "$layer" "${layer##*/}"
         else
             printf "%s %s\n" "$topdir" "$layer_relpath"
@@ -222,9 +231,17 @@ do_prepare_release () {
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw layers; then
         >deploy/${MACHINE}-layers.txt
-        bb_layers | cut -d" " -f1 | sort -u | while read path; do
-            basename $path >>deploy/${MACHINE}-layers.txt
-            git_tar $path
+        bb_layers | sort -k1,1 -u | while read path relpath; do
+            name="${path##*/}"
+
+            echo "$name" >>deploy/${MACHINE}-layers.txt
+            if [ "$path" = "${MELDIR}/$relpath" ]; then
+                git_tar "$path" "--transform=s,^$path,$relpath,"
+            else
+                # Grab the entire toplevel dir for non-individually-archived
+                # sub-layers
+                git_tar "$path" "--transform=s,^$path,$name,"
+            fi
         done
     fi
 
@@ -241,7 +258,8 @@ do_prepare_release () {
         done
         if [ $found_bitbake -eq 0 ]; then
             # Likely using separate bitbake rather than poky
-            git_tar "$(repo_root $(dirname $(which bitbake))/..)"
+            bitbake_path="$(repo_root $(dirname $(which bitbake))/..)"
+            git_tar "$(repo_root $(dirname $(which bitbake))/..)" "--transform=s,^$bitbake_path,${bitbake_path##*/},"
         fi
     fi
 
