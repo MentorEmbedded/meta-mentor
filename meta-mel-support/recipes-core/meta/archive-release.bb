@@ -124,7 +124,7 @@ git_tar () {
         fi
         git --git-dir=$repo/.git archive --format=tar --prefix="$name/" HEAD | bzip2 >deploy/${name}_${version}.tar.bz2
     else
-        release_tar $repo "$@" "--transform=s,^$repo,$name," -cjf deploy/$name.tar.bz2
+        release_tar $repo "$@" -cjf deploy/$name.tar.bz2
     fi
 }
 
@@ -169,9 +169,9 @@ bb_layers () {
             layer_relpath=$repo_name/$layer_relpath
         fi
 
-        if echo "${SUBLAYERS_INDIVIDUAL_ONLY}" | grep -w "$layer"; then
+        if echo "${SUBLAYERS_INDIVIDUAL_ONLY}" | grep -qw "$layer"; then
             printf "%s %s\n" "$layer" "$layer_relpath"
-        elif echo "${SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL}" | grep -w "$layer"; then
+        elif echo "${SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL}" | grep -qw "$layer"; then
             printf "%s %s\n" "$layer" "${layer##*/}"
         else
             printf "%s %s\n" "$topdir" "$layer_relpath"
@@ -222,9 +222,17 @@ do_prepare_release () {
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw layers; then
         >deploy/${MACHINE}-layers.txt
-        bb_layers | cut -d" " -f1 | sort -u | while read path; do
-            basename $path >>deploy/${MACHINE}-layers.txt
-            git_tar $path
+        bb_layers | sort -k1,1 -u | while read path relpath; do
+            name="${path##*/}"
+
+            echo "$name" >>deploy/${MACHINE}-layers.txt
+            if [ "$path" = "${MELDIR}/$relpath" ]; then
+                git_tar "$path" "--transform=s,^$path,$relpath,"
+            else
+                # Grab the entire toplevel dir for non-individually-archived
+                # sub-layers
+                git_tar "$path" "--transform=s,^$path,$name,"
+            fi
         done
     fi
 
@@ -241,7 +249,8 @@ do_prepare_release () {
         done
         if [ $found_bitbake -eq 0 ]; then
             # Likely using separate bitbake rather than poky
-            git_tar "$(repo_root $(dirname $(which bitbake))/..)"
+            bitbake_path="$(repo_root $(dirname $(which bitbake))/..)"
+            git_tar "$(repo_root $(dirname $(which bitbake))/..)" "--transform=s,^$bitbake_path,${bitbake_path##*/},"
         fi
     fi
 
