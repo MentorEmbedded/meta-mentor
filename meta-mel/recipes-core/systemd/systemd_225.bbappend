@@ -15,3 +15,7 @@ EXTRA_OECONF := "${@oe_filter_out('--with-sysvrcnd=${sysconfdir}' if 'mel' in OV
 PACKAGECONFIG[sysvcompat] = "--with-sysvrcnd-path=${sysconfdir},--with-sysvinit-path= --with-sysvrcnd-path=,"
 
 RRECOMMENDS_udev += "udev-extraconf"
+
+# Workaround for GCC 5.2 builds on ARM
+FULL_OPTIMIZATION_remove_arm = "-O2"
+FULL_OPTIMIZATION_arm =+ "-O1"
