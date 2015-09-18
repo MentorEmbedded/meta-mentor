@@ -25,6 +25,7 @@ SRC_URI += "\
     file://configs.cfg \
     file://autofs.cfg \
     file://filesystems.cfg \
+    file://ipv6.cfg \
 "
 
 # GCC-5.x updates to fix the build issue
