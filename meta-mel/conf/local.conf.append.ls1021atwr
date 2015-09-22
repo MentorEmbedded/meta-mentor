@@ -8,12 +8,12 @@ EXTRA_IMAGES_ARCHIVE_RELEASE = "rcw boot"
 DISTRO_FEATURES_remove = "pulseaudio"
 
 # Add file names to go into Boot directory of Sd-card used by wic
-IMAGE_BOOT_FILES =  "uImage\
-                     uImage-ls1021a-twr.dtb\
-                     u-boot-nor.bin\
-                     u-boot-lpuart.bin\
-                     rcw/ls1021atwr/RSR_PPS_70/rcw_1000.bin\
-                     rcw/ls1021atwr/SSR_PPN_20/rcw_1000_lpuart.bin\
+IMAGE_BOOT_FILES =  "uImage \
+                     uImage-ls1021a-twr.dtb \
+                     u-boot-nor.bin \
+                     u-boot-lpuart.bin \
+                     rcw/ls1021atwr/RSR_PPS_70/rcw_1000.bin \
+                     rcw/ls1021atwr/SSR_PPN_20/rcw_1000_lpuart.bin \
                     "
 
 # Install all available kernel modules
