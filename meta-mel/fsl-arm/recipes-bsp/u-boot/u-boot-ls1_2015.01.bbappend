@@ -18,6 +18,11 @@ do_compile_append () {
 }
 
 do_deploy () {
-   install -m 0755 ${S}/ls1021atwr_nor_config/u-boot.bin  ${DEPLOY_DIR_IMAGE}/u-boot-nor.bin
-   install -m 0755 ${S}/ls1021atwr_nor_lpuart_config/u-boot.bin ${DEPLOY_DIR_IMAGE}/u-boot-lpuart.bin
+   install -d ${DEPLOYDIR}
+   install ${S}/ls1021atwr_nor_config/u-boot.bin ${DEPLOYDIR}/u-boot-nor-${MACHINE}-${PV}-${PR}.${UBOOT_SUFFIX}
+   install ${S}/ls1021atwr_nor_lpuart_config/u-boot.bin ${DEPLOYDIR}/u-boot-lpuart-${MACHINE}-${PV}-${PR}.${UBOOT_SUFFIX}
+
+   cd ${DEPLOYDIR}
+   ln -sf u-boot-nor-${MACHINE}-${PV}-${PR}.${UBOOT_SUFFIX} u-boot-nor.${UBOOT_SUFFIX}
+   ln -sf u-boot-lpuart-${MACHINE}-${PV}-${PR}.${UBOOT_SUFFIX} u-boot-lpuart.${UBOOT_SUFFIX}
 }
