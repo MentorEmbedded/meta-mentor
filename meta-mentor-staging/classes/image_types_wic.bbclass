@@ -2,7 +2,7 @@ WKS_FILE ?= "${FILE_DIRNAME}/${IMAGE_BASENAME}.${MACHINE}.wks"
 WKS_SEARCH_PATH ?= "\
     ${COREBASE}/scripts/lib/wic/canned-wks \
     \
-    ${@' '.join('%s/scripts/lib/image/canned-wks' % l for l in '${BBLAYERS}'.split())} \
+    ${@' '.join('%s/scripts/lib/wic/canned-wks' % l for l in '${BBLAYERS}'.split())} \
     ${@' '.join('%s/wks' % l for l in '${BBLAYERS}'.split())} \
 "
 WKS_FULL_PATH = "${@wic_which('${WKS_FILE}', '${WKS_SEARCH_PATH}'.split(), '${WKS_FILE}') if not os.path.isabs('${WKS_FILE}') else '${WKS_FILE}'}"
