@@ -1,0 +1,8 @@
+# Support for SD boot has not been verified for P1020RDB. UBOOT_BINARY
+# will be placed in the boot partition however so that the user may
+# have a choice of manually updating u-boot
+
+# P1020RDB boots from NAND, with default switch settings
+UBOOT_BINARY ?= "u-boot-nand-P1020RDB-PD_NAND.bin"
+
+require conf/include/e500v2-wic.inc
