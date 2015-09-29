@@ -8,7 +8,8 @@ SRC_URI_append_mel = "\
     file://0001-systemd-udevd-propagate-mounts-umounts-services-to-s.patch \
 "
 
-PACKAGECONFIG[defaultval] .= "${@' sysvcompat' if 'mel' in OVERRIDES.split(':') else ''}"
+MEL_PACKAGECONFIG = ""
+MEL_PACKAGECONFIG_mel = " sysvcompat"
+PACKAGECONFIG[defaultval] .= "${MEL_PACKAGECONFIG}"
 
-EXTRA_OECONF := "${@oe_filter_out('--with-sysvrcnd=${sysconfdir}' if 'mel' in OVERRIDES.split(':') else '', EXTRA_OECONF, d)}"
-PACKAGECONFIG[sysvcompat] = "--with-sysvrcnd-path=${sysconfdir},--with-sysvinit-path= --with-sysvrcnd-path=,"
+PACKAGECONFIG[sysvcompat] = "--with-sysvinit-path=${sysconfdir},--with-sysvinit-path= --with-sysvrcnd-path=,"
