@@ -12,4 +12,4 @@ MEL_PACKAGECONFIG = ""
 MEL_PACKAGECONFIG_mel = " sysvcompat"
 PACKAGECONFIG[defaultval] .= "${MEL_PACKAGECONFIG}"
 
-PACKAGECONFIG[sysvcompat] = "--with-sysvinit-path=${sysconfdir},--with-sysvinit-path= --with-sysvrcnd-path=,"
+PACKAGECONFIG[sysvcompat] = "--with-sysvinit-path=${sysconfdir}/init.d --with-sysvrcnd-path=${sysconfdir},--with-sysvinit-path= --with-sysvrcnd-path=,"
