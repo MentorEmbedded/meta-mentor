@@ -1,1 +1,12 @@
 UBOOT_MACHINES = " P2020RDB-PC P2020RDB-PC_NAND P2020RDB-PC_SDCARD P2020RDB-PC_SPIFLASH" 
+
+# WIC support
+# Support for SD boot has not been verified for P2020RDB. UBOOT_BINARY
+# will be placed in the boot partition however so that the user may
+# have a choice of manually updating u-boot
+
+# With default switch settings, P2020RDB boots from primary NOR bank
+# Following binary can be flashed to either NOR bank
+UBOOT_BINARY ?= "u-boot-P2020RDB-PC.bin"
+
+require conf/include/e500v2-wic.inc
