@@ -7,7 +7,7 @@ IMAGE_BOOT_FILES ?= "${KERNEL_IMAGETYPE} ${UBOOT_BINARY} \
 
 # WIC image type support
 IMAGE_FSTYPES += "wic.bz2"
-WKS_FILE ?= "${MACHINE}.wks"
+WKS_FILE ?= "sdimage-bootpart-4g.wks"
 
 # u-boot is needed for our IMAGE_BOOT_FILES
 IMAGE_DEPENDS_wic_append = " virtual/bootloader"

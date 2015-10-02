@@ -23,11 +23,9 @@ MACHINE_EXTRA_RRECOMMENDS_append_ls1021atwr = " kernel-modules"
 UBOOT_SUFFIX ?= "bin"
 
 # WIC image type support
-IMAGE_FSTYPES ?= "tar.bz2 wic.bz2"
-WKS_FILE ?= "${MACHINE}.wks"
+WKS_FILE ?= "sdimage-bootpart-4g.wks"
 
 # u-boot is needed for our IMAGE_BOOT_FILES
 IMAGE_DEPENDS_wic_append = " virtual/bootloader"
 
-# dosfstools is needed to create the boot partition, mtools to copy to it
-IMAGE_DEPENDS_wic_append = " dosfstools-native mtools-native"
+require conf/include/wic-common.inc
