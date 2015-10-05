@@ -1,3 +1,7 @@
+# Build only NOR u-boot
+UBOOT_MACHINES ?= "P1020RDB-PD"
+
+# Wic support
 # Support for SD boot has not been verified for P1020RDB. UBOOT_BINARY
 # will be placed in the boot partition however so that the user may
 # have a choice of manually updating u-boot
@@ -6,4 +10,4 @@
 # Following binary can be flashed to either NOR bank
 UBOOT_BINARY ?= "u-boot-P1020RDB-PD.bin"
 
-require conf/include/e500v2-wic.inc
+require conf/include/wic-ppc.inc

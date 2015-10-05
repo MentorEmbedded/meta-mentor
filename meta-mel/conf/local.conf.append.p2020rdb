@@ -1,4 +1,5 @@
-UBOOT_MACHINES = " P2020RDB-PC P2020RDB-PC_NAND P2020RDB-PC_SDCARD P2020RDB-PC_SPIFLASH" 
+# Only build NOR u-boot
+UBOOT_MACHINES = " P2020RDB-PC"
 
 # WIC support
 # Support for SD boot has not been verified for P2020RDB. UBOOT_BINARY
@@ -9,4 +10,4 @@ UBOOT_MACHINES = " P2020RDB-PC P2020RDB-PC_NAND P2020RDB-PC_SDCARD P2020RDB-PC_S
 # Following binary can be flashed to either NOR bank
 UBOOT_BINARY ?= "u-boot-P2020RDB-PC.bin"
 
-require conf/include/e500v2-wic.inc
+require conf/include/wic-ppc.inc
