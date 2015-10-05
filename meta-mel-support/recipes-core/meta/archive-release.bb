@@ -122,18 +122,28 @@ release_tar () {
 }
 
 git_tar () {
-    repo=$1
+    path="$1"
     shift
-    name=`basename $repo`
-    if [ -e $repo/.git ]; then
+    name="$(basename "$path")"
+
+    if [ -e "$path/.git" ]; then
         if [ "${@oe.data.typed_value('RELEASE_USE_TAGS', d)}" = "True" ]; then
-            version=$(git --git-dir=$repo/.git describe --tags)
+            version="$(git --git-dir="$path/.git" describe --tags)"
         else
-            version=$(git --git-dir=$repo/.git rev-list HEAD | wc -l)
+            version="$(git --git-dir="$path/.git" rev-list HEAD | wc -l)"
         fi
-        git --git-dir=$repo/.git archive --format=tar --prefix="$name/" HEAD | bzip2 >deploy/${name}_${version}.tar.bz2
+        git --git-dir=$path/.git archive --format=tar --prefix="$name/" HEAD | bzip2 >deploy/${name}_${version}.tar.bz2
     else
-        release_tar $repo "$@" -cjf deploy/$name.tar.bz2
+        if repo_root "$path" | grep -q '^${MELDIR}/'; then
+            if [ "${@oe.data.typed_value('RELEASE_USE_TAGS', d)}" = "True" ]; then
+                version=$(cd "$path" && git describe --tags)
+            else
+                version=$(cd "$path" && git rev-list HEAD | wc -l)
+            fi
+            release_tar $path "$@" -cjf deploy/${name}_${version}.tar.bz2
+        else
+            release_tar $path "$@" -cjf deploy/$name.tar.bz2
+        fi
     fi
 }
 
