@@ -1,9 +1,12 @@
+# Build only NOR u-boot
+UBOOT_MACHINES ?= "P1010RDB-PB_NOR"
+
+# Wic support
 # Support for SD boot has not been verified for P1010RDB. UBOOT_BINARY
 # will be placed in the boot partition however so that the user may
 # have a choice of manually updating u-boot
 
-# With default switch settings, P1010RDB boots from NAND
-# so we include the corresponding binary in our WIC image
-UBOOT_BINARY ?= "u-boot-nand-P1010RDB-PB_NAND.bin"
+# Include NOR u-boot binary in the wic image
+UBOOT_BINARY ?= "u-boot-P1010RDB-PB_NOR.bin"
 
-require conf/include/e500v2-wic.inc
+require conf/include/wic-ppc.inc

@@ -3,3 +3,12 @@ BUILD_64BIT_KERNEL_t4240rdb-64b = "1"
 
 #Conditionally set TOOLCHAIN variable to external-sourcery
 TOOLCHAIN = "${@base_contains("TCMODE", "external-sourcery", "external-sourcery", "",d)}"
+
+# WIC support
+# Support for SD boot has not been verified for T4240RDB. UBOOT_BINARY
+# will be placed in the boot partition however so that the user may
+# have a choice of manually updating u-boot
+
+UBOOT_BINARY ?= "u-boot-T4240RDB.bin"
+
+require conf/include/wic-ppc.inc
