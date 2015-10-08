@@ -1,3 +1,5 @@
+inherit image_types
+
 WKS_FILE ?= "${FILE_DIRNAME}/${IMAGE_BASENAME}.${MACHINE}.wks"
 WKS_SEARCH_PATH ?= "\
     ${COREBASE}/scripts/lib/wic/canned-wks \
