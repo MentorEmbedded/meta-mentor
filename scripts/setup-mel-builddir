@@ -37,6 +37,8 @@ Options:
                and the layers
   -l LAYERS    Space-separated list of layer names for additional layers you
                want to be included in the configuration
+  -t           Create toaster configuration file in the build directory with layers
+               configured
   -f           Force overwrite of existing configuration files in the build
                directory. This includes local.conf and bblayers.conf, but not
                site.conf
@@ -143,7 +145,8 @@ process_arguments () {
     OEROOT=
     extralayers=
     force_overwrite=
-    while getopts b:o:l:fh opt; do
+    toasterconfig=
+    while getopts b:o:l:fth opt; do
         case "$opt" in
             b)
                 BUILDDIR="$(abspath $OPTARG)"
@@ -153,6 +156,8 @@ process_arguments () {
                 ;;
             l)
                 extralayers="$OPTARG"
+                ;;
+            t)  toasterconfig="yes"
                 ;;
             f)
                 force_overwrite="-f"
@@ -309,4 +314,8 @@ fi
 MEL_DISTRO="${MEL_DISTRO:-mel}"
 if [ -e $BUILDDIR/conf/local.conf ]; then
     sed -i -e "s/^DISTRO.*/DISTRO = \'$MEL_DISTRO\'/" $BUILDDIR/conf/local.conf
+fi
+
+if [ "$toasterconfig" = "yes" ]; then
+    $layerdir/scripts/toaster_configuration "$BUILDDIR" "$MELDIR"
 fi
