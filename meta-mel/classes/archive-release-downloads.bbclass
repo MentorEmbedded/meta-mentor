@@ -63,16 +63,17 @@ python do_archive_release_downloads () {
         elif u.mirrortarball:
             tarballs = [u.mirrortarball]
         else:
-            continue
+            tarballs = None
 
-        for tarball in tarballs:
-            if tarball:
-                tarball_path = os.path.join(dl_dir, tarball)
-                if os.path.exists(tarball_path):
-                    local = tarball_path
-                    break
-        else:
-            bb.warn('No mirror tarball found for %s, using %s' % (p, local))
+        if tarballs:
+            for tarball in tarballs:
+                if tarball:
+                    tarball_path = os.path.join(dl_dir, tarball)
+                    if os.path.exists(tarball_path):
+                        local = tarball_path
+                        break
+            else:
+                bb.warn('No mirror tarball found for %s, using %s' % (p, local))
 
         oe.path.symlink(local, os.path.join(sources_dir, os.path.basename(local)), force=True)
 }
