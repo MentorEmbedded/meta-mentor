@@ -205,12 +205,6 @@ prepare_templates () {
     if [ -n "${DISTRO}" ]; then
         sed -i 's,^DISTRO =.*,DISTRO = "${DISTRO}",' local.conf.sample
     fi
-    sed -i 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "$,' local.conf.sample
-    if [ "${DISTRO}" = "mel-lite" ]; then
-        sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/../../codebench-lite",' local.conf.sample
-    else
-        sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= "\$\),\1{MELDIR}/../../codebench",' local.conf.sample
-    fi
 
     sourcery_version="$(echo ${SOURCERY_VERSION} | sed 's/-.*$//')"
     if [ -n "$sourcery_version" ]; then
