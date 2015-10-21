@@ -1,0 +1,172 @@
+#!/bin/sh
+#
+# Copyright 2015-2016 Mentor Graphics Corporation
+#
+# This file is licensed under the terms of the GNU General Public License
+# version 2.  This program  is licensed "as is" without any warranty of any
+# kind, whether express or implied.
+
+echo "Creating toaster configuration"
+
+BUILDDIR="$1"
+MELDIR="$2"
+
+
+BBLAYERS=
+configured_layers () {
+   tac "$BUILDDIR/conf/bblayers.conf" | \
+   sed -n -e '/^"/,/^BBLAYERS = /{ /^BBLAYERS =/d; /^"/d; p;}' | \
+   awk {'print $1'}
+}
+
+configured_layers | while read layer; do
+   if [ -d "$layer" ]; then
+       while [ $(dirname $layer) != "${MELDIR}" ];do
+          layer=$(dirname $layer)
+          layername=$(basename $layer)
+       done
+       cd "$layer"
+       if [ ! -d "$PWD/.git" ]; then
+            if [ "$layername" = "poky" ]; then
+                git init . > /dev/null 2>&1
+                git add . > /dev/null 2>&1
+                git commit -m "Initial commit" > /dev/null 2>&1
+                git remote add origin http://169.254.0.1
+            fi
+       fi
+       cd - > /dev/null 2>&1
+   fi
+done
+
+create_toaster_configuration() {
+DISTRO=$(grep "DISTRO =" "$BUILDDIR/conf/local.conf"  | awk {'print $3'} | sed -e s:\'::g)
+MACHINE=$(grep -i "MACHINE ??=" "$BUILDDIR/conf/local.conf" | awk {'print $3'} | sed -e s:\"::g)
+EXTERNAL_TOOLCHAIN=$(grep -i "^EXTERNAL_TOOLCHAIN" "$BUILDDIR/conf/local.conf" | awk {'print $3'})
+
+if [ -n "$EXTERNAL_TOOLCHAIN" ]; then
+   EXTERNAL_TOOLCHAIN=$(eval echo "$EXTERNAL_TOOLCHAIN" &>/dev/null)
+fi
+
+cat <<EOF > "$BUILDDIR"/toasterconf.json
+{
+    "config": {
+        "MACHINE"    : "$MACHINE",
+        "DISTRO"     : "$DISTRO",
+        "IMAGE_INSTALL_append": "",
+        "PACKAGE_CLASSES": "package_ipk",
+        "EXTERNAL_TOOLCHAIN": "$EXTERNAL_TOOLCHAIN",
+        "MGLS_LICENSE_FILE": "",
+        "ACCEPT_FSL_EULA": "",
+        "SDKMACHINE"   : "x86_64"
+    },
+    "layersources": [
+       {
+          "name": "Local Yocto Project",
+          "sourcetype": "local",
+          "apiurl": "../../",
+          "branches": ["HEAD"],
+          "layers": [
+EOF
+
+configured_layers | while read layer; do
+   name=
+   layername=$(basename "$layer")
+   cd $layer
+   if [ "$layername" = "meta" ]; then
+        layername="openembedded-core"
+   fi
+   cat <<EOF >> "$BUILDDIR"/toasterconf.json
+              {
+                  "name": "$layername",
+                  "local_path": "$layer",
+                  "vcs_url": "remote:origin",
+                  "dirpath": "$layer"
+              },
+EOF
+cd - > /dev/null 2>&1
+done
+
+sed -i '$ s/,$//' "$BUILDDIR"/toasterconf.json
+
+cat <<EOF >> "$BUILDDIR"/toasterconf.json
+            ]
+        },
+        {
+            "name": "Imported layers",
+            "sourcetype": "imported",
+            "apiurl": "",
+            "branches": ["HEAD"]
+
+        }
+    ],
+EOF
+
+bitbake_path=
+bitbake_path=$(configured_layers | while read layer; do
+    layer_name=$(basename "$layer")
+    if [ "$layer_name" = "meta" ]; then
+         dirpath=$(dirname "$layer")
+         bitbake_path="$dirpath"/bitbake
+         echo "$bitbake_path"
+         break
+    fi
+done)
+
+cat <<EOF >> "$BUILDDIR"/toasterconf.json
+    "bitbake" : [
+        {
+            "name": "HEAD",
+            "giturl": "remote:origin",
+            "branch": "HEAD",
+            "dirpath": "bitbake"
+        }
+    ],
+
+    "defaultrelease": "local",
+
+    "releases": [
+        {
+            "name": "local",
+            "description": "Local Yocto Project",
+            "bitbake": "HEAD",
+            "branch": "HEAD",
+EOF
+
+DEFAULTLAYERS=""
+DEFAULTLAYERS=$(configured_layers | while read -r layer; do
+    layername=$(basename "$layer")
+    if [ "$layername" = "meta" ]; then
+          layername="openembedded-core"
+    fi
+    DEFAULTLAYERS="$DEFAULTLAYERS \"$layername\","
+    echo "$DEFAULTLAYERS"
+done)
+DEFAULTLAYERS=$(echo "$DEFAULTLAYERS" | sed -n '$p' | sed '$ s/,$//')
+
+cat <<EOF >> "$BUILDDIR"/toasterconf.json
+            "defaultlayers": [ $DEFAULTLAYERS ],
+            "layersourcepriority": { "Imported layers": 99, "Local Yocto Project" : 10 },
+            "helptext": "Toaster will run your builds with the version of the Yocto Project you have cloned or downloaded to your computer."
+        }
+    ]
+}
+EOF
+}
+
+create_toaster_setupscript() {
+POKYDIR=$(configured_layers | while read layer; do
+    layername=$(basename "$layer")
+    if [ "$layername" = "meta" ]; then
+          POKYDIR=$(dirname "$layer")
+          echo "$POKYDIR"
+    fi
+done)
+   cat <<EOF > "$BUILDDIR"/toaster-setup-environment
+export TOASTER_CONF=$BUILDDIR/toasterconf.json
+$POKYDIR/bitbake/bin/toaster
+unset TOASTER_CONF
+EOF
+}
+
+create_toaster_configuration
+create_toaster_setupscript
