@@ -5,7 +5,6 @@ SRC_URI_append_mel = "\
     file://remove-links.patch \
     file://legacy-conf.patch \
     file://fix-systemd-log-level.patch \
-    file://0001-systemd-udevd-propagate-mounts-umounts-services-to-s.patch \
 "
 
 MEL_PACKAGECONFIG = ""
