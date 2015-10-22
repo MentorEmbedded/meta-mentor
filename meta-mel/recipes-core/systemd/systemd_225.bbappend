@@ -2,7 +2,6 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-${PV}:${THISDIR}/${PN}:"
 
 # Do these patches really belong in meta-mel?
 SRC_URI_append_mel = "\
-    file://legacy-conf.patch \
     file://fix-systemd-log-level.patch \
 "
 
