@@ -14,7 +14,7 @@ LIC_FILES_CHKSUM = " \
 PV_append = "+fslgit"
 INHIBIT_DEFAULT_DEPS = "1"
 TOOLCHAIN ?= "external-fsl"
-DEPENDS = "boot-format-native libgcc ${@base_contains('TCMODE', '${TOOLCHAIN}', '', 'virtual/${TARGET_PREFIX}gcc', d)}"
+DEPENDS = "boot-format-native libgcc virtual/${TARGET_PREFIX}gcc"
 
 inherit deploy
 
