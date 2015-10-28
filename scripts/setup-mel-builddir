@@ -244,6 +244,10 @@ setup_builddir () {
         echo "You had no local.conf file. This configuration file has therefore been"
         echo "created for you with some default values."
 
+        if [ -d "$MELDIR/../../codebench" ]; then
+            sed -i -e 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "${MELDIR}/../../codebench",' "$BUILDDIR/conf/local.conf"
+        fi
+
         (
             JOBS_FACTOR="2"
             THREADS_FACTOR="3 / 2"
@@ -314,6 +318,9 @@ fi
 MEL_DISTRO="${MEL_DISTRO:-mel}"
 if [ -e $BUILDDIR/conf/local.conf ]; then
     sed -i -e "s/^DISTRO.*/DISTRO = \'$MEL_DISTRO\'/" $BUILDDIR/conf/local.conf
+    if [ -d "$MELDIR/../../codebench-lite" ]; then
+        sed -i -e 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "${MELDIR}/../../codebench-lite",' "$BUILDDIR/conf/local.conf"
+    fi
 fi
 
 if [ "$toasterconfig" = "yes" ]; then
