@@ -9,4 +9,9 @@ UBOOT_MACHINES ?= "P1010RDB-PB_NOR"
 # Include NOR u-boot binary in the wic image
 UBOOT_BINARY ?= "u-boot-P1010RDB-PB_NOR.bin"
 
+# Uncomment one of these for specific SD card sizes (default=4g)
+#WKS_FILE ?= "sdimage-bootpart-2g.wks"
+WKS_FILE ?= "sdimage-bootpart-4g.wks"
+#WKS_FILE ?= "sdimage-bootpart-8g.wks"
+
 require conf/include/wic-ppc.inc
