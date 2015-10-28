@@ -22,8 +22,10 @@ MACHINE_EXTRA_RRECOMMENDS_append_ls1021atwr = " kernel-modules"
 # WIC image type support
 UBOOT_SUFFIX ?= "bin"
 
-# WIC image type support
+# Uncomment one of these for specific SD card sizes (default=4g)
 WKS_FILE ?= "sdimage-bootpart-4g.wks"
+# WKS_FILE ?= "sdimage-bootpart-2g.wks"
+# WKS_FILE ?= "sdimage-bootpart-8g.wks"
 
 # u-boot is needed for our IMAGE_BOOT_FILES
 IMAGE_DEPENDS_wic_append = " virtual/bootloader"
