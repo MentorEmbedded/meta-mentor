@@ -1,5 +1,6 @@
-# Build only NOR u-boot
-UBOOT_MACHINES ?= "P1010RDB-PB_NOR"
+# Only build 32-bit u-boot binaries
+# This disables generation of 36-bit and SECBOOT u-boot binaries
+UBOOT_MACHINES ?= "P1010RDB-PB_NAND P1010RDB-PB_NOR P1010RDB-PB_SPIFLASH"
 
 # Wic support
 # Support for SD boot has not been verified for P1010RDB. UBOOT_BINARY
