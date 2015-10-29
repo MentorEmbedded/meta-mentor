@@ -10,4 +10,9 @@ UBOOT_MACHINES ?= "P1020RDB-PD"
 # Following binary can be flashed to either NOR bank
 UBOOT_BINARY ?= "u-boot-P1020RDB-PD.bin"
 
+# Uncomment one of these for specific SD card sizes (default=4g)
+#WKS_FILE ?= "sdimage-bootpart-2g.wks"
+WKS_FILE ?= "sdimage-bootpart-4g.wks"
+#WKS_FILE ?= "sdimage-bootpart-8g.wks"
+
 require conf/include/wic-ppc.inc
