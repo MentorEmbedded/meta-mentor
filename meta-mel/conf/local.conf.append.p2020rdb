@@ -1,5 +1,5 @@
-# Only build NOR u-boot
-UBOOT_MACHINES = " P2020RDB-PC"
+# Only build 32-bit u-boot binaries
+UBOOT_MACHINES = "P2020RDB-PC P2020RDB-PC_NAND P2020RDB-PC_SDCARD P2020RDB-PC_SPIFLASH"
 
 # WIC support
 # Support for SD boot has not been verified for P2020RDB. UBOOT_BINARY
