@@ -1,1 +1,1 @@
-DEPENDS += "avahi libaio"
+DEPENDS += "avahi libaio acl"
