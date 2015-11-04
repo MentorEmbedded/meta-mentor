@@ -161,6 +161,11 @@ POKYDIR=$(configured_layers | while read layer; do
           echo "$POKYDIR"
     fi
 done)
+
+if [ -d "${BUILDDIR}/../downloads" ]; then
+  ln -sf "${BUILDDIR}/../downloads" "${BUILDDIR}/"
+fi
+
    cat <<EOF > "$BUILDDIR"/toaster-setup-environment
 export TOASTER_CONF=$BUILDDIR/toasterconf.json
 $POKYDIR/bitbake/bin/toaster
