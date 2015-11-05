@@ -10,7 +10,17 @@ CFLAGS .= "${@base_contains('PACKAGECONFIG', 'valgrind$', ' -DVALGRIND=1', '', d
 
 do_install_append() {
 	install -m 0644 ${WORKDIR}/01-create-run-lock.conf ${D}${sysconfdir}/tmpfiles.d/
+
+	if ! ${@bb.utils.contains('PACKAGECONFIG', 'resolved', 'true', 'false', d)}; then
+		# if resolved is disabled, it won't handle the link of resolv.conf, so
+		# set it up ourselves
+		ln -s ../run/resolv.conf ${D}${sysconfdir}/resolv.conf
+		echo 'L! ${sysconfdir}/resolv.conf - - - - ../run/resolv.conf' >>${D}${exec_prefix}/lib/tmpfiles.d/etc.conf
+		echo 'f /run/resolv.conf 0644 root root' >>${D}${exec_prefix}/lib/tmpfiles.d/systemd.conf
+	fi
 }
+
+FILES_${PN} += "${sysconfdir}/resolv.conf"
 
 pkg_postinst_${PN} () {
 	sed -e '/^hosts:/s/\s*\<myhostname\>//' \
@@ -33,4 +43,3 @@ pkg_postinst_udev-hwdb () {
 		udevadm hwdb --update
 	fi
 }
-
