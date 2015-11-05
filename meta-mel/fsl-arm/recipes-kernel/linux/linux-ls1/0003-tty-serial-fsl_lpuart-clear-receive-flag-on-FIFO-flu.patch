@@ -1,0 +1,44 @@
+From c7a3fdfe6a22fa2a65495c699c6edbc7a50e2f9f Mon Sep 17 00:00:00 2001
+From: Stefan Agner <stefan@agner.ch>
+Date: Fri, 13 Mar 2015 14:51:51 +0100
+Subject: [PATCH 3/3] tty: serial: fsl_lpuart: clear receive flag on FIFO flush
+
+When the receiver was enabled during startup, a character could
+have been in the FIFO when the UART get initially used. The
+driver configures the (receive) watermark level, and flushes the
+FIFO. However, the receive flag (RDRF) could still be set at that
+stage (as mentioned in the register description of UARTx_RWFIFO).
+This leads to an interrupt which won't be handled properly in
+interrupt mode: The receive interrupt function lpuart_rxint checks
+the FIFO count, which is 0 at that point (due to the flush
+during initialization). The problem does not manifest when using
+DMA to receive characters.
+
+Fix this situation by explicitly read the status register, which
+leads to clearing of the RDRF flag. Due to the flush just after
+the status flag read, a explicit data read is not to required.
+
+Signed-off-by: Stefan Agner <stefan@agner.ch>
+Cc: stable <stable@vger.kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/tty/serial/fsl_lpuart.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/tty/serial/fsl_lpuart.c b/drivers/tty/serial/fsl_lpuart.c
+index f93c63b..4b3eff6 100644
+--- a/drivers/tty/serial/fsl_lpuart.c
++++ b/drivers/tty/serial/fsl_lpuart.c
+@@ -678,6 +678,9 @@ static void lpuart_setup_watermark(struct lpuart_port *sport)
+ 	writeb(val | UARTPFIFO_TXFE | UARTPFIFO_RXFE,
+ 			sport->port.membase + UARTPFIFO);
+ 
++	/* explicitly clear RDRF */
++	readb(sport->port.membase + UARTSR1);
++
+ 	/* flush Tx and Rx FIFO */
+ 	writeb(UARTCFIFO_TXFLUSH | UARTCFIFO_RXFLUSH,
+ 			sport->port.membase + UARTCFIFO);
+-- 
+1.9.1
+

@@ -1,0 +1,42 @@
+From 89c44f92c730cb7436ae841234397ac500e1495f Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Fri, 7 Nov 2014 00:23:14 -0200
+Subject: [PATCH 2/3] serial: fsl_lpuart: Remove unneeded registration message
+
+There is no real value in displaying "serial: Freescale lpuart driver" in every
+boot.
+
+The uart_register_driver() can fail and even so the "serial: Freescale lpuart
+driver" will be displayed, which is not really helpful.
+
+This is particularly annoying when booting multi_v7_defconfig kernel on a SoC
+that is not a Vybrid/Layerscape and even though this message gets displayed.
+
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Acked-by: Jingchang Lu <jingchang.lu@freescale.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ drivers/tty/serial/fsl_lpuart.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/drivers/tty/serial/fsl_lpuart.c b/drivers/tty/serial/fsl_lpuart.c
+index f34d67d..f93c63b 100644
+--- a/drivers/tty/serial/fsl_lpuart.c
++++ b/drivers/tty/serial/fsl_lpuart.c
+@@ -1515,11 +1515,8 @@ static struct platform_driver lpuart_driver = {
+ 
+ static int __init lpuart_serial_init(void)
+ {
+-	int ret;
+-
+-	pr_info("serial: Freescale lpuart driver\n");
++	int ret = uart_register_driver(&lpuart_reg);
+ 
+-	ret = uart_register_driver(&lpuart_reg);
+ 	if (ret)
+ 		return ret;
+ 
+-- 
+1.9.1
+

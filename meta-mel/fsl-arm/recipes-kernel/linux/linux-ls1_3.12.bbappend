@@ -20,6 +20,9 @@ python () {
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 SRC_URI += "\
     file://unionfs-2.6_for_3.12.26.patch \
+    file://0001-serial-fsl_lpuart-Remove-unneeded-check-for-res.patch \
+    file://0002-serial-fsl_lpuart-Remove-unneeded-registration-messa.patch \
+    file://0003-tty-serial-fsl_lpuart-clear-receive-flag-on-FIFO-flu.patch \
     \
     file://kgdb.cfg \
     file://configs.cfg \
