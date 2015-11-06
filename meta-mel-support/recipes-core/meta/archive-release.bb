@@ -4,7 +4,6 @@ LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=3f40d7994397109285ec7b81fdeb3b58 \
                     file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
 INHIBIT_DEFAULT_DEPS = "1"
-DEPENDS += "${@bb.utils.contains_any('RELEASE_ARTIFACTS', 'images downloads sstate', '${RELEASE_IMAGE}', '', d)}"
 PROVIDES += "mel-release"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 PACKAGES = ""
@@ -408,13 +407,11 @@ do_prepare_release[dirs] =+ "${DEPLOY_DIR_RELEASE} ${MELDIR} ${S}"
 do_prepare_release[cleandirs] = "${S}"
 
 # Ensure that all our dependencies are entirely built
-do_prepare_release[deptask] += "do_${BB_DEFAULT_TASK}"
+do_prepare_release[depends] += "${@bb.utils.contains('RELEASE_ARTIFACTS', 'images', '${RELEASE_IMAGE}:do_${BB_DEFAULT_TASK}', '', d) if '${RELEASE_IMAGE}' else ''}"
 
-# Ensure that all the license-filtered downloads are available
-python () {
-    if oe.utils.inherits(d, 'archive-release-downloads'):
-        bb.build.addtask('do_prepare_release', '', 'do_archive_release_downloads_all', d)
-}
+# When archiving downloads, make sure they're fetched
+FETCHALL_TASK = "${@'do_archive_release_downloads_all' if oe.utils.inherits(d, 'archive-release-downloads') else 'do_fetchall'}"
+do_prepare_release[depends] += "${@bb.utils.contains('RELEASE_ARTIFACTS', 'downloads', '${RELEASE_IMAGE}:${FETCHALL_TASK}', '', d) if '${RELEASE_IMAGE}' else ''}"
 
 do_configure[noexec] = "1"
 do_compile[noexec] = "1"
@@ -426,3 +423,10 @@ do_package_write[noexec] = "1"
 do_package_write_ipk[noexec] = "1"
 do_package_write_deb[noexec] = "1"
 do_package_write_rpm[noexec] = "1"
+
+python () {
+    if not bb.utils.contains('RELEASE_ARTIFACTS', 'sstate', True, False, d):
+        # If we aren't packaging sstate, there's no need to suck in all the
+        # packaging functions recursively
+        d.delVarFlag('do_build', 'recrdeptask')
+}
