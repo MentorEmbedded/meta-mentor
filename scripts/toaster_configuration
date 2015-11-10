@@ -162,8 +162,8 @@ POKYDIR=$(configured_layers | while read layer; do
     fi
 done)
 
-if [ -d "${BUILDDIR}/../downloads" ]; then
-  ln -sf "${BUILDDIR}/../downloads" "${BUILDDIR}/"
+if [ -d "${MELDIR}/downloads" ]; then
+  ln -sf "${MELDIR}/downloads" "${BUILDDIR}/"
 fi
 
    cat <<EOF > "$BUILDDIR"/toaster-setup-environment
