@@ -1,11 +1,7 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${BPN}:"
 SRC_URI += "\
     file://0001-systemd-udevd-propagate-mounts-umounts-services-to-s.patch \
-    file://add-argument-for-valgrind.patch \
 "
-
-PACKAGECONFIG[valgrind] = "--with-valgrind,--without-valgrind,valgrind,"
-CFLAGS .= "${@base_contains('PACKAGECONFIG', 'valgrind$', ' -DVALGRIND=1', '', d)}"
 
 do_install_append() {
 	if ! ${@bb.utils.contains('PACKAGECONFIG', 'resolved', 'true', 'false', d)}; then
