@@ -52,16 +52,6 @@ def tinfoil_init(instance):
     tinfoil = instance
 
 
-def _provide_to_pn(cooker, provide):
-    """Get the name of the preferred recipe for the specified provide."""
-    import bb.providers
-    filenames = cooker.recipecache.providers[provide]
-    eligible, foundUnique = bb.providers.filterProviders(filenames, provide, cooker.expanded_data, cooker.recipecache)
-    filename = eligible[0]
-    pn = cooker.recipecache.pkg_fn[filename]
-    return pn
-
-
 def _get_recipe_file(cooker, pn):
     import oe.recipeutils
     recipefile = oe.recipeutils.pn_to_recipe(cooker, pn)
@@ -76,8 +66,7 @@ def _get_recipe_file(cooker, pn):
 
 def _parse_recipe(provide, tinfoil):
     import oe.recipeutils
-    pn = _provide_to_pn(tinfoil.cooker, provide)
-    recipefile = _get_recipe_file(tinfoil.cooker, pn)
+    recipefile = _get_recipe_file(tinfoil.cooker, provide)
     if not recipefile:
         # Error already logged
         return None
