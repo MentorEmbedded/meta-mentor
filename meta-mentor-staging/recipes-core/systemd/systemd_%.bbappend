@@ -2,15 +2,12 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/${BPN}:"
 SRC_URI += "\
     file://0001-systemd-udevd-propagate-mounts-umounts-services-to-s.patch \
     file://add-argument-for-valgrind.patch \
-    file://01-create-run-lock.conf \
 "
 
 PACKAGECONFIG[valgrind] = "--with-valgrind,--without-valgrind,valgrind,"
 CFLAGS .= "${@base_contains('PACKAGECONFIG', 'valgrind$', ' -DVALGRIND=1', '', d)}"
 
 do_install_append() {
-	install -m 0644 ${WORKDIR}/01-create-run-lock.conf ${D}${sysconfdir}/tmpfiles.d/
-
 	if ! ${@bb.utils.contains('PACKAGECONFIG', 'resolved', 'true', 'false', d)}; then
 		# if resolved is disabled, it won't handle the link of resolv.conf, so
 		# set it up ourselves
