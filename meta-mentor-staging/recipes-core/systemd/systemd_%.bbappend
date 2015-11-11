@@ -14,15 +14,3 @@ do_install_append() {
 }
 
 FILES_${PN} += "${sysconfdir}/resolv.conf"
-
-pkg_postinst_${PN} () {
-	sed -e '/^hosts:/s/\s*\<myhostname\>//' \
-		-e 's/\(^hosts:.*\)\(\<files\>\)\(.*\)\(\<dns\>\)\(.*\)/\1\2 myhostname \3\4\5/' \
-		-i $D${sysconfdir}/nsswitch.conf
-}
-
-pkg_prerm_${PN} () {
-	sed -e '/^hosts:/s/\s*\<myhostname\>//' \
-		-e '/^hosts:/s/\s*myhostname//' \
-		-i $D${sysconfdir}/nsswitch.conf
-}
