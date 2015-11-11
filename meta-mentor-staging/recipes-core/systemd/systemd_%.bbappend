@@ -30,13 +30,3 @@ pkg_prerm_${PN} () {
 		-e '/^hosts:/s/\s*myhostname//' \
 		-i $D${sysconfdir}/nsswitch.conf
 }
-
-pkg_postinst_udev-hwdb () {
-	if test -n "$D"; then
-		${@qemu_run_binary(d, '$D', '${base_bindir}/udevadm')} hwdb --update \
-			--root $D
-		chown root:root $D${sysconfdir}/udev/hwdb.bin
-	else   
-		udevadm hwdb --update
-	fi
-}
