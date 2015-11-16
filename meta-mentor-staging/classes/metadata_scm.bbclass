@@ -69,7 +69,7 @@ def base_get_metadata_git_branch(path, d):
 
     try:
         return subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                                       cwd=path).strip()
+                                       cwd=path, stderr=subprocess.STDOUT).strip()
     except:
         return "<unknown>"
 
@@ -78,6 +78,6 @@ def base_get_metadata_git_revision(path, d):
 
     try:
         return subprocess.check_output(["git", "rev-parse", "HEAD"],
-                                       cwd=path).strip()
+                                       cwd=path, stderr=subprocess.STDOUT).strip()
     except:
         return "<unknown>"
