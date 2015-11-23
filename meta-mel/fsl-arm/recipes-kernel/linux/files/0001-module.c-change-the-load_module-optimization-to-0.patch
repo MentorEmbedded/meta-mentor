@@ -1,0 +1,25 @@
+From 36f9c79cbe3830f9a0d82a381c59c7be147332da Mon Sep 17 00:00:00 2001
+From: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+Date: Fri, 20 Nov 2015 18:48:05 +0530
+Subject: [PATCH] module.c: change the load_module optimization to 0
+
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ kernel/module.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/kernel/module.c b/kernel/module.c
+index f3c612e..9ad8af6 100644
+--- a/kernel/module.c
++++ b/kernel/module.c
+@@ -3216,6 +3216,7 @@ static int unknown_module_param_cb(char *param, char *val, const char *modname)
+ 
+ /* Allocate and load the module: note that size of section 0 is always
+    zero, and we rely on this for optional sections. */
++__attribute__((optimize(0)))
+ static int load_module(struct load_info *info, const char __user *uargs,
+ 		       int flags)
+ {
+-- 
+1.9.1
+
