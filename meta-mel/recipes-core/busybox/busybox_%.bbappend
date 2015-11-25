@@ -6,4 +6,5 @@ SRC_URI_append_mel = "\
     file://setsid.cfg \
     file://resize.cfg \
     file://fancy-head.cfg \
+	file://pidof.cfg \
 "
