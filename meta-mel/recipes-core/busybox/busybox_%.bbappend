@@ -7,4 +7,5 @@ SRC_URI_append_mel = "\
     file://resize.cfg \
     file://fancy-head.cfg \
 	file://pidof.cfg \
+	file://top.cfg \
 "
