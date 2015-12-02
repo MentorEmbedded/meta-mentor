@@ -1,16 +1,14 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-${PV}:${THISDIR}/${PN}:"
+PACKAGECONFIG[no-sysvcompat] = "--with-sysvinit-path= --with-sysvrcnd-path=,--with-sysvinit-path=${sysconfdir}/init.d --with-sysvrcnd-path=${sysconfdir},,"
 
-# Do these patches really belong in meta-mel?
-SRC_URI_append_mel = "\
-    file://remove-links.patch \
-    file://legacy-conf.patch \
-    file://fix-systemd-log-level.patch \
-    file://0001-systemd-udevd-propagate-mounts-umounts-services-to-s.patch \
-"
+SYSTEMD_LOGLEVEL ?= "info"
+SYSTEMD_LOGLEVEL_mel ?= "emerg"
 
-PACKAGECONFIG[defaultval] .= "${@' sysvcompat' if 'mel' in OVERRIDES.split(':') else ''}"
+do_compile_append_mel () {
+    printf '[Manager]\n' >loglevel.conf
+    printf 'LogLevel=${SYSTEMD_LOGLEVEL}\n' >>loglevel.conf
+}
 
-EXTRA_OECONF := "${@oe_filter_out('--with-sysvrcnd=${sysconfdir}' if 'mel' in OVERRIDES.split(':') else '', EXTRA_OECONF, d)}"
-PACKAGECONFIG[sysvcompat] = "--with-sysvrcnd-path=${sysconfdir},--with-sysvinit-path= --with-sysvrcnd-path=,"
-
-RRECOMMENDS_udev += "udev-extraconf"
+do_install_append_mel () {
+    install -d "${D}${nonarch_libdir}/systemd/system.conf.d"
+    install -m 0644 loglevel.conf "${D}${nonarch_libdir}/systemd/system.conf.d/"
+}
