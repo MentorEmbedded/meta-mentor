@@ -68,7 +68,14 @@ cat <<EOF > "$BUILDDIR"/toasterconf.json
           "layers": [
 EOF
 
-configured_layers | while read layer; do
+LAYER_PATHS=""
+LAYER_PATHS=$(configured_layers | while read layer; do
+    LAYER_PATHS="\"$layer\",$LAYER_PATHS"
+    echo "$LAYER_PATHS"
+done)
+LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
+
+for layer in $LAYER_PATHS; do
    name=
    layername=$(basename "$layer")
    cd $layer
@@ -138,10 +145,10 @@ DEFAULTLAYERS=$(configured_layers | while read -r layer; do
     if [ "$layername" = "meta" ]; then
           layername="openembedded-core"
     fi
-    DEFAULTLAYERS="$DEFAULTLAYERS \"$layername\","
+    DEFAULTLAYERS="\"$layername\", $DEFAULTLAYERS"
     echo "$DEFAULTLAYERS"
 done)
-DEFAULTLAYERS=$(echo "$DEFAULTLAYERS" | sed -n '$p' | sed '$ s/,$//')
+DEFAULTLAYERS=$(echo "$DEFAULTLAYERS" | sed -n '$p' | sed 's/, $//')
 
 cat <<EOF >> "$BUILDDIR"/toasterconf.json
             "defaultlayers": [ $DEFAULTLAYERS ],
