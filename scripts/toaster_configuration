@@ -69,13 +69,13 @@ cat <<EOF > "$BUILDDIR"/toasterconf.json
 EOF
 
 LAYER_PATHS=""
-LAYER_PATHS=$(configured_layers | while read layer; do
+LAYER_PATHS=$(configured_layers | while read -r layer; do
     LAYER_PATHS="\"$layer\",$LAYER_PATHS"
     echo "$LAYER_PATHS"
 done)
 LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
 
-for layer in $LAYER_PATHS; do
+for layer in $(echo "$LAYER_PATHS"); do
    name=
    layername=$(basename "$layer")
    cd $layer
