@@ -105,14 +105,13 @@ def kernel_set_defconfig(args):
         return 1
 
     import bb.data
-    if bb.data.inherits_class('kernel-yocto', rd):
-        logger.error('linux-yocto based kernels are not supported by this command.')
-        return 3
-
-    extralines = []
-    for configvar in ['KERNEL_DEFCONFIG', 'DEFCONFIG']:
-        if rd.getVar(configvar, True):
-            extralines.append('{0} = ${{WORKDIR}}/defconfig'.format(configvar))
+    if not bb.data.inherits_class('kernel-yocto', rd):
+        extralines = []
+        for configvar in ['KERNEL_DEFCONFIG', 'DEFCONFIG']:
+            if rd.getVar(configvar, True):
+                extralines.append('{0} = ${{WORKDIR}}/defconfig'.format(configvar))
+    else:
+        extralines = None
 
     return append_srcfiles(args.destlayer, rd, {args.defconfig: 'defconfig'}, use_workdir=True, use_machine=True, extralines=extralines)
 

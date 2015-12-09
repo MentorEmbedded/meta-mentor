@@ -8,7 +8,8 @@ SRC_URI_append = " file://nbd.cfg \
                    file://autofs.cfg \
                    file://lttng.cfg \
                    file://autofs.cfg \
-                   file://ext4.cfg"
+                   file://ext4.cfg \
+                   file://0001-kernel-module-change-the-optimization-level-of-load_.patch"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 FILESEXTRAPATHS_append = ":${@os.path.dirname(bb.utils.which(BBPATH, 'files/lttng.cfg') or '')}"
