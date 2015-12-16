@@ -40,7 +40,6 @@ def configured_mx6_layers(d):
 SUBLAYERS_INDIVIDUAL_ONLY ?= "${@configured_mx6_layers(d)}"
 SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL ?= "${@configured_update_layers(d)}"
 
-DUMP_HEADREVS_DB ?= ""
 DEPLOY_DIR_RELEASE ?= "${DEPLOY_DIR}/release-artifacts"
 RELEASE_ARTIFACTS ?= "layers bitbake templates images downloads sstate"
 RELEASE_ARTIFACTS[doc] = "List of artifacts to include (available: layers, bitbake, templates, images, downloads, sstate"
@@ -223,12 +222,6 @@ prepare_templates () {
     echo '"' >>bblayers.conf.sample
 }
 
-python do_dump_headrevs () {
-    if d.getVar('DUMP_HEADREVS_DB', True):
-        dump_headrevs(d, os.path.join(d.getVar('WORKDIR', True), 'dumped-headrevs.db'))
-}
-addtask dump_headrevs
-
 do_prepare_release () {
     mkdir -p deploy
 
@@ -358,9 +351,11 @@ do_prepare_release () {
         find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 \( -type f -o -type l \) | \
             grep -Ev '^${DEPLOY_DIR_IMAGE}/${DEPLOY_IMAGES_EXCLUDE_PATTERN}' >>include
 
-        if [ -n "${DUMP_HEADREVS_DB}" ]; then
-            echo "--transform=s,${WORKDIR}/dumped-headrevs.db,${@DUMP_HEADREVS_DB.replace('${MELDIR}/', '')}," >>include
-            echo ${WORKDIR}/dumped-headrevs.db >>include
+        # Lock down any autorevs
+        buildhistory-collect-srcrevs -p "${BUILDHISTORY_DIR}" >"${WORKDIR}/autorevs.conf"
+        if [ -s "${WORKDIR}/autorevs.conf" ]; then
+            echo "--transform=s,${WORKDIR}/autorevs.conf,${MACHINE}/conf/autorevs.conf," >>include
+            echo "${WORKDIR}/autorevs.conf" >>include
         fi
 
         release_tar --files-from=include -cf deploy/${MACHINE}.tar
