@@ -24,6 +24,7 @@ SRC_URI += "\
     file://0002-serial-fsl_lpuart-Remove-unneeded-registration-messa.patch \
     file://0003-tty-serial-fsl_lpuart-clear-receive-flag-on-FIFO-flu.patch \
     file://0001-module.c-change-the-load_module-optimization-to-0.patch \
+    file://0005-kernel-module.c-Remove-optimization-for-complete_for.patch \
     \
     file://kgdb.cfg \
     file://configs.cfg \

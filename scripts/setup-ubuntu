@@ -20,6 +20,9 @@ PKGS="$PKGS libgl1-mesa-dev libglu1-mesa-dev libsdl1.2-dev"
 # Install 32-bit compatibility libraries
 [ "$(uname -m)" = "x86_64" ] && PKGS="$PKGS libncurses5:i386 libc6-dev-i386"
 
+# This is needed for Windows ADE
+PKGS="$PKGS zip"
+
 echo "Installing packages required to build Mentor Embedded Linux"
 
 sudo apt-get -y install $PKGS
