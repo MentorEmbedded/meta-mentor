@@ -1,1 +1,3 @@
 PREFERRED_PROVIDER_virtual/bootloader = "u-boot"
+UBOOT_MACHINE = "socfpga_cyclone5_defconfig"
+
