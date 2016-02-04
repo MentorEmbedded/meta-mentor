@@ -1,0 +1,5 @@
+# Align paths with the external toolchain
+BASELIB_x86-64 = "lib64"
+
+# Work around failure in 'perf' due to use of ld rather than gcc to link
+LDEMULATION_x86-64 = "elf_${TARGET_ARCH}"
