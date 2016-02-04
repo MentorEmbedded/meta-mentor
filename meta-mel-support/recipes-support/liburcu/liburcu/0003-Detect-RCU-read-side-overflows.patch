@@ -1,0 +1,45 @@
+From 84dc7b322a6a520de8aafca371dfd1d70d2c74e9 Mon Sep 17 00:00:00 2001
+From: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+Date: Sun, 13 Sep 2015 11:46:04 -0400
+Subject: [PATCH 2/3] Detect RCU read-side overflows
+
+Use the urcu_assert() macro (enabled on DEBUG_RCU) to check for
+unmatched rcu_read_lock() that eventually leads to nesting counter
+overflow in urcu.h and urcu-bp.h. This won't necessarily point the the
+exact rcu_read_lock() that is unmatched, but will at least detect the
+overflow condition.
+
+Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+Signed-off-by: Srikanth_Krishnakar@mentor.com <Srikanth_Krishnakar@mentor.com>
+---
+ urcu/static/urcu-bp.h | 1 +
+ urcu/static/urcu.h    | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/urcu/static/urcu-bp.h b/urcu/static/urcu-bp.h
+index d9740d0..4bf0417 100644
+--- a/urcu/static/urcu-bp.h
++++ b/urcu/static/urcu-bp.h
+@@ -159,6 +159,7 @@ static inline void _rcu_read_lock(void)
+ 		rcu_bp_register(); /* If not yet registered. */
+ 	cmm_barrier();	/* Ensure the compiler does not reorder us with mutex */
+ 	tmp = URCU_TLS(rcu_reader)->ctr;
++	urcu_assert((tmp & RCU_GP_CTR_NEST_MASK) != RCU_GP_CTR_NEST_MASK);
+ 	_rcu_read_lock_update(tmp);
+ }
+ 
+diff --git a/urcu/static/urcu.h b/urcu/static/urcu.h
+index 589886b..0e747ac 100644
+--- a/urcu/static/urcu.h
++++ b/urcu/static/urcu.h
+@@ -220,6 +220,7 @@ static inline void _rcu_read_lock(void)
+ 
+ 	cmm_barrier();
+ 	tmp = URCU_TLS(rcu_reader).ctr;
++	urcu_assert((tmp & RCU_GP_CTR_NEST_MASK) != RCU_GP_CTR_NEST_MASK);
+ 	_rcu_read_lock_update(tmp);
+ }
+ 
+-- 
+1.9.1
+
