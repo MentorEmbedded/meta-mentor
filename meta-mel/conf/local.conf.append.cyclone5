@@ -1,0 +1,7 @@
+# The u-boot-socfpga from meta-altera doesn't produce a signed SPL image
+# that is require to boot Altera Cyclone V target. Support for signing 
+# u-boot SPL binary has recently been added to the mainline u-boot, so
+# want to use that.
+PREFERRED_PROVIDER_virtual/bootloader = "u-boot"
+UBOOT_MACHINE = "socfpga_cyclone5_defconfig"
+
