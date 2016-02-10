@@ -14,4 +14,5 @@ SRC_URI_append_intel-corei7-64 = " \
 	file://filesystem.cfg \
 	file://framebuffer.cfg \
 	file://wireless.cfg \
+	file://kernel.cfg \
 	"
