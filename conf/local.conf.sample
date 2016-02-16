@@ -157,6 +157,14 @@ SDKMACHINE ?= "i686"
 # Uncomment to make populate_sdk write a tar file rather than a .sh installer
 #SDK_PACKAGING_FUNC = ""
 
+# TOOLCHAIN_HOST_TASK is used to add host packages to the ADE/SDK, for
+# example, to add bash:
+#TOOLCHAIN_HOST_TASK_append = " nativesdk-bash"
+
+# TOOLCHAIN_TARGET_TASK is used to add target packages to the ADE/SDK, for
+# example, to add libncurses:
+#TOOLCHAIN_TARGET_TASK_append = " ncurses-libncurses"
+
 # The following is a list of additional classes to use when building which
 # enable extra features. Some available options which can be included in this variable
 # are:
