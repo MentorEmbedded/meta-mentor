@@ -147,10 +147,11 @@ require conf/include/drop-toolchain-from-sdk.inc
 
 # SDK/ADT target architecture
 #
-# This variable specified the architecture to build SDK/ADT items for and means
-# you can build the SDK packages for architectures other than the machine you are
-# running the build on (i.e. building i686 packages on an x86_64 host._
-# Supported values are i686 and x86_64
+# CodeBench is 32-bit at this time, so we need to set this to ensure the ADE
+# is configured correctly for that target by default. Set to one of the
+# mingw32 SDKMACHINEs to target Windows rather than Linux.
+#
+# Supported values: i686, x86_64, i686-mingw32, x86_64-mingw32
 SDKMACHINE ?= "i686"
 
 # The following is a list of additional classes to use when building which
