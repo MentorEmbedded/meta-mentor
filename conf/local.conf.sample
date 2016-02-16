@@ -154,6 +154,9 @@ require conf/include/drop-toolchain-from-sdk.inc
 # Supported values: i686, x86_64, i686-mingw32, x86_64-mingw32
 SDKMACHINE ?= "i686"
 
+# Uncomment to make populate_sdk write a tar file rather than a .sh installer
+#SDK_PACKAGING_FUNC = ""
+
 # The following is a list of additional classes to use when building which
 # enable extra features. Some available options which can be included in this variable
 # are:
