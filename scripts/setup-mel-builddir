@@ -8,6 +8,8 @@
 
 OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
 EXTRAMELLAYERS="${EXTRAMELLAYERS:-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery}"
+layer_priority_overrides="openembedded-layer=1"
+
 
 usage () {
     cat >&2 <<END
@@ -102,7 +104,7 @@ configure_for_machine () {
 
 
     sed -i -e"s/^#*MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
-    sed -n -i -e "s|##COREBASE##|$OEROOT|g" -e '/^BBLAYERS /{ :start; /\\$/{n; b start}; d; }; p' $BUILDDIR/conf/bblayers.conf
+    sed -n -i -e "s|##COREBASE##|$OEROOT|g" -e '/^BBLAYERS /{ :start; /\\$/{n; b start}; d; }; p' -e "/BBFILE_PRIORITY/d" $BUILDDIR/conf/bblayers.conf
 
     echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
     layersfile=$(mktemp setup-mel-builddir.XXXXXX)
@@ -127,7 +129,7 @@ configure_for_machine () {
         updatelayernames="$updatelayernames $layer"
     done
 
-    $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "core mel mel-support mentor-staging $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" "$@" $MACHINE >$layersfile
+    $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "core mel mel-support mentor-staging $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" -O "$layer_priority_overrides" "$@" $MACHINE >$layersfile
     if [ $? -ne 0 ]; then
         rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
@@ -137,6 +139,11 @@ configure_for_machine () {
     rm -f $layersfile
     echo '"' >> $BUILDDIR/conf/bblayers.conf
     unset layersfile
+
+    echo "$layer_priority_overrides" | tr " " "\n" | \
+        while IFS== read -r layer priority; do
+            printf 'BBFILE_PRIORITY_%s_%s = "%d"\n' "$layer" "$MEL_DISTRO" "$priority" >> $BUILDDIR/conf/bblayers.conf
+        done
 }
 
 process_arguments () {
@@ -311,11 +318,12 @@ scriptsdir="$(cd $(dirname $0) && pwd)"
 scriptsdir="$(abspath $scriptsdir)"
 layerdir="${scriptsdir%/*}"
 
-setup_builddir "$@" || exit $?
 if [ -e $layerdir/../.mel-lite ]; then
     MEL_DISTRO="mel-lite"
 fi
 MEL_DISTRO="${MEL_DISTRO:-mel}"
+
+setup_builddir "$@" || exit $?
 if [ -e $BUILDDIR/conf/local.conf ]; then
     sed -i -e "s/^DISTRO.*/DISTRO = \'$MEL_DISTRO\'/" $BUILDDIR/conf/local.conf
     if [ -d "$MELDIR/../../codebench-lite" ]; then
