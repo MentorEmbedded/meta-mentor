@@ -14,10 +14,12 @@ override_default = 'openembedded-layer=1'
 
 
 class Terminate(BaseException):
+    """Exception raised if we receive a SIGTERM"""
     pass
 
 
 def sigterm_exception(signum, stackframe):
+    """Raise Terminate exception if we receive a SIGTERM"""
     raise Terminate()
 
 
