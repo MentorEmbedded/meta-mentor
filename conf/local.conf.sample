@@ -106,7 +106,10 @@ USER_FEATURES += "~nfc"
 DL_DIR ?= "${TOPDIR}/downloads"
 
 # Continue to pull downloads from the MEL install
-PREMIRRORS_prepend = ".*://.*/.* file://${MELDIR}/downloads/ \n "
+PREMIRRORS_prepend = "\
+    .*://.*/.* file://${MELDIR}/${MACHINE}/downloads/ \n \
+    .*://.*/.* file://${MELDIR}/downloads/ \n \
+"
 
 # BitBake has the capability to accelerate builds based on previously built
 # output. This is done using "shared state" files which can be thought of as
@@ -114,7 +117,10 @@ PREMIRRORS_prepend = ".*://.*/.* file://${MELDIR}/downloads/ \n "
 SSTATE_DIR ?= "${TOPDIR}/cached-binaries"
 
 # Continue to pull cached binaries from the MEL install
-SSTATE_MIRROR_SITES += "file://${MELDIR}/cached-binaries"
+SSTATE_MIRROR_SITES += "\
+    file://${MELDIR}/${MACHINE}/cached-binaries \
+    file://${MELDIR}/cached-binaries \
+"
 
 # Where to place the build output and temporary artifacts
 #
