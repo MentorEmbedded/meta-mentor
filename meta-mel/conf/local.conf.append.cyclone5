@@ -3,8 +3,21 @@
 # u-boot SPL binary has recently been added to the mainline u-boot, so
 # want to use that.
 PREFERRED_PROVIDER_virtual/bootloader = "u-boot"
-UBOOT_MACHINE = "socfpga_cyclone5_defconfig"
+UBOOT_MACHINE_cyclone5 = "socfpga_cyclone5_defconfig"
 
 # Switch to linux-altera-4.1 kernel instead of linux-altera-ltsi-3.10
 PREFERRED_PROVIDER_virtual/kernel  = "linux-altera"
 PREFERRED_VERSION_linux-altera = "4.1+gitAUTOINC+186070d468"
+
+# WIC image type support
+IMAGE_FSTYPES += "wic.bz2"
+WKS_FILE ?= "Cyclone-V.wks"
+
+# dosfstools is needed to create the boot partition, mtools to copy to it
+IMAGE_DEPENDS_wic_append = " dosfstools-native mtools-native parted-native"
+
+# u-boot is also needed for wic image
+IMAGE_DEPENDS_wic_append = " virtual/bootloader"
+
+IMAGE_BOOT_FILES += "zImage, zImage-socfpga_cyclone5.dtb;socfpga.dtb, u-boot.scr"
+
