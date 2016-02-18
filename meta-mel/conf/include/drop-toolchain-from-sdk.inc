@@ -3,8 +3,8 @@
 # same packagegroup which installs the toolchain, so add that back in
 # explicitly.
 python () {
-    host_task = d.getVar('TOOLCHAIN_HOST_TASK', True)
-    if host_task:
+    if oe.utils.inherits(d, 'populate_sdk_base'):
+        host_task = d.getVar('TOOLCHAIN_HOST_TASK', True)
         tcmode = d.getVar('TCMODE', True)
         packagegroup = d.expand('packagegroup-cross-canadian-${MACHINE}')
         if packagegroup in host_task.split() and tcmode.startswith('external'):
