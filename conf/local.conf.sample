@@ -157,6 +157,11 @@ SDKMACHINE ?= "i686"
 # Uncomment to make populate_sdk write a tar file rather than a .sh installer
 #SDK_PACKAGING_FUNC = ""
 
+# By default, only include the target sysroot in the SDK/ADE, not host tools.
+# Comment this line to change that. This packagegroup includes host tools like
+# autoconf, automake, etc.
+TOOLCHAIN_HOST_TASK_remove = "nativesdk-packagegroup-sdk-host"
+
 # TOOLCHAIN_HOST_TASK is used to add host packages to the ADE/SDK, for
 # example, to add bash:
 #TOOLCHAIN_HOST_TASK_append = " nativesdk-bash"
