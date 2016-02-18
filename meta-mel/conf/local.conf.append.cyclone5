@@ -19,5 +19,5 @@ IMAGE_DEPENDS_wic_append = " dosfstools-native mtools-native parted-native"
 # u-boot is also needed for wic image
 IMAGE_DEPENDS_wic_append = " virtual/bootloader"
 
-IMAGE_BOOT_FILES += "zImage, zImage-socfpga_cyclone5.dtb;socfpga.dtb, u-boot.scr"
+IMAGE_BOOT_FILES += "zImage, zImage-socfpga_cyclone5_sockit.dtb;socfpga.dtb, u-boot.scr"
 
