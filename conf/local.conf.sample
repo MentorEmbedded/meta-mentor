@@ -149,9 +149,11 @@ require conf/include/drop-toolchain-from-sdk.inc
 #
 # CodeBench is 32-bit at this time, so we need to set this to ensure the ADE
 # is configured correctly for that target by default. Set to one of the
-# mingw32 SDKMACHINEs to target Windows rather than Linux.
+# mingw32 SDKMACHINEs to target Windows rather than Linux. Warning: if you
+# choose to add packages to TOOLCHAIN_HOST_TASK and target Windows, then you
+# must add the meta-mingw layer to your configuration.
 #
-# Supported values: i686, x86_64, i686-mingw32, x86_64-mingw32
+# Valid values: i686, x86_64, i686-mingw32, x86_64-mingw32
 SDKMACHINE ?= "i686"
 
 # Uncomment to make populate_sdk write a tar file rather than a .sh installer
@@ -159,7 +161,9 @@ SDKMACHINE ?= "i686"
 
 # By default, only include the target sysroot in the SDK/ADE, not host tools.
 # Comment this line to change that. This packagegroup includes host tools like
-# autoconf, automake, etc.
+# autoconf, automake, etc. See the aforementioned warning about use of Windows
+# SDKMACHINE while setting TOOLCHAIN_HOST_TASK, if you're building a Windows
+# SDK/ADE.
 TOOLCHAIN_HOST_TASK_remove = "nativesdk-packagegroup-sdk-host"
 
 # TOOLCHAIN_HOST_TASK is used to add host packages to the ADE/SDK, for
