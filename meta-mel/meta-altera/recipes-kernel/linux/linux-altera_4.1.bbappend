@@ -4,4 +4,5 @@ SRC_URI += "file://disable-altera-edac.cfg \
             file://enable-nfs-server.cfg \
             file://lttng.cfg \
             file://bluetooth.cfg \
+            file://wireless.cfg \
             "
