@@ -16,3 +16,7 @@ SRC_URI_append_intel-corei7-64 = " \
 	file://wireless.cfg \
 	file://kernel.cfg \
 	"
+
+# Add Shallow support for mirror tarballs
+BB_GIT_SHALLOW_machine = "v4.1"
+BB_GIT_SHALLOW_meta = ""
