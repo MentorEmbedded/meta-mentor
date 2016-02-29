@@ -441,7 +441,13 @@ if [ -d $ROOTFS_MNT/etc/udev/ ] ; then
 fi
 
 # Add startup.nsh script for automated boot
-echo "fs0:\EFI\BOOT\bootx64.efi" > $BOOTFS_MNT/startup.nsh
+if [ -L /bin/sh ]; then
+   if [ $(ls -l /bin/sh | awk {'print $11'}) = "dash" ]; then
+        $(which echo) -E "fs0:\EFI\BOOT\bootx64.efi" > $BOOTFS_MNT/startup.nsh
+   else
+        echo "fs0:\EFI\BOOT\bootx64.efi" > $BOOTFS_MNT/startup.nsh
+   fi
+fi
 
 # Call cleanup to unmount devices and images and remove the TMPDIR
 cleanup
