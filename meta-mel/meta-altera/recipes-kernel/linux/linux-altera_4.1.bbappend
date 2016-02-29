@@ -6,4 +6,5 @@ SRC_URI += "file://disable-altera-edac.cfg \
             file://bluetooth.cfg \
             file://wireless.cfg \
             file://kgdb.cfg \
+            file://filesystems.cfg \
             "
