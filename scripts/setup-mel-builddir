@@ -206,6 +206,8 @@ setup_builddir () {
         OEROOT="$MELDIR/poky"
     elif [ -e "$MELDIR/oe-core" ]; then
         OEROOT="$MELDIR/oe-core"
+    elif [ -e "$MELDIR/openembedded-core" ]; then
+        OEROOT="$MELDIR/openembedded-core"
     else
         echo >&2 "Unable to locate poky or oe-core in $MELDIR, aborting"
         return 3
