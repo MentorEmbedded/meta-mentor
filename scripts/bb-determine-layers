@@ -9,8 +9,8 @@ from collections import defaultdict
 
 
 glob_default = './*/:./*/*/:{scriptdir}/../../*/:{scriptdir}/../../*/*/'
-layers_default = 'core yocto mentor'
-override_default = 'openembedded-layer=1'
+layers_default = 'core'
+override_default = ''
 
 
 class Terminate(BaseException):
