@@ -10,7 +10,7 @@ PREFERRED_PROVIDER_virtual/kernel  = "linux-altera"
 PREFERRED_VERSION_linux-altera = "4.1+gitAUTOINC+186070d468"
 
 # WIC image type support
-IMAGE_FSTYPES += "wic.bz2"
+IMAGE_FSTYPES_append = " wic.bz2"
 WKS_FILE ?= "Cyclone-V.wks"
 
 # dosfstools is needed to create the boot partition, mtools to copy to it
