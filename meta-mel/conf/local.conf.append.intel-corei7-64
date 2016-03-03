@@ -11,3 +11,6 @@ MACHINE_EXTRA_RRECOMMENDS_append_intel-corei7-64 = " firmware-wireless"
 
 #vfat support required for minnowmax
 MACHINE_FEATURES_append_intel-corei7-64 = " vfat"
+
+# Install WIC dependency for partitioning
+IMAGE_DEPENDS_ext4_append = " parted-native"
