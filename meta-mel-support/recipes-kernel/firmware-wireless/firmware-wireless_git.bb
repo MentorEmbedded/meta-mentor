@@ -32,6 +32,17 @@ LIC_FILES_CHKSUM = "\
     file://carl9170/LICENSE;md5=751419260aa954499f7abaabaa882bbe \
 "
 
+NO_GENERIC_LICENSE[Firmware-atheros] = "atheros/LICENSE"
+NO_GENERIC_LICENSE[Firmware-broadcom] = "broadcom/LICENSE"
+NO_GENERIC_LICENSE[Firmware-cw1200] = "cw1200/LICENSE"
+NO_GENERIC_LICENSE[Firmware-intelwimax] = "intelwimax/LICENSE"
+NO_GENERIC_LICENSE[Firmware-libertas] = "libertas/LICENSE"
+NO_GENERIC_LICENSE[Firmware-orinoco] = "orinoco/LICENSE"
+NO_GENERIC_LICENSE[Firmware-ralink] = "ralink/LICENSE"
+NO_GENERIC_LICENSE[Firmware-realtek] = "realtek/LICENSE"
+NO_GENERIC_LICENSE[Firmware-rsi] = "rsi/LICENSE"
+NO_GENERIC_LICENSE[Firmware-ti-connectivity] = "ti-connectivity/LICENSE"
+NO_GENERIC_LICENSE[Firmware-via_vt6656] = "via_vt6656/LICENSE"
 
 SRCREV = "c2c3df64df50d826d7649e03fbbe84ea99e5dbc8"
 PV = "0.0+git${SRCPV}"
