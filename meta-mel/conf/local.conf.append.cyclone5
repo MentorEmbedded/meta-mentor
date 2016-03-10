@@ -27,3 +27,7 @@ MACHINE_FEATURES_append = " usbhost"
 # Include firmware-wireless package which provides firmwares for commonly 
 # used wireless adapters.
 MACHINE_EXTRA_RRECOMMENDS_append_cyclone5 = " firmware-wireless"
+
+# To build weston-image, uncomment following two lines.
+#USER_FEATURES += "~x11"
+#DISTRO_FEATURES_append = " wayland"
