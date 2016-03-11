@@ -1,0 +1,13 @@
+Index: xserver-common-1.34/X11/xserver-common
+===================================================================
+--- xserver-common-1.34.orig/X11/xserver-common	2016-03-10 16:55:52.151235322 +0530
++++ xserver-common-1.34/X11/xserver-common	2016-03-11 19:33:39.361035094 +0530
+@@ -241,7 +241,7 @@
+     ARGS="$ARGS $MOUSE $KDRIVEARGS"
+ fi
+ if [ "$XSERVER" = "Xvfb" ] ; then
+-    ARGS="-screen 0 640x480x16"
++    ARGS="-screen 0 1200x800x24"
+ fi
+ 
+ # let a local script modify the variables                    
