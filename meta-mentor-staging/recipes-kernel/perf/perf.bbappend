@@ -8,3 +8,8 @@ do_configure_prepend () {
         fi
     done
 }
+
+FILES_${PN}-archive += "${libexecdir}/perf-core/perf-archive"
+FILES_${PN}-tests += "${libexecdir}/perf-core/tests"
+FILES_${PN}-perl += "${libexecdir}/perf-core/scripts/perl"
+FILES_${PN}-python += "${libexecdir}/perf-core/scripts/python"
