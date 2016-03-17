@@ -1,4 +1,4 @@
-DEPENDS_cyclone5 += "freerdp libevdev libinput"
+DEPENDS_append_cyclone5 = " freerdp"
 
 # Enable building of rdp-compositor
 EXTRA_OECONF_cyclone5 := "${@oe_filter_out('--disable-rdp-compositor', '${EXTRA_OECONF}', d)}"
