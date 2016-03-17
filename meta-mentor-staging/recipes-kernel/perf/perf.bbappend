@@ -9,6 +9,10 @@ do_configure_prepend () {
     done
 }
 
+do_install_append () {
+    sed -i -e "1s/python2/python/" "${D}${libexecdir}/perf-core/scripts/python/"*.py
+}
+
 FILES_${PN}-archive += "${libexecdir}/perf-core/perf-archive"
 FILES_${PN}-tests += "${libexecdir}/perf-core/tests"
 FILES_${PN}-perl += "${libexecdir}/perf-core/scripts/perl"
