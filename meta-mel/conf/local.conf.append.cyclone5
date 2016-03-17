@@ -32,12 +32,14 @@ MACHINE_EXTRA_RRECOMMENDS_append_cyclone5 = " firmware-wireless"
 #USER_FEATURES += "~x11"
 #DISTRO_FEATURES_append = " wayland"
 
-# Uncomment following to enable JAVA support
-# Supported image types: console-image, core-image-sato, weston-image
+# Uncomment following to enable Java support
+# Supported image types: console-image, core-image-sato
 # Make sure to add path/to/meta-java in BBLAYERS
 #ENABLE_JAVA = "1"
 
-# Set PREFERRED_PROVIDERs for java packages
+# Set PREFERRED_PROVIDERs for Java packages
 PREFERRED_PROVIDER_virtual/java-initial-native = "cacao-initial-native"
 PREFERRED_PROVIDER_virtual/java-native = "jamvm-native"
 PREFERRED_PROVIDER_virtual/javac-native = "ecj-bootstrap-native"
+PREFERRED_PROVIDER_make-native = "make-native"
+PREFERRED_PROVIDER_openjdk-7-jre = "openjdk-7-jre"
