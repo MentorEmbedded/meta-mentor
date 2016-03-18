@@ -43,3 +43,6 @@ PREFERRED_PROVIDER_virtual/java-native = "jamvm-native"
 PREFERRED_PROVIDER_virtual/javac-native = "ecj-bootstrap-native"
 PREFERRED_PROVIDER_make-native = "make-native"
 PREFERRED_PROVIDER_openjdk-7-jre = "openjdk-7-jre"
+
+# Use hard-float support
+DEFAULTTUNE = "cortexa9hf-neon"
