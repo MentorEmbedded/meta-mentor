@@ -41,3 +41,6 @@ MACHINE_EXTRA_RRECOMMENDS_append_cyclone5 = " firmware-wireless"
 PREFERRED_PROVIDER_virtual/java-initial-native = "cacao-initial-native"
 PREFERRED_PROVIDER_virtual/java-native = "jamvm-native"
 PREFERRED_PROVIDER_virtual/javac-native = "ecj-bootstrap-native"
+
+# Use hard-float support
+DEFAULTTUNE = "cortexa9hf-neon"
