@@ -8,3 +8,6 @@ SRC_URI += "file://disable-altera-edac.cfg \
             file://kgdb.cfg \
             file://filesystems.cfg \
             "
+
+# Fix FS mount messages during boot
+SRC_URI_append = " file://0001-fs-Makefile-Re-order-EXT4-prior-to-EXT2-or-EXT3.patch"
