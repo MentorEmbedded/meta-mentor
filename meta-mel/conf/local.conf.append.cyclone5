@@ -1,10 +1,3 @@
-# The u-boot-socfpga from meta-altera doesn't produce a signed SPL image
-# that is require to boot Altera Cyclone V target. Support for signing 
-# u-boot SPL binary has recently been added to the mainline u-boot, so
-# want to use that.
-PREFERRED_PROVIDER_virtual/bootloader = "u-boot"
-UBOOT_MACHINE_cyclone5 = "socfpga_cyclone5_defconfig"
-
 # Switch to linux-altera-4.1 kernel instead of linux-altera-ltsi-3.10
 PREFERRED_PROVIDER_virtual/kernel  = "linux-altera"
 PREFERRED_VERSION_linux-altera = "4.1+gitAUTOINC+186070d468"
@@ -19,7 +12,8 @@ IMAGE_DEPENDS_wic_append = " dosfstools-native mtools-native parted-native"
 # u-boot is also needed for wic image
 IMAGE_DEPENDS_wic_append = " virtual/bootloader"
 
-IMAGE_BOOT_FILES += "zImage, zImage-socfpga_cyclone5_sockit.dtb;socfpga.dtb, u-boot.scr"
+IMAGE_BOOT_FILES += "zImage, zImage-socfpga_cyclone5_sockit.dtb;socfpga.dtb, u-boot.scr, \
+		     u-boot-cyclone5.img;u-boot.img"
 
 # Include usbhost feature to support various USB devices
 MACHINE_FEATURES_append = " usbhost"
