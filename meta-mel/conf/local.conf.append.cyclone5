@@ -1,0 +1,42 @@
+# Switch to linux-altera-4.1 kernel instead of linux-altera-ltsi-3.10
+PREFERRED_PROVIDER_virtual/kernel  = "linux-altera"
+PREFERRED_VERSION_linux-altera = "4.1+gitAUTOINC+186070d468"
+
+# WIC image type support
+IMAGE_FSTYPES_append = " wic.bz2"
+WKS_FILE ?= "Cyclone-V.wks"
+
+# dosfstools is needed to create the boot partition, mtools to copy to it
+IMAGE_DEPENDS_wic_append = " dosfstools-native mtools-native parted-native"
+
+# u-boot is also needed for wic image
+IMAGE_DEPENDS_wic_append = " virtual/bootloader"
+
+IMAGE_BOOT_FILES += "zImage, zImage-socfpga_cyclone5_sockit.dtb;socfpga.dtb, u-boot.scr, \
+		     u-boot-cyclone5.img;u-boot.img"
+
+# Include usbhost feature to support various USB devices
+MACHINE_FEATURES_append = " usbhost"
+
+# Include firmware-wireless package which provides firmwares for commonly 
+# used wireless adapters.
+MACHINE_EXTRA_RRECOMMENDS_append_cyclone5 = " firmware-wireless"
+
+# To build weston-image, uncomment following two lines.
+#USER_FEATURES += "~x11"
+#DISTRO_FEATURES_append = " wayland"
+
+# Uncomment following to enable Java support
+# Supported image types: console-image, core-image-sato
+# Make sure to add path/to/meta-java in BBLAYERS
+#ENABLE_JAVA = "1"
+
+# Set PREFERRED_PROVIDERs for Java packages
+PREFERRED_PROVIDER_virtual/java-initial-native = "cacao-initial-native"
+PREFERRED_PROVIDER_virtual/java-native = "jamvm-native"
+PREFERRED_PROVIDER_virtual/javac-native = "ecj-bootstrap-native"
+PREFERRED_PROVIDER_make-native = "make-native"
+PREFERRED_PROVIDER_openjdk-7-jre = "openjdk-7-jre"
+
+# Use hard-float support
+DEFAULTTUNE = "cortexa9hf-neon"

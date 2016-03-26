@@ -1,0 +1,20 @@
+# Align paths with the external toolchain
+BASELIB_x86-64 = "lib64"
+
+# Work around failure in 'perf' due to use of ld rather than gcc to link
+LDEMULATION_x86-64 = "elf_${TARGET_ARCH}"
+
+# Override intel-corei7-64's inclusion of linux-firmware in favor of a minimal subset
+# which holds just the wireless firmware
+MACHINE_EXTRA_RRECOMMENDS_remove_intel-corei7-64 = "linux-firmware"
+MACHINE_EXTRA_RRECOMMENDS_append_intel-corei7-64 = " firmware-wireless"
+
+#vfat support required for minnowmax
+MACHINE_FEATURES_append_intel-corei7-64 = " vfat"
+
+# Install WIC dependency for partitioning
+IMAGE_DEPENDS_ext4_append = " parted-native pbzip2-native"
+
+# WKS Files for 4GB/8GB microSD
+WKS_FILE ?= "minnowmax-sd-4g.wks"
+#WKS_FILE ?= "minnowmax-sd-8g.wks"
