@@ -18,3 +18,6 @@ IMAGE_DEPENDS_ext4_append = " parted-native pbzip2-native"
 # WKS Files for 4GB/8GB microSD
 WKS_FILE ?= "minnowmax-sd-4g.wks"
 #WKS_FILE ?= "minnowmax-sd-8g.wks"
+
+# Deploy wic image in release artifacts
+IMAGE_FSTYPES_append_pn-archive-release = " wic.bz2"
