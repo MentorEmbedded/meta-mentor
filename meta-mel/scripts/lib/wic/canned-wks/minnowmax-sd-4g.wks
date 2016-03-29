@@ -1,0 +1,11 @@
+# short-description: Create an EFI disk image for 4GB SD Card
+# long-description: Creates a partitioned EFI disk image that the user
+# can directly dd to boot media.
+
+part /boot --source bootimg-efi --sourceparams="loader=grub-efi" --ondisk mmcblk0 --label msdos --active --align 4 --size 64M --extra-space 0
+
+part / --source rootfs --ondisk mmcblk0 --fstype=ext4 --label root --align 4 --size 3000M --overhead-factor 1 --extra-space 0
+
+part swap --ondisk mmcblk0 --label swap --fstype=swap --size 500M
+
+bootloader  --timeout=3  --append="rw rootfstype=ext4 console=ttyS0,115200 console=tty0"

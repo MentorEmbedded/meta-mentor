@@ -1,0 +1,20 @@
+# Override intel-corei7-64's inclusion of linux-firmware in favor of a minimal subset
+# which holds just the wireless firmware
+MACHINE_EXTRA_RRECOMMENDS_remove_intel-corei7-64 = "linux-firmware"
+MACHINE_EXTRA_RRECOMMENDS_append_intel-corei7-64 = " firmware-wireless"
+
+# vfat support required for minnowmax
+MACHINE_FEATURES_append_intel-corei7-64 = " vfat"
+
+# Currently qemu user mode acts up for this machine, we can't rely on it
+MACHINE_FEATURES_BACKFILL_CONSIDERED_append_intel-corei7-64 = "gobject-introspection-data"
+
+# WIC image type support
+IMAGE_FSTYPES += "wic.bz2"
+
+# WKS Files for 4GB/8GB microSD
+WKS_FILE ?= "minnowmax-sd-4g.wks"
+#WKS_FILE ?= "minnowmax-sd-8g.wks"
+
+# dosfstools is needed to create the boot partition, mtools to copy to it
+IMAGE_DEPENDS_wic_append = " dosfstools-native mtools-native parted-native"
