@@ -11,7 +11,7 @@ VERSION="0.1"
 SELF=$(basename $0)
 SELFPATH=$(dirname $0)
 
-binary="./u-boot-with-spl-dtb.sfp"
+binary="./u-boot-spl-mkpimage.bin"
 
 BOOT_PT_NUM="3"
 BOOT_PT_TYPE="a2"
