@@ -18,6 +18,9 @@ IMAGE_BOOT_FILES += "zImage, zImage-socfpga_cyclone5_sockit.dtb;socfpga.dtb, u-b
 # Include usbhost feature to support various USB devices
 MACHINE_FEATURES_append = " usbhost"
 
+# Add support to create and modify file-systems on the target.
+MACHINE_FEATURES_append = " ext2 vfat"
+
 # Include firmware-wireless package which provides firmwares for commonly 
 # used wireless adapters.
 MACHINE_EXTRA_RRECOMMENDS_append_cyclone5 = " firmware-wireless"
