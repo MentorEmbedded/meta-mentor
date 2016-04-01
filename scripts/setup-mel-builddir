@@ -6,7 +6,8 @@
 # version 2.  This program  is licensed "as is" without any warranty of any
 # kind, whether express or implied.
 
-CORELAYERS="${CORELAYERS:-core mel mel-support mentor-staging}"
+MEL_DISTRO="${MEL_DISTRO:-mel}"
+CORELAYERS="${CORELAYERS:-core mel-support mentor-staging}"
 OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
 EXTRAMELLAYERS="${EXTRAMELLAYERS:-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery}"
 layer_priority_overrides="openembedded-layer=1"
@@ -130,7 +131,7 @@ configure_for_machine () {
         updatelayernames="$updatelayernames $layer"
     done
 
-    $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "$CORELAYERS $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" -O "$layer_priority_overrides" -m "$MACHINE" "$@" >$layersfile
+    $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "$CORELAYERS $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" -O "$layer_priority_overrides" -m "$MACHINE" -d "$MEL_DISTRO" "$@" >$layersfile
     if [ $? -ne 0 ]; then
         rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
@@ -324,7 +325,6 @@ layerdir="${scriptsdir%/*}"
 if [ -e $layerdir/../.mel-lite ]; then
     MEL_DISTRO="mel-lite"
 fi
-MEL_DISTRO="${MEL_DISTRO:-mel}"
 
 setup_builddir "$@" || exit $?
 if [ -e $BUILDDIR/conf/local.conf ]; then
