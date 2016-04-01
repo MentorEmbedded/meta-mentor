@@ -227,6 +227,7 @@ class Layers(collections.MutableSet):
     def __init__(self, iterable=None):
         """A collection of layers. Maintains lookup mappings by path and name"""
         self.layers = set()
+        self.duplicates = collections.defaultdict(set)
         self.by_path = {}
         self.by_name = {}
 
@@ -252,11 +253,12 @@ class Layers(collections.MutableSet):
         if layer in self:
             return
 
-        if layer.name in self.by_name:
-            raise Exception("Layer name '{0}' found more than once: {1}, {2}".format(
-                layer.name, self.by_name[layer.name].path, layer.path))
-
         if layer.path in self.by_path:
+            return
+
+        if layer.name in self.by_name:
+            self.duplicates[layer.name].add(self.by_name[layer.name])
+            self.duplicates[layer.name].add(layer)
             return
 
         self.layers.add(layer)
@@ -298,6 +300,9 @@ class Layers(collections.MutableSet):
         missing = set()
         found_layers = Layers()
 
+        if name in self.duplicates:
+            raise DuplicateLayers(name, self.duplicates[name])
+
         try:
             layer = self.by_name[name]
         except KeyError:
@@ -313,6 +318,15 @@ class Layers(collections.MutableSet):
                     found_layers |= dep_found
                     missing |= dep_missing
         return found_layers, missing
+
+
+class DuplicateLayers(Exception):
+    def __init__(self, name, layers):
+        self.name = name
+        self.layers = layers
+
+    def __str__(self):
+        return 'Duplicate layers found for %s:\n%s' % (self.name, ''.join('  %s\n' % l.path for l in self.layers))
 
 
 class LayerStatus(StatusDisplay):
@@ -458,6 +472,8 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, sigterm_exception)
     try:
         sys.exit(determine_layers(sys.argv[1:]) or 0)
+    except DuplicateLayers as exc:
+        sys.exit(str(exc))
     except KeyboardInterrupt:
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         os.kill(os.getpid(), signal.SIGINT)
