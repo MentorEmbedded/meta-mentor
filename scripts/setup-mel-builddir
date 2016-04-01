@@ -214,10 +214,6 @@ setup_builddir () {
         return 3
     fi
 
-    if [ "$force_overwrite" = "-f" ]; then
-        rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
-    fi
-
     TEMPLATECONF=
     MACHINE=$1
     if [ -n "$MACHINE" ]; then
@@ -226,7 +222,11 @@ setup_builddir () {
             TEMPLATECONF=$MELDIR/$MACHINE/conf
         fi
     else
-        if [ ! -e $BUILDDIR/conf/local.conf -o ! -e $BUILDDIR/conf/bblayers.conf ]; then
+        if [ -e "$BUILDDIR/conf/local.conf" ]; then
+            MACHINE=$(sed -n 's/^MACHINE ?*= "\([^"]*\)"/\1/p' $BUILDDIR/conf/local.conf)
+        fi
+
+        if [ ! -e $BUILDDIR/conf/local.conf -o ! -e $BUILDDIR/conf/bblayers.conf ] || [ -z "$MACHINE" ]; then
             tmpfile="$(mktemp -t "${0##*/}.XXXXX")"
             ls -1d $MELDIR/*/binary 2>/dev/null | sed "s,^$MELDIR/,,; s,/binary$,," | \
                 while read machine; do
@@ -244,6 +244,10 @@ setup_builddir () {
                 TEMPLATECONF=$MELDIR/$MACHINE/conf
             fi
         fi
+    fi
+
+    if [ "$force_overwrite" = "-f" ]; then
+        rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
     fi
 
     : ${TEMPLATECONF:=$layerdir/conf}
@@ -283,10 +287,6 @@ setup_builddir () {
         if [ -n "$MACHINE" ]; then
             echo "Configuring existing bblayers.conf for $MACHINE"
         fi
-    fi
-
-    if [ -z "$MACHINE" ]; then
-        MACHINE=$(sed -n 's/^MACHINE ?*= "\([^"]*\)"/\1/p' $BUILDDIR/conf/local.conf)
     fi
 
     if [ -d "$MELDIR/bitbake" ]; then
