@@ -141,6 +141,7 @@ def process_arguments(cmdline_args):
     parser.add_argument('-m', '--machine', help='add layer(s) providing the specified MACHINE')
     parser.add_argument('-d', '--distro', help='add layer(s) providing the specified DISTRO')
     parser.add_argument('-s', '--sdkmachine', help='add layer(s) providing the specified SDKMACHINE')
+    parser.add_argument('-v', '--verbose', help='increase verbosity', action='store_true')
 
     scriptdir = os.path.dirname(__file__)
     args = parser.parse_args(cmdline_args)
@@ -314,6 +315,23 @@ class Layers(collections.MutableSet):
         return found_layers, missing
 
 
+class LayerStatus(StatusDisplay):
+    """Show status of work whose results are a set of layers."""
+
+    def __init__(self, message, verbose=False, output=None):
+        super(LayerStatus, self).__init__(message, output)
+        self.verbose = verbose
+
+    def set_layer_status(self, layers):
+        layer_names = set(l.name for l in layers)
+        if self.verbose:
+            self.set_status('')
+            for f in sorted(l.path for l in layers):
+                self.output.write('  %s\n' % f)
+        else:
+            self.set_status(','.join(sorted(layer_names)))
+
+
 def get_layerpaths_bitbake(globs=None, paths=None):
     bitbake_path = None
     layer_paths = set()
@@ -372,55 +390,65 @@ def determine_layers(cmdline_opts):
             if priority_override is not None:
                 layer.priority = priority_override
 
+    def get_layers_for(value, varname, cfgpath):
+        with LayerStatus("Determining layers to include for {0} '{1}'".format(varname, value), verbose=args.verbose) as s:
+            layers = all_layers.which('conf/{0}/{1}.conf'.format(cfgpath, value))
+            if not layers:
+                sys.exit("No layer found for {0} `{1}`".format(varname, value))
+
+            s.set_layer_status(layers)
+            layer_names = set(l.name for l in layers)
+            return layer_names
+
     configured_layer_names = set(args.layers)
 
-    if args.machine:
-        with status("Determining layers to include for MACHINE '{0}'".format(args.machine)):
-            machine_layers = all_layers.which('conf/machine/{0}.conf'.format(args.machine))
-            if not machine_layers:
-                sys.exit("No layer found for MACHINE `{0}`".format(args.machine))
-
-            configured_layer_names |= set(l.name for l in machine_layers)
-
     if args.distro and args.distro != 'nodistro':
-        with status("Determining layers to include for DISTRO '{0}'".format(args.distro)):
-            distro_layers = all_layers.which('conf/distro/{0}.conf'.format(args.distro))
-            if not distro_layers:
-                sys.exit("No layer found for DISTRO `{0}`".format(args.distro))
+        configured_layer_names |= get_layers_for(args.distro, 'DISTRO', 'distro')
 
-            configured_layer_names |= set(l.name for l in distro_layers)
+    if args.machine:
+        configured_layer_names |= get_layers_for(args.machine, 'MACHINE', 'machine')
 
     if args.sdkmachine:
-        with status("Determining layers to include for SDKMACHINE '{0}'".format(args.sdkmachine)):
-            sdkmachine_layers = all_layers.which('conf/machine-sdk/{0}.conf'.format(args.sdkmachine))
-            if not sdkmachine_layers:
-                sys.exit("No layer found for SDKMACHINE `{0}`".format(args.sdkmachine))
+        configured_layer_names |= get_layers_for(args.sdkmachine, 'SDKMACHINE', 'machine-sdk')
 
-            configured_layer_names |= set(l.name for l in sdkmachine_layers)
+    with status('Processing layer dependencies'):
+        configured_layers = Layers()
+        for name in configured_layer_names:
+            if name not in all_layers.by_name:
+                sys.exit("Layer '{0}' not found".format(name))
 
-    configured_layers = Layers()
-    for name in configured_layer_names:
-        if name not in all_layers.by_name:
-            sys.exit("Layer '{0}' not found".format(name))
-
-        layers, missing_layers = all_layers.get_by_name_recursive(name)
-        if missing_layers:
-            sys.exit("Dependent layers `{0}` not found for requested layer `{1}`".format(', '.join(missing_layers), name))
-        configured_layers |= layers
-
-    for name in args.optional_layers:
-        if name in all_layers.by_name:
             layers, missing_layers = all_layers.get_by_name_recursive(name)
             if missing_layers:
-                sys.stderr.write("Warning: optional layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
-            else:
-                configured_layers |= layers
+                sys.exit("Dependent layers `{0}` not found for requested layer `{1}`".format(', '.join(missing_layers), name))
+            configured_layers |= layers
 
-    for name in args.extra_layers:
-        if name in all_layers.by_name:
-            layers, missing_layers = all_layers.get_by_name_recursive(name)
-            if not missing_layers:
-                configured_layers |= layers
+    if args.optional_layers:
+        with LayerStatus('Checking for optional layers', verbose=args.verbose) as s:
+            found_optional = set()
+            for name in args.optional_layers:
+                if name in all_layers.by_name:
+                    layers, missing_layers = all_layers.get_by_name_recursive(name)
+                    if missing_layers:
+                        sys.stderr.write("Warning: optional layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
+                    else:
+                        found_optional.update(layers)
+
+            found_optional.difference_update(configured_layers)
+            s.set_layer_status(found_optional)
+            configured_layers |= found_optional
+
+    if args.extra_layers:
+        with LayerStatus('Checking for extra layers', verbose=args.verbose) as s:
+            found_extra = set()
+            for name in args.extra_layers:
+                if name in all_layers.by_name:
+                    layers, missing_layers = all_layers.get_by_name_recursive(name)
+                    if not missing_layers:
+                        found_extra.update(layers)
+
+            found_extra.difference_update(configured_layers)
+            s.set_layer_status(found_extra)
+            configured_layers |= found_extra
 
     for layer in configured_layers.priority_sorted():
         print(layer.path)

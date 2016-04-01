@@ -99,9 +99,10 @@ abspath () {
 
 configure_for_machine () {
     if [ -n "$EXCLUDEDLAYERS" ]; then
-        set -- -x "$EXCLUDEDLAYERS"
-    else
-        set --
+        set -- "$@" -x "$EXCLUDEDLAYERS"
+    fi
+    if [ "$verbose" -eq 1 ]; then
+        set -- "$@" -v
     fi
 
 
@@ -153,9 +154,10 @@ process_arguments () {
     MELDIR=
     OEROOT=
     extralayers=
-    force_overwrite=
-    toasterconfig=
-    while getopts b:o:l:fth opt; do
+    force_overwrite=0
+    toasterconfig=0
+    verbose=0
+    while getopts b:o:l:tfvh opt; do
         case "$opt" in
             b)
                 BUILDDIR="$(abspath $OPTARG)"
@@ -166,10 +168,14 @@ process_arguments () {
             l)
                 extralayers="$OPTARG"
                 ;;
-            t)  toasterconfig="yes"
+            t)
+                toasterconfig=1
                 ;;
             f)
-                force_overwrite="-f"
+                force_overwrite=1
+                ;;
+            v)
+                verbose=1
                 ;;
             \?|h)
                 usage
@@ -247,7 +253,7 @@ setup_builddir () {
         fi
     fi
 
-    if [ "$force_overwrite" = "-f" ]; then
+    if [ $force_overwrite -eq 1 ]; then
         rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
     fi
 
@@ -300,7 +306,7 @@ setup_builddir () {
         if [ -e "$layerdir/pre-setup.$MACHINE" ]; then
             . "$layerdir/pre-setup.$MACHINE"
         fi
-        PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" configure_for_machine "$BUILDDIR/conf"
+        PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" configure_for_machine
     fi
 
     cat >$BUILDDIR/setup-environment <<END
@@ -334,6 +340,6 @@ if [ -e $BUILDDIR/conf/local.conf ]; then
     fi
 fi
 
-if [ "$toasterconfig" = "yes" ]; then
+if [ $toasterconfig -eq 1 ]; then
     $layerdir/scripts/toaster_configuration "$BUILDDIR" "$MELDIR"
 fi
