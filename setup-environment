@@ -63,7 +63,8 @@ else
     fi
 
     OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" EXCLUDEDLAYERS="$EXCLUDEDLAYERS" $layerdir/scripts/setup-mel-builddir "$@"
-    if [ $? -eq 0 ] && [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ]; then
+    mel_setup_ret=$?
+    if [ $mel_setup_ret -eq 0 ] && [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ]; then
         . $BUILDDIR/setup-environment >/dev/null 2>&1
 
         configured_layers () {
@@ -102,4 +103,5 @@ else
     unset OPTIONALLAYERS
     unset EXCLUDEDLAYERS
     unset layerdir
+    test $mel_setup_ret -eq 0
 fi
