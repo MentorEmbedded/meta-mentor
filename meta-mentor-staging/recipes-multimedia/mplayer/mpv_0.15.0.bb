@@ -4,6 +4,7 @@ HOMEPAGE = "http://www.mpv.io/"
 DEPENDS = "zlib ffmpeg jpeg virtual/libx11 xsp libxv \
            libxscrnsaver libv4l libxinerama \
            libxkbcommon \
+           pulseaudio virtual/mesa libdrm \
 "
 
 REQUIRED_DISTRO_FEATURES = "x11"
