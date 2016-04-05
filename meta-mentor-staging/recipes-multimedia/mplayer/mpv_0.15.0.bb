@@ -4,6 +4,7 @@ HOMEPAGE = "http://www.mpv.io/"
 DEPENDS = "zlib ffmpeg jpeg virtual/libx11 xsp libxv \
            libxscrnsaver libv4l libxinerama \
            libxkbcommon \
+           pulseaudio virtual/mesa libdrm \
 "
 
 REQUIRED_DISTRO_FEATURES = "x11"
@@ -22,10 +23,11 @@ SRC_URI[waf.sha256sum] = "01bf2beab2106d1558800c8709bc2c8e496d3da4a2ca343fe091f2
 inherit pkgconfig
 
 # Note: both lua and libass are required to get on-screen-display (controls)
-PACKAGECONFIG ??= "lua libass"
+PACKAGECONFIG ??= "lua libass ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'wayland', '', d)}"
 PACKAGECONFIG[lua] = "--enable-lua,--disable-lua,lua luajit"
 PACKAGECONFIG[libass] = "--enable-libass,--disable-libass,libass"
 PACKAGECONFIG[libarchive] = "--enable-libarchive,--disable-libarchive,libarchive"
+PACKAGECONFIG[wayland] = "--enable-wayland,--disable-wayland,wayland"
 
 EXTRA_OECONF = " \
     --prefix=${prefix} \
