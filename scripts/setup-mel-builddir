@@ -110,7 +110,7 @@ configure_for_machine () {
     echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
     layersfile=$(mktemp setup-mel-builddir.XXXXXX)
 
-    layerpaths="*:*/*:$MELDIR/*:$MELDIR/*/*"
+    layerpaths="*:*/*:meta*/*/*:$MELDIR/*:$MELDIR/*/*:$MELDIR/meta*/*/*"
     # Convert layer paths to layer names for bb-determine-layers
     extralayernames=
     for layer in $extralayers; do
