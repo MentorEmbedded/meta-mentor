@@ -46,3 +46,17 @@ DEFAULTTUNE = "cortexa9hf-neon"
 
 # Prefer ffmpeg instead of libav for ffmpeg.
 PREFERRED_PROVIDER_ffmpeg = "ffmpeg"
+
+# MPV requires packages that have IP issues and other restrictions hence they
+# are not included by default. If you agree with their licenses and want to
+# include MPV and its dependent license restricted packages in your rootfs
+# then set INCLUDE_MPV to yes.
+#
+# Note: Currently MPV is only supported by core-image-sato.
+
+INCLUDE_MPV = "no"
+
+MPV = "${@bb.utils.contains('INCLUDE_MPV', 'yes', 'mpv', '', d)}"
+LIC_WHITELIST_MPV = "${@bb.utils.contains('INCLUDE_MPV', 'yes', 'commercial_ffmpeg commercial_x264', '', d)}"
+LICENSE_FLAGS_WHITELIST += "${LIC_WHITELIST_MPV}"
+CORE_IMAGE_EXTRA_INSTALL_append += "${MPV}"
