@@ -106,18 +106,23 @@ def kernel_set_defconfig(args):
 
 
 def kernel_add_dts(args):
+    import oe.recipeutils
+
     rd = _parse_recipe(args.recipe, tinfoil)
     if not rd:
         return 1
 
-    packages = rd.getVar('PACKAGES', True).split()
-    if 'kernel-devicetree' not in packages:
-        logger.warn("kernel-devicetree not in the kernel recipe's PACKAGES. This likely means that linux-dtb.inc was not included, so dts files will not be used. Please include this in your kernel recipe ({0}) to proceed.")
-
     dtbs = (os.path.basename(dts.replace('dts', 'dtb')) for dts in args.dts_files)
     extralines = ['KERNEL_DEVICETREE += {0}'.format(' '.join(dtbs))]
     files = dict((dts, os.path.join('arch/${{ARCH}}/boot/dts/{0}'.format(os.path.basename(dts)))) for dts in args.dts_files)
-    return append_srcfiles(args.destlayer, rd, files, use_workdir=False, use_machine=True, extralines=extralines)
+    ret = append_srcfiles(args.destlayer, rd, files, use_workdir=False, use_machine=True, extralines=extralines)
+
+    packages = rd.getVar('PACKAGES', True).split()
+    if 'kernel-devicetree' not in packages:
+        appendpath, _ = oe.recipeutils.get_bbappend_path(rd, args.destlayer, wildcardver=False)
+        with open(appendpath, 'a') as f:
+            f.write('require recipes-kernel/linux/linux-dtb.inc')
+    return ret
 
 
 def kernel_add_fragments(args):
