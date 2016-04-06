@@ -60,17 +60,3 @@ MPV = "${@bb.utils.contains('INCLUDE_MPV', 'yes', 'mpv', '', d)}"
 LIC_WHITELIST_MPV = "${@bb.utils.contains('INCLUDE_MPV', 'yes', 'commercial_ffmpeg commercial_x264', '', d)}"
 LICENSE_FLAGS_WHITELIST += "${LIC_WHITELIST_MPV}"
 CORE_IMAGE_EXTRA_INSTALL_append += "${MPV}"
-
-# Certain multimedia formats requires packages that have IP issues and other
-# restrictions and hence they are not included in the root file-system by default.
-# If you agree with their licenses and want to include those license restricted
-# packages in your rootfs then set INCLUDE_COMMERCIAL_MULTIMEDIA to yes.
-
-INCLUDE_COMMERCIAL_MULTIMEDIA = "no"
-
-COMMERCIAL_MULTIMEDIA = "${@bb.utils.contains('INCLUDE_COMMERCIAL_MULTIMEDIA', 'yes', 'gstreamer1.0-plugins-ugly gstreamer1.0-libav', '', d)}"
-LIC_WHITELIST_COMMERCIAL = "${@bb.utils.contains('INCLUDE_COMMERCIAL_MULTIMEDIA', 'yes', ' commercial_gstreamer1.0-plugins-ugly \
-                                            commercial_gstreamer1.0-libav commercial_lame commercial_libmad commercial_mpeg2dec ', '', d)}"
-
-LICENSE_FLAGS_WHITELIST += "${LIC_WHITELIST_COMMERCIAL}"
-CORE_IMAGE_EXTRA_INSTALL_append += "${COMMERCIAL_MULTIMEDIA}"
