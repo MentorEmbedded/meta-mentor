@@ -1,8 +1,3 @@
-# Override intel-corei7-64's inclusion of linux-firmware in favor of a minimal subset
-# which holds just the wireless firmware
-MACHINE_EXTRA_RRECOMMENDS_remove_intel-corei7-64 = "linux-firmware"
-MACHINE_EXTRA_RRECOMMENDS_append_intel-corei7-64 = " firmware-wireless"
-
 # vfat support required for minnowmax
 MACHINE_FEATURES_append_intel-corei7-64 = " vfat"
 
