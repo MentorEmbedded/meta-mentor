@@ -6,7 +6,8 @@
 # version 2.  This program  is licensed "as is" without any warranty of any
 # kind, whether express or implied.
 
-CORELAYERS="${CORELAYERS:-core mel mel-support mentor-staging}"
+MEL_DISTRO="${MEL_DISTRO:-mel}"
+CORELAYERS="${CORELAYERS:-core mel-support mentor-staging}"
 OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
 EXTRAMELLAYERS="${EXTRAMELLAYERS:-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery}"
 layer_priority_overrides="openembedded-layer=1"
@@ -98,9 +99,10 @@ abspath () {
 
 configure_for_machine () {
     if [ -n "$EXCLUDEDLAYERS" ]; then
-        set -- -x "$EXCLUDEDLAYERS"
-    else
-        set --
+        set -- "$@" -x "$EXCLUDEDLAYERS"
+    fi
+    if [ "$verbose" -eq 1 ]; then
+        set -- "$@" -v
     fi
 
 
@@ -130,7 +132,7 @@ configure_for_machine () {
         updatelayernames="$updatelayernames $layer"
     done
 
-    $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "$CORELAYERS $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" -O "$layer_priority_overrides" "$@" $MACHINE >$layersfile
+    $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "$CORELAYERS $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" -O "$layer_priority_overrides" -m "$MACHINE" -d "$MEL_DISTRO" "$@" >$layersfile
     if [ $? -ne 0 ]; then
         rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
@@ -152,9 +154,10 @@ process_arguments () {
     MELDIR=
     OEROOT=
     extralayers=
-    force_overwrite=
-    toasterconfig=
-    while getopts b:o:l:fth opt; do
+    force_overwrite=0
+    toasterconfig=0
+    verbose=0
+    while getopts b:o:l:tfvh opt; do
         case "$opt" in
             b)
                 BUILDDIR="$(abspath $OPTARG)"
@@ -165,10 +168,14 @@ process_arguments () {
             l)
                 extralayers="$OPTARG"
                 ;;
-            t)  toasterconfig="yes"
+            t)
+                toasterconfig=1
                 ;;
             f)
-                force_overwrite="-f"
+                force_overwrite=1
+                ;;
+            v)
+                verbose=1
                 ;;
             \?|h)
                 usage
@@ -214,10 +221,6 @@ setup_builddir () {
         return 3
     fi
 
-    if [ "$force_overwrite" = "-f" ]; then
-        rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
-    fi
-
     TEMPLATECONF=
     MACHINE=$1
     if [ -n "$MACHINE" ]; then
@@ -226,7 +229,11 @@ setup_builddir () {
             TEMPLATECONF=$MELDIR/$MACHINE/conf
         fi
     else
-        if [ ! -e $BUILDDIR/conf/local.conf -o ! -e $BUILDDIR/conf/bblayers.conf ]; then
+        if [ -e "$BUILDDIR/conf/local.conf" ]; then
+            MACHINE=$(sed -n 's/^MACHINE ?*= "\([^"]*\)"/\1/p' $BUILDDIR/conf/local.conf)
+        fi
+
+        if [ ! -e $BUILDDIR/conf/local.conf -o ! -e $BUILDDIR/conf/bblayers.conf ] || [ -z "$MACHINE" ]; then
             tmpfile="$(mktemp -t "${0##*/}.XXXXX")"
             ls -1d $MELDIR/*/binary 2>/dev/null | sed "s,^$MELDIR/,,; s,/binary$,," | \
                 while read machine; do
@@ -244,6 +251,10 @@ setup_builddir () {
                 TEMPLATECONF=$MELDIR/$MACHINE/conf
             fi
         fi
+    fi
+
+    if [ $force_overwrite -eq 1 ]; then
+        rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
     fi
 
     : ${TEMPLATECONF:=$layerdir/conf}
@@ -285,10 +296,6 @@ setup_builddir () {
         fi
     fi
 
-    if [ -z "$MACHINE" ]; then
-        MACHINE=$(sed -n 's/^MACHINE ?*= "\([^"]*\)"/\1/p' $BUILDDIR/conf/local.conf)
-    fi
-
     if [ -d "$MELDIR/bitbake" ]; then
         BITBAKEDIR="$MELDIR/bitbake"
     else
@@ -299,7 +306,7 @@ setup_builddir () {
         if [ -e "$layerdir/pre-setup.$MACHINE" ]; then
             . "$layerdir/pre-setup.$MACHINE"
         fi
-        PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" configure_for_machine "$BUILDDIR/conf"
+        PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" configure_for_machine
     fi
 
     cat >$BUILDDIR/setup-environment <<END
@@ -324,7 +331,6 @@ layerdir="${scriptsdir%/*}"
 if [ -e $layerdir/../.mel-lite ]; then
     MEL_DISTRO="mel-lite"
 fi
-MEL_DISTRO="${MEL_DISTRO:-mel}"
 
 setup_builddir "$@" || exit $?
 if [ -e $BUILDDIR/conf/local.conf ]; then
@@ -334,6 +340,6 @@ if [ -e $BUILDDIR/conf/local.conf ]; then
     fi
 fi
 
-if [ "$toasterconfig" = "yes" ]; then
+if [ $toasterconfig -eq 1 ]; then
     $layerdir/scripts/toaster_configuration "$BUILDDIR" "$MELDIR"
 fi

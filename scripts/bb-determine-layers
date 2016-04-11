@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 import argparse
+import collections
+import contextlib
 import glob
 import os
 import signal
 import sys
-from collections import defaultdict
 
 
 glob_default = './*/:./*/*/:{scriptdir}/../../*/:{scriptdir}/../../*/*/'
@@ -25,7 +26,7 @@ def sigterm_exception(signum, stackframe):
 
 def setup_command_import(command, relpath='../lib'):
     """Set up sys.path based on the location of a binary in the PATH """
-    PATH = os.getenv('PATH').split(':')
+    PATH = os.environ['PATH'].split(':')
     cmd_paths = [os.path.join(path, relpath)
                  for path in PATH if os.path.exists(os.path.join(path, command))]
     if not cmd_paths:
@@ -34,11 +35,16 @@ def setup_command_import(command, relpath='../lib'):
     sys.path[0:0] = cmd_paths
 
 
-def find(dir, **walkoptions):
+def find(dir, dirfilter=None, **walkoptions):
     """ Given a directory, recurse into that directory,
     returning all files as absolute paths. """
 
     for root, dirs, files in os.walk(dir, **walkoptions):
+        if dirfilter is not None:
+            for d in dirs:
+                if not dirfilter(d):
+                    dirs.remove(d)
+
         for file in files:
             yield os.path.join(root, file)
 
@@ -120,7 +126,7 @@ def process_arguments(cmdline_args):
     parser.add_argument('-l', '--layers', default=layers_default,
             help='base layers to include. space separated. default: `{0}`'.format(layers_default))
     parser.add_argument('-o', '--optional-layers', default='',
-            help='optional layers to include. space separated.')
+            help='optional layers to include. space separated. These layers are included if they and their dependencies are available, but are silently left out otherwise.')
     parser.add_argument('-e', '--extra-layers', default='',
             help='extra layers to include. space separated. These layers are expected to exist, but are only included if their dependencies are already included in the configuration.')
     parser.add_argument('-x', '--excluded-layers', default='',
@@ -132,15 +138,18 @@ def process_arguments(cmdline_args):
             help='wildcard patterns to locate layers. colon separated. default: `{0}`'.format(glob_default))
     parser.add_argument('-p', '--paths',
             help='paths to search recursively to find layers. colon separated. equivalent to the "find" command', default='')
-    parser.add_argument('machine', help='machine to use when selecting bsp layers')
+    parser.add_argument('-m', '--machine', help='add layer(s) providing the specified MACHINE')
+    parser.add_argument('-d', '--distro', help='add layer(s) providing the specified DISTRO')
+    parser.add_argument('-s', '--sdkmachine', help='add layer(s) providing the specified SDKMACHINE')
+    parser.add_argument('-v', '--verbose', help='increase verbosity', action='store_true')
 
     scriptdir = os.path.dirname(__file__)
     args = parser.parse_args(cmdline_args)
 
     args.layers = args.layers.split()
     args.optional_layers = args.optional_layers.split()
-    args.excluded_layers = args.excluded_layers.split()
     args.extra_layers = args.extra_layers.split()
+    args.excluded_layers = args.excluded_layers.split()
 
     new_globs = []
     for pattern in args.globs.split(':'):
@@ -164,8 +173,8 @@ class LayerError(Exception):
 
 class Layer(object):
     def __init__(self, path, confpath, name, priority, pattern, depends):
-        self.path = path
-        self.confpath = confpath
+        self.path = os.path.realpath(path)
+        self.confpath = os.path.realpath(confpath)
         self.name = name
         self.priority = priority
         self.depends = depends
@@ -173,7 +182,8 @@ class Layer(object):
         self.pattern = pattern
 
     def __repr__(self):
-        return 'Layer(%s, %s, %s, %s, %s, %s)' % (repr(self.path), repr(self.confpath), repr(self.name), repr(self.priority), repr(self.pattern), repr(self.depends))
+        return '{0.__class__.__name__}({0.path!r}, {0.confpath!r},' \
+               '{0.name!r}, {0.priority!r}, {0.pattern!r}, {0.depends!r})'.format(self)
 
     def __hash__(self):
         return hash(repr(self))
@@ -195,13 +205,13 @@ class Layer(object):
             raise LayerError(exc)
         ldata.expandVarref('LAYERDIR')
 
-        collections = (ldata.getVar('BBFILE_COLLECTIONS', True) or '').split()
-        if not collections:
+        bbfile_collections = (ldata.getVar('BBFILE_COLLECTIONS', True) or '').split()
+        if not bbfile_collections:
             name = os.path.basename(layer_path)
             l = Layer(layer_path, lconf, name, 0, None, set())
             layers.append(l)
 
-        for name in collections:
+        for name in bbfile_collections:
             pattern = ldata.getVar('BBFILE_PATTERN_%s' % name, True)
             priority = ldata.getVar('BBFILE_PRIORITY_%s' % name, True) or 0
             depends = ldata.getVar('LAYERDEPENDS_%s' % name, True) or ''
@@ -213,91 +223,158 @@ class Layer(object):
             return layers
 
 
-def resolve_dependencies(layers_by_name):
-    missing_dependencies = defaultdict(set)
+class Layers(collections.MutableSet):
+    def __init__(self, iterable=None):
+        """A collection of layers. Maintains lookup mappings by path and name"""
+        self.layers = set()
+        self.duplicates = collections.defaultdict(set)
+        self.by_path = {}
+        self.by_name = {}
 
-    for layer in layers_by_name.values():
-        missing_layer_deps = set()
-        new_deps = set()
+        if iterable is not None:
+            self |= iterable
 
-        for depname in layer.depends:
-            dep = layers_by_name.get(depname)
-            if not dep:
-                missing_layer_deps.add(depname)
-            else:
-                new_deps.add(dep)
+    def __contains__(self, layer):
+        return layer in self.layers
 
-        layer.depends = new_deps
-        if missing_layer_deps:
-            layer.missingdeps |= missing_layer_deps
-            missing_dependencies[layer] = missing_layer_deps
+    def __iter__(self):
+        return iter(self.layers)
 
-    return missing_dependencies
+    def __len__(self):
+        return len(self.layers)
+
+    def __repr__(self):
+        return '{0.__class__.__name__}({0.layers!r})'.format(self)
+
+    def __hash__(self):
+        return hash(repr(self))
+
+    def add(self, layer):
+        if layer in self:
+            return
+
+        if layer.path in self.by_path:
+            return
+
+        if layer.name in self.by_name:
+            self.duplicates[layer.name].add(self.by_name[layer.name])
+            self.duplicates[layer.name].add(layer)
+            return
+
+        self.layers.add(layer)
+        self.by_path[layer.path] = layer
+        self.by_name[layer.name] = layer
+
+    def add_from_path(self, layerpath, data=None):
+        layerpath = os.path.realpath(layerpath)
+        if layerpath in self.by_path:
+            return
+
+        self |= Layer.from_layerpath(layerpath, data)
+
+    def discard(self, layer):
+        self.layers.discard(layer)
+        del self.by_path[layer.path]
+        del self.by_name[layer.name]
+
+    def clear(self):
+        self.layers.clear()
+        self.by_path.clear()
+        self.by_name.clear()
+
+    def priority_sorted(self):
+        return sorted(self.layers, key=lambda l: (l.priority, l.name), reverse=True)
+
+    def which(self, path, all=True):
+        layers = []
+        for layer in self.priority_sorted():
+            if os.path.exists(os.path.join(layer.path, path)):
+                layers.append(layer)
+        return layers
+
+    def get_by_name_recursive(self, name):
+        """Get a layer by name and its dependencies, recursively.
+
+        Returns a Layers() collection, and a list of missing dependencies."""
+
+        missing = set()
+        found_layers = Layers()
+
+        if name in self.duplicates:
+            raise DuplicateLayers(name, self.duplicates[name])
+
+        try:
+            layer = self.by_name[name]
+        except KeyError:
+            missing.add(name)
+        else:
+            found_layers.add(layer)
+            for dep in layer.depends:
+                try:
+                    dep_found, dep_missing = self.get_by_name_recursive(dep)
+                except KeyError:
+                    missing.add(dep)
+                else:
+                    found_layers |= dep_found
+                    missing |= dep_missing
+        return found_layers, missing
 
 
-class MissingDeps(Exception):
-    def __init__(self, layer, deps):
-        self.layer = layer
-        self.deps = deps
-        Exception.__init__(self)
+class DuplicateLayers(Exception):
+    def __init__(self, name, layers):
+        self.name = name
+        self.layers = layers
 
     def __str__(self):
-        return 'Layer `{}` has missing dependencies: {}'.format(self.layer, ', '.join(self.deps))
+        return 'Duplicate layers found for %s:\n%s' % (self.name, ''.join('  %s\n' % l.path for l in self.layers))
 
 
-def get_configured_layers(all_layers, base_layer_names, optional_layer_names, extra_layer_names, missing_deps, machine):
-    configured_layers, optional = set(), set()
+class LayerStatus(StatusDisplay):
+    """Show status of work whose results are a set of layers."""
 
-    def layer_and_deps(layer, seen):
-        if layer.missingdeps:
-            raise MissingDeps(layer.name, layer.missingdeps)
-        if layer in seen:
-            return
-        seen.add(layer)
+    def __init__(self, message, verbose=False, output=None):
+        super(LayerStatus, self).__init__(message, output)
+        self.verbose = verbose
 
-        for d in layer.depends:
-            for _d in layer_and_deps(d, seen):
-                yield _d
-        yield layer
-
-    def add_layer(layer, configured_layers, seen):
-        configured_layers |= set(layer_and_deps(layer, seen))
-
-    seen = set()
-    layers_by_name = dict((l.name, l) for l in all_layers)
-    for layer in all_layers:
-        if os.path.exists(os.path.join(layer.path, 'conf', 'machine',
-                                       '{0}.conf'.format(machine))):
-            add_layer(layer, configured_layers, seen)
-
-    for base_name in base_layer_names:
-        if base_name not in layers_by_name:
-            raise Exception("Requested base layer `{}` not found".format(base_name))
-        add_layer(layers_by_name[base_name], configured_layers, seen)
-
-    for optional_name in optional_layer_names:
-        if optional_name in layers_by_name:
-            optional_layer = layers_by_name[optional_name]
-            optional.add(optional_layer)
-            try:
-                add_layer(optional_layer, configured_layers, seen)
-            except MissingDeps:
-                pass
-
-    for extra_name in extra_layer_names:
-        layer = layers_by_name[extra_name]
-        with_deps = set(layer_and_deps(layer, seen))
-        with_deps.remove(layer)
-        if any(dep not in configured_layers for dep in with_deps):
-            continue
+    def set_layer_status(self, layers):
+        layer_names = set(l.name for l in layers)
+        if self.verbose:
+            self.set_status('')
+            for f in sorted(l.path for l in layers):
+                self.output.write('  %s\n' % f)
         else:
-            configured_layers.add(layer)
-
-    return configured_layers, optional
+            self.set_status(','.join(sorted(layer_names)))
 
 
-def print_layers(cmdline_opts):
+def get_layerpaths_bitbake(globs=None, paths=None):
+    bitbake_path = None
+    layer_paths = set()
+
+    for pattern in globs:
+        for glob_path in glob.glob(pattern):
+            layerconf_path = os.path.join(glob_path, 'conf', 'layer.conf')
+            if os.path.exists(layerconf_path):
+                layer_paths.add(os.path.realpath(glob_path))
+            elif os.path.exists(os.path.join(glob_path, 'bin', 'bitbake')):
+                bitbake_path = os.path.join(glob_path, 'bin')
+
+    for path in paths:
+        for subpath in find(path, dirfilter=lambda d: d != 'lib'):
+            if subpath.endswith('/conf/layer.conf'):
+                layer_paths.add(os.path.realpath(os.path.dirname(os.path.dirname(subpath))))
+            elif subpath.endswith('/bin/bitbake'):
+                bitbake_path = os.path.dirname(subpath)
+
+    return layer_paths, bitbake_path
+
+
+def determine_layers(cmdline_opts):
     args = process_arguments(cmdline_opts)
+
+    with status('Locating layers and bitbake'):
+        layer_paths, bitbake_path = get_layerpaths_bitbake(args.globs, args.paths)
+        if bitbake_path is not None:
+            os.environ['PATH'] += ':' + bitbake_path
 
     setup_command_import('bitbake')
     try:
@@ -311,73 +388,92 @@ def print_layers(cmdline_opts):
     data = bb.data.init()
     bb.parse.init_parser(data)
 
-    all_layers = set()
-    with status('Locating layers and parsing layer.conf files'):
-        layer_paths = set()
-        for pattern in args.globs:
-            paths = glob.glob(pattern)
-            for path in paths:
-                layerconf_path = os.path.join(path, 'conf', 'layer.conf')
-                if os.path.exists(layerconf_path):
-                    layer_paths.add(os.path.realpath(path))
-
-        for path in args.paths:
-            for subpath in find(path):
-                if subpath.endswith('/conf/layer.conf'):
-                    layer_paths.add(os.path.realpath(subpath))
-
+    all_layers = Layers()
+    with status('Parsing layer configuration files'):
         for layer_path in layer_paths:
             try:
-                layers = Layer.from_layerpath(layer_path, data)
+                all_layers.add_from_path(layer_path, data)
             except LayerError as exc:
                 sys.exit(str(exc))
-            else:
-                all_layers |= set(layers)
 
-    all_layers = set(filter(lambda layer:layer.name not in args.excluded_layers, all_layers))
-
-    for layer in all_layers:
-        priority_override = args.override_layer_priorities.get(layer.name)
-        if priority_override is not None:
-            layer.priority = priority_override
-
-    duplicates = defaultdict(set)
-    with status('Resolving layer dependencies'):
-        layers_by_name = {}
-        for l in all_layers:
-            if l.name in layers_by_name:
-                duplicates[l.name].add(layers_by_name[l.name].path)
-                duplicates[l.name].add(l.path)
-            else:
-                layers_by_name[l.name] = l
-
-        missing_deps = resolve_dependencies(layers_by_name)
-
-    with status("Determining layers to include for MACHINE '{0}'".format(args.machine)) as s:
-        try:
-            configured_layers, optional = get_configured_layers(all_layers, args.layers, args.optional_layers, args.extra_layers, missing_deps, args.machine)
-        except Exception as exc:
-            sys.exit('ERROR: {0}'.format(exc))
+    for layer in list(all_layers):
+        if layer.name in args.excluded_layers:
+            all_layers.discard(layer)
         else:
-            configured_names = set(l.name for l in configured_layers)
-            configured_dupes = list((n, l) for n, l in duplicates.iteritems() if n in configured_names)
-            if configured_dupes:
-                s.set_status('failed (duplicate layers)')
-                for name, paths in configured_dupes:
-                    sys.stderr.write("Multiple layer paths found for layer name '{0}':\n{1}\n".format(name, '\n'.join('  ' + p for p in sorted(paths))))
-                sys.exit(1)
+            priority_override = args.override_layer_priorities.get(layer.name)
+            if priority_override is not None:
+                layer.priority = priority_override
 
-    for layer in optional:
-        sys.stderr.write("Layer '{0}' was detected, including in configuration\n".format(layer.name))
+    def get_layers_for(value, varname, cfgpath):
+        with LayerStatus("Determining layers to include for {0} '{1}'".format(varname, value), verbose=args.verbose) as s:
+            layers = all_layers.which('conf/{0}/{1}.conf'.format(cfgpath, value))
+            if not layers:
+                sys.exit("No layer found for {0} `{1}`".format(varname, value))
 
-    for layer in sorted(configured_layers, key=lambda l: (l.priority, l.name), reverse=True):
+            s.set_layer_status(layers)
+            layer_names = set(l.name for l in layers)
+            return layer_names
+
+    configured_layer_names = set(args.layers)
+
+    if args.distro and args.distro != 'nodistro':
+        configured_layer_names |= get_layers_for(args.distro, 'DISTRO', 'distro')
+
+    if args.machine:
+        configured_layer_names |= get_layers_for(args.machine, 'MACHINE', 'machine')
+
+    if args.sdkmachine:
+        configured_layer_names |= get_layers_for(args.sdkmachine, 'SDKMACHINE', 'machine-sdk')
+
+    with status('Processing layer dependencies'):
+        configured_layers = Layers()
+        for name in configured_layer_names:
+            if name not in all_layers.by_name:
+                sys.exit("Layer '{0}' not found".format(name))
+
+            layers, missing_layers = all_layers.get_by_name_recursive(name)
+            if missing_layers:
+                sys.exit("Dependent layers `{0}` not found for requested layer `{1}`".format(', '.join(missing_layers), name))
+            configured_layers |= layers
+
+    if args.optional_layers:
+        with LayerStatus('Checking for optional layers', verbose=args.verbose) as s:
+            found_optional = set()
+            for name in args.optional_layers:
+                if name in all_layers.by_name:
+                    layers, missing_layers = all_layers.get_by_name_recursive(name)
+                    if missing_layers:
+                        sys.stderr.write("Warning: optional layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
+                    else:
+                        found_optional.update(layers)
+
+            found_optional.difference_update(configured_layers)
+            s.set_layer_status(found_optional)
+            configured_layers |= found_optional
+
+    if args.extra_layers:
+        with LayerStatus('Checking for extra layers', verbose=args.verbose) as s:
+            found_extra = set()
+            for name in args.extra_layers:
+                if name in all_layers.by_name:
+                    layers, missing_layers = all_layers.get_by_name_recursive(name)
+                    if not missing_layers:
+                        found_extra.update(layers)
+
+            found_extra.difference_update(configured_layers)
+            s.set_layer_status(found_extra)
+            configured_layers |= found_extra
+
+    for layer in configured_layers.priority_sorted():
         print(layer.path)
 
 
 if __name__ == '__main__':
     signal.signal(signal.SIGTERM, sigterm_exception)
     try:
-        sys.exit(print_layers(sys.argv[1:]) or 0)
+        sys.exit(determine_layers(sys.argv[1:]) or 0)
+    except DuplicateLayers as exc:
+        sys.exit(str(exc))
     except KeyboardInterrupt:
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         os.kill(os.getpid(), signal.SIGINT)
