@@ -19,10 +19,6 @@ do_deploy_append () {
 	install ${WORKDIR}/u-boot.scr ${DEPLOYDIR}/
 
 	# Remove additional files that are un-wanted
-	rm -f ${DEPLOYDIR}/u-boot-${MACHINE}-${PV}-${PR} \
-	      ${DEPLOYDIR}/u-boot-${MACHINE} \
-	      ${DEPLOYDIR}/u-boot-spl-${MACHINE} \
-	      ${DEPLOYDIR}/u-boot-spl-${MACHINE}.bin \
-	      ${DEPLOYDIR}/u-boot-spl-${MACHINE}-${PV}-${PR} \
+	rm -f ${DEPLOYDIR}/u-boot-spl-${MACHINE}.bin \
 	      ${DEPLOYDIR}/u-boot-spl-${MACHINE}-${PV}-${PR}.bin
 }
