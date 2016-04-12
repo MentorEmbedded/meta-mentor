@@ -13,6 +13,3 @@ WKS_FILE ?= "minnowmax-sd-4g.wks"
 
 # dosfstools is needed to create the boot partition, mtools to copy to it
 IMAGE_DEPENDS_wic_append = " dosfstools-native mtools-native parted-native"
-
-# Deploy wic image in release artifacts
-IMAGE_FSTYPES_append_pn-archive-release = " wic.bz2"
