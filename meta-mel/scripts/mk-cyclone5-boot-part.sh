@@ -21,7 +21,7 @@ BOOT_PT_END="32775"
 P="p"
 
 # only Superuser can run this script
-if [ ${UID} -ne 0 ] ; then
+if [ `whoami` != "root" ] ; then
     echo "Please run this script as a Superuser."
     exit -1
 fi
