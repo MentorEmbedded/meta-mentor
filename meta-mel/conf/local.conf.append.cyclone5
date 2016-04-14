@@ -1,6 +1,6 @@
-# Switch to linux-altera-4.1 kernel instead of linux-altera-ltsi-3.10
-PREFERRED_PROVIDER_virtual/kernel  = "linux-altera"
-PREFERRED_VERSION_linux-altera = "4.1+gitAUTOINC+186070d468"
+# Switch to linux-altera-ltsi_4.1 kernel
+PREFERRED_PROVIDER_virtual/kernel  = "linux-altera-ltsi"
+PREFERRED_VERSION_linux-altera-ltsi = "4.1"
 
 # WIC image type support
 IMAGE_FSTYPES_append = " wic.bz2"
