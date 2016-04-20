@@ -1,6 +1,6 @@
 # Switch to linux-altera-ltsi_4.1 kernel
 PREFERRED_PROVIDER_virtual/kernel  = "linux-altera-ltsi"
-PREFERRED_VERSION_linux-altera-ltsi = "4.1"
+PREFERRED_VERSION_linux-altera-ltsi = "4.1%"
 
 # WIC image type support
 IMAGE_FSTYPES_append = " wic.bz2"
