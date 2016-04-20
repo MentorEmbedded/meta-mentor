@@ -4,7 +4,7 @@
 
 # Leave some empty space at the beginning of the card for the special
 # partition that Cyclone-5 requires for the boot loader.
-part --ondisk mmcblk --no-table --align 4 --size 16 
+part '' --ondisk mmcblk --no-table --align 4 --size 16
 
 part /boot --source bootimg-partition --ondisk mmcblk --fstype=vfat --label boot --active --align 4 --size 16
 part / --source rootfs --ondisk mmcblk --fstype=ext4 --label root --align 4 --size 7500M --overhead-factor 1 --extra-space 0
