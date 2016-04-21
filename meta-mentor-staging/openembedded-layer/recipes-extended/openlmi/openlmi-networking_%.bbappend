@@ -1,0 +1,1 @@
+DEPENDS += "konkretcmpi-native"
