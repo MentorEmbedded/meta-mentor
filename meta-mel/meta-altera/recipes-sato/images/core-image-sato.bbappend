@@ -3,6 +3,7 @@ IMAGE_INSTALL_append_cyclone5 = " xserver-xorg-xvfb \
 				  mesa-megadriver \
 				  xserver-xorg-extension-glx \
 				  webkitgtk \
+				  x11vnc \
 				"
 
 # Install OpenJDK 7 JRE if ENABLE_JAVA is set to "1"

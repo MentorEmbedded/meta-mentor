@@ -44,6 +44,9 @@ PREFERRED_PROVIDER_virtual/javac-native = "ecj-bootstrap-native"
 PREFERRED_PROVIDER_make-native = "make-native"
 PREFERRED_PROVIDER_openjdk-7-jre = "openjdk-7-jre"
 
+# Set preference for xserver-nodm-init v2.0
+PREFERRED_VERSION_xserver-nodm-init = "2.0"
+
 # Use hard-float support
 DEFAULTTUNE = "cortexa9hf-neon"
 
