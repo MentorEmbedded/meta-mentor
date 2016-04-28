@@ -26,7 +26,6 @@ SRC_URI += "\
     file://0001-module.c-change-the-load_module-optimization-to-0.patch \
     file://0005-kernel-module.c-Remove-optimization-for-complete_for.patch \
     \
-    file://kgdb.cfg \
     file://configs.cfg \
     file://autofs.cfg \
     file://filesystems.cfg \
@@ -48,6 +47,10 @@ SRC_URI += "\
 	file://0011-Input-fsp_detect-use-static-inline-instead-of-inline.patch \
 	file://0001-kernel-use-the-gnu89-standard-explicitly.patch \
 "
+
+# Enable kgdb config
+FILESEXTRAPATHS_append = ":${@os.path.dirname(bb.utils.which(BBPATH, 'files/kgdb.cfg') or '')}"
+SRC_URI += "file://kgdb.cfg"
 
 # Enable lttng config
 FILESEXTRAPATHS_append = ":${@os.path.dirname(bb.utils.which("${BBPATH}", 'files/lttng.cfg') or '')}"
