@@ -135,7 +135,7 @@ def kernel_add_fragments(args):
 
 def _kernel_add_fragments(destlayer, rd, fragments, files=None, extralines=None):
     depends = rd.getVar('DEPENDS', True).split()
-    md_depends = (rd.getVarFlag('do_kernel_metadata', 'depends') or '').split()
+    md_depends = (rd.getVarFlag('do_kernel_metadata', 'depends', True) or '').split()
     depends.extend(dep.split(':', 1)[0] for dep in md_depends)
 
     if extralines is None:
