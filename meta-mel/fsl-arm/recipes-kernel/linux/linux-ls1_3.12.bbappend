@@ -57,7 +57,7 @@ FILESEXTRAPATHS_append = ":${@os.path.dirname(bb.utils.which("${BBPATH}", 'files
 SRC_URI += "file://lttng.cfg"
 
 # Enable systemd config
-SRC_URI += "${@base_contains('DISTRO_FEATURES', 'systemd', ' file://systemd.cfg', '', d)}"
+SRC_URI += "${@bb.utils.contains('DISTRO_FEATURES', 'systemd', ' file://systemd.cfg', '', d)}"
 
 SRC_URI += "${@bb.utils.contains('BBFILE_COLLECTIONS', 'mel-iot', " ${6LOWPAN_PATCHES}", '', d)}"
 
