@@ -122,7 +122,9 @@ release_tar () {
 git_tar () {
     path="$1"
     shift
-    name="$(basename "$path")"
+    name="$1"
+    shift
+    rel="${path##*/}"
 
     if [ -e "$path/.git" ]; then
         if [ "${@oe.data.typed_value('RELEASE_USE_TAGS', d)}" = "True" ]; then
@@ -130,7 +132,7 @@ git_tar () {
         else
             version="$(git --git-dir="$path/.git" rev-list HEAD | wc -l)"
         fi
-        git --git-dir=$path/.git archive --format=tar --prefix="$name/" HEAD | bzip2 >deploy/${name}_${version}.tar.bz2
+        git --git-dir=$path/.git archive --format=tar --prefix="${rel:-.}/" HEAD | bzip2 >deploy/${name}_${version}.tar.bz2
     else
         if repo_root "$path" | grep -q '^${MELDIR}/'; then
             if [ "${@oe.data.typed_value('RELEASE_USE_TAGS', d)}" = "True" ]; then
@@ -187,7 +189,7 @@ bb_layers () {
         fi
 
         if echo "${SUBLAYERS_INDIVIDUAL_ONLY}" | grep -qw "$layer"; then
-            printf "%s %s\n" "$layer" "$layer_relpath"
+            printf "%s %s %s\n" "$layer" "$layer_relpath" "$(echo "$layer_relpath" | tr / _)"
         elif echo "${SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL}" | grep -qw "$layer"; then
             printf "%s %s\n" "$layer" "${layer##*/}"
         else
@@ -216,7 +218,7 @@ prepare_templates () {
 
     sed -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' ${TEMPLATECONF}/bblayers.conf.sample >bblayers.conf.sample
     echo 'BBLAYERS = "\' >>bblayers.conf.sample
-    bb_layers | while read path relpath; do
+    bb_layers | while read path relpath name; do
         printf '    $%s%s \\\n' '{MELDIR}/' "$relpath" >>bblayers.conf.sample
     done
     echo '"' >>bblayers.conf.sample
@@ -227,16 +229,18 @@ do_prepare_release () {
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw layers; then
         >deploy/${MACHINE}-layers.txt
-        bb_layers | sort -k1,1 -u | while read path relpath; do
-            name="${path##*/}"
+        bb_layers | sort -k1,1 -u | while read path relpath name; do
+            if [ -z "$name" ]; then
+                name="${path##*/}"
+            fi
 
-            echo "$name" >>deploy/${MACHINE}-layers.txt
-            if [ "$path" = "${MELDIR}/$relpath" ]; then
-                git_tar "$path" "--transform=s,^$path,$relpath,"
-            else
+            echo "$relpath" >>deploy/${MACHINE}-layers.txt
+            if echo "${SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL}" | grep -qw "$path"; then
                 # Grab the entire toplevel dir for non-individually-archived
                 # sub-layers
-                git_tar "$path" "--transform=s,^$path,$name,"
+                git_tar "$path" "$name" "--transform=s,^$path,$name,"
+            else
+                git_tar "$path" "$name" "--transform=s,^$path,$relpath,"
             fi
         done
     fi
@@ -255,7 +259,7 @@ do_prepare_release () {
         if [ $found_bitbake -eq 0 ]; then
             # Likely using separate bitbake rather than poky
             bitbake_path="$(repo_root $(dirname $(which bitbake))/..)"
-            git_tar "$(repo_root $(dirname $(which bitbake))/..)" "--transform=s,^$bitbake_path,${bitbake_path##*/},"
+            git_tar "$bitbake_path" bitbake "--transform=s,^$bitbake_path,${bitbake_path##*/},"
         fi
     fi
 
