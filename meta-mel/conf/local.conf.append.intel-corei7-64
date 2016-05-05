@@ -1,3 +1,6 @@
+# Prefer the LTSI 4.1 kernel rather than 4.3
+PREFERRED_VERSION_linux-yocto_intel-corei7-64 = "4.1%"
+
 # vfat support required for minnowmax
 MACHINE_FEATURES_append_intel-corei7-64 = " vfat"
 
