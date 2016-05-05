@@ -14,5 +14,5 @@ CORE_IMAGE_BASE_INSTALL += "weston weston-init weston-examples"
 # is minimal, and it's often needed by third party (or QA) binaries
 IMAGE_INSTALL_append_mel = " libgcc"
 
-IMAGE_FEATURES .= "${@base_contains('COMBINED_FEATURES', 'alsa', ' tools-audio', '', d)}"
+IMAGE_FEATURES .= "${@bb.utils.contains('COMBINED_FEATURES', 'alsa', ' tools-audio', '', d)}"
 IMAGE_INSTALL += " quota connman"
