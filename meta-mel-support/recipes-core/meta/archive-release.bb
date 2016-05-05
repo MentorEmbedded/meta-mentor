@@ -39,7 +39,13 @@ def configured_mx6_layers(d):
 
 # Sub-layers to archive individually, rather than grabbing the entire
 # repository they're in
-SUBLAYERS_INDIVIDUAL_ONLY ?= "${@configured_mx6_layers(d)}"
+def layers_by_name(d, *layers):
+    for l in layers:
+        v = d.getVar('LAYERDIR_%s' % l, True)
+        if v:
+            yield v
+
+SUBLAYERS_INDIVIDUAL_ONLY ?= "${@configured_mx6_layers(d)} ${@' '.join(layers_by_name(d, 'mentor-bsp', 'mentor-bsp-${MACHINE}'))}"
 SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL ?= "${@configured_update_layers(d)}"
 
 DEPLOY_DIR_RELEASE ?= "${DEPLOY_DIR}/release-artifacts"
