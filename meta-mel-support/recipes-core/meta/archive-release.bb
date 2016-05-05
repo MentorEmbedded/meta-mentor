@@ -229,12 +229,15 @@ do_prepare_release () {
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw layers; then
         >deploy/${MACHINE}-layers.txt
+        bb_layers | while read path relpath name; do
+            echo "$relpath" >>deploy/${MACHINE}-layers.txt
+        done
+
         bb_layers | sort -k1,1 -u | while read path relpath name; do
             if [ -z "$name" ]; then
                 name="${path##*/}"
             fi
 
-            echo "$relpath" >>deploy/${MACHINE}-layers.txt
             if echo "${SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL}" | grep -qw "$path"; then
                 # Grab the entire toplevel dir for non-individually-archived
                 # sub-layers
