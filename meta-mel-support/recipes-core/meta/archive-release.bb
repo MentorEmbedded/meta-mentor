@@ -248,14 +248,17 @@ do_prepare_release () {
     if echo "${RELEASE_ARTIFACTS}" | grep -qw bitbake; then
         bitbake_dir="$(which bitbake)"
         found_bitbake=0
-        bb_layers | while read path _; do
+        bb_layers >bblayers_for_bitbake
+        while read path _ _; do
             case "$bitbake_dir" in
                 $path/*)
                     found_bitbake=1
                     break
                     ;;
             esac
-        done
+        done <bblayers_for_bitbake
+        rm bblayers_for_bitbake
+
         if [ $found_bitbake -eq 0 ]; then
             # Likely using separate bitbake rather than poky
             bitbake_path="$(repo_root $(dirname $(which bitbake))/..)"
