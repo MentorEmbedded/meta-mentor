@@ -9,6 +9,7 @@ SRC_URI += "file://disable-altera-edac.cfg \
             file://kgdb.cfg \
             file://filesystems.cfg \
             file://block.cfg \
+            file://network.cfg \
             "
 
 # Fix FS mount messages during boot and Wifi debug messages
