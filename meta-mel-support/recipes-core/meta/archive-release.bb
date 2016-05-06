@@ -12,6 +12,8 @@ EXCLUDE_FROM_WORLD = "1"
 MELDIR ?= "${COREBASE}/.."
 TEMPLATECONF ?= "${FILE_DIRNAME}/../../../conf"
 
+PROBECONFIGS ?= "${@bb.utils.which('${BBPATH}', 'conf/probe-configs/${MACHINE}')}" 
+
 # Add a default in case the user doesn't inherit copyleft_compliance
 ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
 ARCHIVE_RELEASE_DL_TOPDIR ?= "${DL_DIR}"
@@ -41,8 +43,8 @@ SUBLAYERS_INDIVIDUAL_ONLY ?= "${@configured_mx6_layers(d)}"
 SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL ?= "${@configured_update_layers(d)}"
 
 DEPLOY_DIR_RELEASE ?= "${DEPLOY_DIR}/release-artifacts"
-RELEASE_ARTIFACTS ?= "layers bitbake templates images downloads sstate"
-RELEASE_ARTIFACTS[doc] = "List of artifacts to include (available: layers, bitbake, templates, images, downloads, sstate"
+RELEASE_ARTIFACTS ?= "layers bitbake templates images downloads sstate probeconfigs"
+RELEASE_ARTIFACTS[doc] = "List of artifacts to include (available: layers, bitbake, templates, images, downloads, sstate, probeconfigs"
 RELEASE_IMAGE ?= "core-image-base"
 RELEASE_IMAGE[doc] = "The image to build and archive in this release"
 RELEASE_USE_TAGS ?= "false"
@@ -399,6 +401,13 @@ do_prepare_release () {
         elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".gz" ]
         then
             gzip deploy/${MACHINE}.tar
+        fi
+    fi
+
+    if echo "${RELEASE_ARTIFACTS}" | grep -qw probeconfigs; then
+        if [ -d ${PROBECONFIGS} ]
+        then
+            release_tar "--transform=s,${PROBECONFIGS},probe-configs-${MACHINE}," -rf deploy/${MACHINE}.tar ${PROBECONFIGS}
         fi
     fi
 
