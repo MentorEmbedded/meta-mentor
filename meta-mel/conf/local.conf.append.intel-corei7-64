@@ -7,6 +7,13 @@ MACHINE_FEATURES_append_intel-corei7-64 = " vfat"
 # Currently qemu user mode acts up for this machine, we can't rely on it
 MACHINE_FEATURES_BACKFILL_CONSIDERED_append_intel-corei7-64 = "gobject-introspection-data"
 
+# On this platform we don't want to "install" with a live image, we want to
+# boot it directly, so disable the live initramfs, which wic doesn't use
+# anyway.
+NOISO = "1"
+INITRD_LIVE = ""
+INITRD_IMAGE_LIVE = ""
+
 # WIC image type support
 IMAGE_FSTYPES += "wic.bz2"
 
