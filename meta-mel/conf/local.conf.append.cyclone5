@@ -50,25 +50,38 @@ DEFAULTTUNE = "cortexa9hf-neon"
 # Prefer ffmpeg instead of libav for ffmpeg.
 PREFERRED_PROVIDER_ffmpeg = "ffmpeg"
 
-# MPV requires packages that have IP issues and other restrictions hence they
-# are not included by default. If you agree with their licenses and want to
-# include MPV and its dependent license restricted packages in your rootfs
-# then set INCLUDE_MPV to yes.
+
+# MPV is a movie player based on MPlayer and mplayer2. Using MPV requires
+# the use of license-restricted algorithms or software.
+#
+# MEL provides the functionality to build packages with license-restricted
+# algorithms or software. Their configuration variables can be set to
+# "yes" or "no" in the local.conf file to enable or disable the
+# functionality to include them in the build. The option to build these
+# packages is NOT enabled in the default configuration. After enabling the
+# option to build, when you build your target image, the BitBake utility
+# fetches package sources from the canonical upstream location. If you do
+# not have an active network connection, your build with these packages
+# will fail.
+#
+# Building packages with license-restricted algorithms or software may add
+# proprietary IP or functionality with other restrictions to your output.
+# Mentor Graphics has no connection with or responsibility for such
+# license-restricted algorithms or software, and failure to abide by the
+# relevant license terms may have legal consequences.
+#
+# Mentor Graphics does not distribute or endorse sources for license-
+# restricted algorithms or software, and disclaims any liability for their
+# use.
 #
 # Note: Currently MPV is only supported by core-image-sato.
 
 INCLUDE_MPV = "no"
+INCLUDE_COMMERCIAL_MULTIMEDIA = "no"
 
 COMMERCIAL_LIC_FLAGS_MPV = "commercial_ffmpeg commercial_x264"
 LICENSE_FLAGS_WHITELIST .= "${@' ${COMMERCIAL_LIC_FLAGS_MPV}' if bb.utils.to_boolean('${INCLUDE_MPV}') else ''}"
 CORE_IMAGE_EXTRA_INSTALL .= "${@' mpv' if bb.utils.to_boolean('${INCLUDE_MPV}') else ''}"
-
-# Certain multimedia formats requires packages that have IP issues and other
-# restrictions and hence they are not included in the root file-system by default.
-# If you agree with their licenses and want to include those license restricted
-# packages in your rootfs then set INCLUDE_COMMERCIAL_MULTIMEDIA to yes.
-
-INCLUDE_COMMERCIAL_MULTIMEDIA = "no"
 
 COMMERCIAL_MEDIA_PACKAGES = "gstreamer1.0-plugins-ugly gstreamer1.0-libav"
 COMMERCIAL_LIC_FLAGS_GST = "commercial_gstreamer1.0-plugins-ugly commercial_gstreamer1.0-libav commercial_lame commercial_libmad commercial_mpeg2dec"
