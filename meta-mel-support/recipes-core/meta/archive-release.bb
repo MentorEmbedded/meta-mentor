@@ -86,7 +86,6 @@ DEPLOY_IMAGES[doc] = "List of files from DEPLOY_DIR_IMAGE which will be archived
 # Use IMAGE_EXTENSION_xxx to map image type 'xxx' with real image file
 # extension name(s)
 IMAGE_EXTENSION_live = "hddimg iso"
-IMAGE_EXTENSION_live_minnow = "hddimg"
 
 # Exclude certain image types from the packaged build.
 # This allows us to build in the automated environment for regression,
