@@ -20,7 +20,7 @@ SRC_URI[mpv.sha256sum] = "7d31217ba8572f364fcea2955733f821374ae6d8c6d8f22f8bc63c
 SRC_URI[waf.md5sum] = "cef4ee82206b1843db082d0b0506bf71"
 SRC_URI[waf.sha256sum] = "01bf2beab2106d1558800c8709bc2c8e496d3da4a2ca343fe091f22fca60c98b"
 
-inherit pkgconfig
+inherit pkgconfig pythonnative
 
 # Note: both lua and libass are required to get on-screen-display (controls)
 PACKAGECONFIG ??= "lua libass ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'wayland', '', d)}"
@@ -28,6 +28,7 @@ PACKAGECONFIG[lua] = "--enable-lua,--disable-lua,lua luajit"
 PACKAGECONFIG[libass] = "--enable-libass,--disable-libass,libass"
 PACKAGECONFIG[libarchive] = "--enable-libarchive,--disable-libarchive,libarchive"
 PACKAGECONFIG[wayland] = "--enable-wayland,--disable-wayland,wayland"
+PACKAGECONFIG[jack] = "--enable-jack, --disable-jack, jack"
 
 EXTRA_OECONF = " \
     --prefix=${prefix} \
@@ -56,6 +57,7 @@ do_configure() {
         chmod a+x ../waf-1.8.12
 	ln -s waf-1.8.12 ../waf
     fi
+    export SIMPLE_TARGET_SYS="$(echo ${TARGET_SYS} | sed s:${TARGET_VENDOR}::g)"
     ../waf configure ${EXTRA_OECONF}
 }
 
