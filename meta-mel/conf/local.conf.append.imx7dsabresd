@@ -1,0 +1,5 @@
+# By default meta-fsl-arm selects u-boot-fslc.
+# Override it and select u-boot-imx as our PREFERED_PROVIDER.
+
+PREFERRED_PROVIDER_virtual/bootloader = "u-boot-imx"
+PREFERRED_PROVIDER_u-boot = "u-boot-imx"
