@@ -1,7 +1,7 @@
 import os
 import logging
 import tempfile
-import urlparse
+import urllib.parse
 
 from . import recipetool
 
@@ -33,12 +33,12 @@ class RecipetoolMelTests(recipetool.RecipetoolAppendsrcBase):
     def _test_kernel_cmd(self, cmd, target, expected_file_info):
         testrecipe = get_bb_var('PN', target)
         machine = get_bb_var('MACHINE')
-        expectedfiles = [os.path.join(machine, i) for i in expected_file_info.iterkeys()]
+        expectedfiles = [os.path.join(machine, i) for i in expected_file_info.keys()]
 
         bbappendfile, _ = self._try_recipetool_appendcmd(cmd, testrecipe, expectedfiles)
 
         src_uri = get_bb_var('SRC_URI', testrecipe).split()
-        for f, destdir in expected_file_info.iteritems():
+        for f, destdir in expected_file_info.items():
             if destdir:
                 self.assertIn('file://%s;subdir=%s' % (f, destdir), src_uri)
             else:
