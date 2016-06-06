@@ -1,0 +1,1 @@
+EXTRA_ENV += "'LINK=${CXX} ${LDFLAGS}'"
