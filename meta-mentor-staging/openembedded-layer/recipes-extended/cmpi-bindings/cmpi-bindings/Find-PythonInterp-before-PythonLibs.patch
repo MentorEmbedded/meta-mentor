@@ -1,0 +1,38 @@
+From 6d7c4716c70d96679c181c02fe0545c1fc6d9480 Mon Sep 17 00:00:00 2001
+From: Christopher Larson <chris_larson@mentor.com>
+Date: Fri, 10 Jun 2016 14:31:27 -0700
+Subject: [PATCH] Find PythonInterp before PythonLibs
+
+Per cmake documentation, this is required to get consistent version handling.
+This ensures our PYTHON_EXECUTABLE is obeyed for everything. This fixes
+a build failure on hosts with python 3.5 installed, as it'll find and use that
+rather than our 2.7 python-native.
+
+Upstream-Status: Pending
+Signed-off-by: Christopher Larson <chris_larson@mentor.com>
+---
+ swig/CMakeLists.txt | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/swig/CMakeLists.txt b/swig/CMakeLists.txt
+index c2655b9..c4bf8c3 100644
+--- a/swig/CMakeLists.txt
++++ b/swig/CMakeLists.txt
+@@ -4,10 +4,10 @@
+ 
+ enable_testing()
+ 
+-FIND_PACKAGE(PythonLibs)
+-IF (PYTHON_LIBRARY)
+-  FIND_PACKAGE(PythonInterp REQUIRED)
+-  MESSAGE(STATUS "Found PythonLibs...")
++FIND_PACKAGE(PythonInterp REQUIRED)
++IF (PYTHON_EXECUTABLE)
++  MESSAGE(STATUS "Found PythonInterp...")
++  FIND_PACKAGE(PythonLibs REQUIRED)
+   FIND_PACKAGE(PythonLinkLibs)
+   IF (PYTHON_LINK_LIBS)
+     MESSAGE(STATUS "Building Python...")
+-- 
+2.8.0
+
