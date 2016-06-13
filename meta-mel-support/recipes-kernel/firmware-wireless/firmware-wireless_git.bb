@@ -54,7 +54,7 @@ S = "${WORKDIR}/git"
 inherit allarch update-alternatives
 
 hack_around_do_populate_lic_limitations () {
-    for license in ${@' '.join(d.getVarFlags('NO_GENERIC_LICENSE').itervalues())}; do
+    for license in ${@' '.join(d.getVarFlags('NO_GENERIC_LICENSE').values())}; do
         n="$(echo "$license" | sed 's,\([^.]*\)\.\(.*\),\2/\1,')"
         cp -f "$n" "$license"
     done

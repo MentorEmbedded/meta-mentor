@@ -28,7 +28,7 @@ def shell_get_vars(d, bbvars):
     $'{@shell_get_vars(d, 'FOO BAR')}
     END
     """
-    if isinstance(bbvars, basestring):
+    if isinstance(bbvars, str):
         bbvars = bbvars.split()
     lines = []
     for var in bbvars:
@@ -38,7 +38,7 @@ def shell_get_vars(d, bbvars):
 def shell_vars(d, bbvars, indent='    '):
     """Return var=value lines to set them as shell variables."""
     import subprocess
-    if isinstance(bbvars, basestring):
+    if isinstance(bbvars, str):
         bbvars = bbvars.split()
     lines = []
     for var in bbvars:

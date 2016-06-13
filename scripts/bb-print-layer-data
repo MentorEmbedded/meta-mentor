@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Given a layer or layer.conf path, print the layer metadata
 
