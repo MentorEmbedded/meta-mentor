@@ -7,7 +7,7 @@ python save_layerdirs() {
         l = bb.parse.handle(layerconf, l)
         l.expandVarref('LAYERDIR')
 
-        for layername in l.getVar('BBFILE_COLLECTIONS', True).split():
+        for layername in (l.getVar('BBFILE_COLLECTIONS', True) or '').split():
             d.setVar('LAYERDIR_%s' % layername, layerpath)
 }
 save_layerdirs[eventmask] = "bb.event.ConfigParsed"
