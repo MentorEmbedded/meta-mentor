@@ -5,5 +5,4 @@ PR = "r0"
 
 RDEPENDS_${PN} += "\
     samba \
-    swat \
 "
