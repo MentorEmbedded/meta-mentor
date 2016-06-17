@@ -5,6 +5,16 @@ SRC_URI += "\
     file://0002-Allow-override-of-the-uname-s-for-cross-compilation.patch \
 "
 
+do_unpack[postfuncs] += "dos2unix"
+
+dos2unix () {
+    cr="$(printf '\r')"
+    for f in make/*/Makefile; do
+        tr -d "$cr" <"$f" >"$f.new" && \
+            mv "$f.new" "$f"
+    done
+}
+
 LIBEBML_OS = "Unknown"
 LIBEBML_OS_linux = "Linux"
 LIBEBML_OS_darwin = "Darwin"
