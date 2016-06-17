@@ -1,3 +1,3 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${BPN}:"
 
-SRC_URI += "file://sshd_config"
+SRC_URI_append_mel = " file://sshd_config"
