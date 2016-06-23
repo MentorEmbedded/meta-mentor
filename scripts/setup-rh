@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2007-2012 Mentor Graphics Corporation
+# Copyright 2007-2016 Mentor Graphics Corporation
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -8,31 +8,23 @@
 
 packages="make gcc gcc-c++ patch texi2html diffstat texinfo tetex cvs git
           subversion gawk tar gzip bzip2 redhat-lsb sqlite ncurses-devel \
-          SDL-devel glibc-devel glibc-static glibc-devel.i686 libgcc.i686"
-scriptsdir="$(cd $(dirname $0) && pwd)"
+          SDL-devel glibc-devel glibc-static glibc-devel.i686 libgcc.i686 \
+          chrpath python python34 wget perl-Thread-Queue"
 
 set -e
 
-is_installed () {
-    rpm -q "$@" >/dev/null 2>&1
-}
-
-echo "Verifying access to sudo, please enter your password if prompted."
-if ! sudo -v; then
-        echo "Could not use sudo, exiting"
+if [ "$(id -u)" != "0" ]; then
+    echo "Verifying access to sudo, please enter your password if prompted."
+    if ! sudo -v; then
+        echo >&2 "Could not use sudo, exiting"
         exit 1
-fi
-
-if ! is_installed python; then
-    packages="$packages python"
-fi
-
-if ! is_installed chrpath; then
-    packages="$packages chrpath"
+    fi
+    alias yum="sudo yum"
 fi
 
 echo "Installing packages required to build Mentor Embedded Linux"
-sudo yum -y install $packages || {
+yum -y install epel-release
+yum -y install $packages || {
     echo >&2 "Error installing our required packages, aborting"
     exit 1
 }
