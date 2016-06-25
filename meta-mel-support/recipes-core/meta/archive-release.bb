@@ -362,3 +362,12 @@ do_package_write[noexec] = "1"
 do_package_write_ipk[noexec] = "1"
 do_package_write_deb[noexec] = "1"
 do_package_write_rpm[noexec] = "1"
+
+IMAGE_EXTENSION_live_baldeagle := "${@oe_filter_out('iso', '${IMAGE_EXTENSION_live}', d)}"
+IMAGE_EXTENSION_live_steppeeagle := "${@oe_filter_out('iso', '${IMAGE_EXTENSION_live}', d)}"
+prepare_templates_append_baldeagle() {
+    sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= \"\$\)\({MELDIR}/../..\)",\1\2/codebench-lite",' local.conf.sample
+}
+prepare_templates_append_steppeeagle() {
+    sed -i 's,^\(EXTERNAL_TOOLCHAIN ?= \"\$\)\({MELDIR}/../..\)",\1\2/codebench-lite",' local.conf.sample
+}
