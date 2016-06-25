@@ -81,6 +81,9 @@ USER_FEATURES += "~3g"
 # Disable near field communication support by default
 USER_FEATURES += "~nfc"
 
+# Disable bluetooth support for qoriq-ppc
+USER_FEATURES_qoriq-ppc += "~bluetooth"
+
 # How many tasks bitbake should run in parallel
 #BB_NUMBER_THREADS = "4"
 
