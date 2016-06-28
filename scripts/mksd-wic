@@ -1,0 +1,207 @@
+#!/bin/bash
+#
+# Copyright 2016 Mentor Graphics Corporation
+#
+# This file is licensed under the terms of the GNU General Public License
+# version 2.  This program  is licensed "as is" without any warranty of any
+# kind, whether express or implied.
+
+# List of critical mountpoints.  Any device with a partition
+# mounted to one of these will not be overwritten.
+MOUNTPOINT_BLACKLIST=" \
+    / \
+    /home \
+    /opt \
+    /var \
+    /tmp \
+    /usr/local \
+"
+
+DEVICE_NODE=""
+WIC_FILE=""
+EXPAND_ROOTFS=0
+
+execute ()
+{
+    $* >/dev/null
+    if [ $? -ne 0 ]; then
+        echo
+        echo "ERROR: executing $*"
+        echo
+        exit 1
+    fi
+}
+
+usage ()
+{
+  echo "
+Usage: `basename $0` <options>
+
+Options:
+  -d                    SD block device node (e.g /dev/sdd)
+  -w                    Path to wic.bz2 file
+  -l                    List information on all block devices on system
+  -h                    Show this help
+  -x                    Expand last partition to consume all free space on card
+  "
+}
+
+list_devices()
+{
+        lsblk -oNAME,SIZE,TYPE,MOUNTPOINT
+}
+
+detect_sudo()
+{
+    echo "Verifying access to sudo, please enter your password if prompted."
+    sudo -v
+    if [ $? -ne 0 ]; then
+        echo "Could not use sudo, exiting"
+        exit 1
+    fi
+}
+
+detect_blacklisted_mountpoints()
+{
+    PART_LIST=`ls ${DEVICE_NODE}*`
+
+    for MP in $MOUNTPOINT_BLACKLIST; do
+        MOUNT_LINE=`sudo mount | grep "on $MP type"`
+        if [ $? == "0" ]; then
+            MOUNT_PART=`echo $MOUNT_LINE | awk '{print $1;}'`
+            if [[ "$PART_LIST" == *"$MOUNT_PART"* ]]; then
+                echo "WARNING: $DEVICE_NODE contains a critical partition:"
+                echo "  $MOUNT_PART is mounted on $MP"
+                echo "Refusing to write to the device!"
+                exit 1
+            fi
+        fi
+    done
+}
+
+write_wic_to_sd()
+{
+    PART_LIST=`ls ${DEVICE_NODE}*`
+
+    echo "************************************************************"
+    echo "*         THIS WILL DELETE ALL THE DATA ON $DEVICE_NODE        *"
+    echo "*                                                          *"
+    echo "*         WARNING! Make sure your computer does not go     *"
+    echo "*                  in to idle mode while this script is    *"
+    echo "*                  running. The script will complete,      *"
+    echo "*                  but your SD card may be corrupted.      *"
+    echo "*                                                          *"
+    echo "*         Press <ENTER> to confirm....                     *"
+    echo "************************************************************"
+    read junk
+
+    for PART in $PART_LIST; do
+        echo "Unmounting $PART"
+        sudo umount $PART 2> /dev/null
+    done
+
+    echo "Writing $WIC_FILE to $DEVICE_NODE..."
+    bzcat $WIC_FILE | sudo dd of=$DEVICE_NODE bs=4M conv=fsync > /dev/null
+    echo "Done!"
+}
+
+expand_rootfs()
+{
+    echo "Expanding last partition to consume remaining free space on card..."
+    # New partition table takes some time to propagate to system
+    sleep 1 
+
+    sudo parted $DEVICE_NODE print free | tail -2 | head -1 | grep -q "Free Space"
+    if [ $? -ne 0 ]; then
+        echo "No free space found on card. Exiting."
+        exit 1
+    fi
+
+    LAST_PART=`sudo parted $DEVICE_NODE print free | tail -3 | head -1 | awk '{print $1;}'`
+    END_MB=`sudo parted $DEVICE_NODE print free | tail -2 | head -1 | awk '{print $2;}'`
+    
+    cat << END | sudo parted $DEVICE_NODE resizepart $LAST_PART
+$END_MB
+END
+    sleep 1
+
+    LAST_PART_NODE=${DEVICE_NODE}${LAST_PART}
+    if [ ! -b ${LAST_PART_NODE} ]; then
+        LAST_PART_NODE=${DEVICE_NODE}p${LAST_PART}
+    fi
+    sudo resize2fs $LAST_PART_NODE
+    sync
+    echo "Done!"
+}
+
+# Main body of execution
+
+# TODO: Add detection of host distribution here.  Do we need anything special
+# on RHEL vs Ubuntu vs Others?
+
+while getopts ":d:w:lx" opt; do
+    case $opt in
+    d)
+        DEVICE_NODE=$OPTARG
+        ;;
+    w)
+        WIC_FILE=$OPTARG
+        ;;
+    l)
+        which lsblk > /dev/null
+        if [ $? -ne 0 ]; then 
+            echo "lsblk command required for -l option.  Exiting."
+            exit 1
+        fi
+        list_devices
+        exit 0
+        ;;
+    h)
+        usage
+        exit 0
+        ;;
+    x)
+        which parted > /dev/null
+        if [ $? -ne 0 ]; then 
+            echo "parted command required for -x option.  Exiting."
+            exit 1
+        fi
+        which resize2fs > /dev/null
+        if [ $? -ne 0 ]; then 
+            echo "resize2fs command required for -x option.  Exiting."
+            exit 1
+        fi
+        EXPAND_ROOTFS=1
+        ;; 
+    :)
+        echo "Option -$OPTARG requires argument" 
+        usage
+        exit 1
+        ;;
+    \?)
+        echo "Invalid option -$OPTARG"
+        usage
+        exit 1
+    esac
+done
+
+if [ \( -z "$DEVICE_NODE" \) -o \( ! -b "$DEVICE_NODE" \) ]; then
+    echo "Please pass a valid device node"
+    usage
+    exit 1
+fi
+
+if [ \( -z "$WIC_FILE" \) -o \( ! -f "$WIC_FILE" \) ]; then
+    echo "Please pass a valid wic.bz2 image"
+    usage
+    exit 1
+fi
+
+detect_sudo
+detect_blacklisted_mountpoints
+write_wic_to_sd
+
+if [ $EXPAND_ROOTFS -eq  1 ]; then
+    expand_rootfs
+fi
+
