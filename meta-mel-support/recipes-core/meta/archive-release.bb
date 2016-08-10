@@ -145,7 +145,7 @@ git_tar () {
             if [ "${@oe.data.typed_value('RELEASE_USE_TAGS', d)}" = "True" ]; then
                 version=$(cd "$path" && git describe --tags)
             else
-                version=$(cd "$path" && git rev-list HEAD | wc -l)
+                version=$(cd "$path" && git rev-list HEAD . | wc -l)
             fi
             release_tar $path "$@" -cjf deploy/${name}_${version}.tar.bz2
         else
