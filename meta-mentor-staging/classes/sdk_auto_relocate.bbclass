@@ -17,7 +17,9 @@ SDK_POST_INSTALL_COMMAND_append = 'echo "${env_setup_script%/*}" >"${env_setup_s
 sdkpath_to_bindir = "${@os.path.relpath('${SDKPATHNATIVE}${bindir_nativesdk}', '${SDKPATH}')}"
 
 toolchain_env_script_reloc_fragment () {
-    cat <<END >>"$script"
+    mv "$script" "$script.fragment"
+    sed -ie "s#${SDKPATH}#\$scriptdir#g" "$script.fragment" 
+    cat >"$script" <<END
 if [ -z "\$SDK_RELOCATING" ]; then
     if [ -n "\$BASH_SOURCE" ] || [ -n "\$ZSH_NAME" ]; then
         if [ -n "\$BASH_SOURCE" ]; then
@@ -31,14 +33,16 @@ if [ -z "\$SDK_RELOCATING" ]; then
         else
             echo >&2 "Warning: Unable to find sdk-auto-relocate script"
         fi
-        unset scriptdir
     else
         echo >&2 "Warning: Unable to determine SDK install path from environment setup script location. Please run <installdir>/${sdkpath_to_bindir}/sdk-auto-relocate manually."
+        scriptdir="${SDKPATH}"
     fi
 else
     unset SDK_RELOCATING
 fi
 END
+    cat "$script.fragment" >>"$script"
+    rm "$script.fragment"
 }
 
 python () {
