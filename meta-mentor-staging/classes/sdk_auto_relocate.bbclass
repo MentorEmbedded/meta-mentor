@@ -25,7 +25,12 @@ if [ -z "\$SDK_RELOCATING" ]; then
         elif [ -n "\$ZSH_NAME" ]; then
             scriptdir="\$(cd "\$(dirname "\$0")" && pwd)"
         fi
-        env -i "\$scriptdir/${sdkpath_to_bindir}/sdk-auto-relocate" && SDK_RELOCATING=1 . "\$scriptdir/environment-setup-${REAL_MULTIMACH_TARGET_SYS}"
+
+        if [ -e "\$scriptdir/${sdkpath_to_bindir}/sdk-auto-relocate" ]; then
+            env -i "\$scriptdir/${sdkpath_to_bindir}/sdk-auto-relocate" && SDK_RELOCATING=1 . "\$scriptdir/environment-setup-${REAL_MULTIMACH_TARGET_SYS}"
+        else
+            echo >&2 "Warning: Unable to find sdk-auto-relocate script"
+        fi
         unset scriptdir
     else
         echo >&2 "Warning: Unable to determine SDK install path from environment setup script location. Please run <installdir>/${sdkpath_to_bindir}/sdk-auto-relocate manually."
