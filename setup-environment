@@ -32,19 +32,27 @@ else
     OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private tracing-layer}"
     EXCLUDEDLAYERS="$EXCLUDEDLAYERS"
     # Customer directory layers handling (e.g. <customername>-custom)
-    if [ -e "$layerdir/../customer.conf" ] ; then
-        for CUSTOMER in $(cat $layerdir/../customer.conf) ; do
-            if [ -d "$CUSTOMER-custom" ] ; then
-                if [ -e "$CUSTOMER-custom/custom.conf" ] ; then
-                    CUSTOMERLAYERS=`cat $CUSTOMER-custom/custom.conf | sed -e '/^[ 	]*#/d'`
-                    CUSTOMERLAYERS=`echo $CUSTOMERLAYERS | sed -e 's/\n//g'`
-                    OPTIONALLAYERS="$OPTIONALLAYERS $CUSTOMERLAYERS"
-                    unset CUSTOMERLAYERS
-                fi
-            fi
-        done
-        unset CUSTOMER
-    fi
+    for _layercheck in . $layerdir/..; do
+        if [ -e "$_layercheck/customer.conf" ]; then
+            while read -r _customer; do
+                for _layercheck2 in . $layerdir/..; do
+                    if [ -d "$_layercheck2/$_customer-custom" ]; then
+                        if [ -e "$_layercheck2/$_customer-custom/custom.conf" ] ; then
+                            CUSTOMERLAYERS=`cat $_layercheck2/$_customer-custom/custom.conf | sed -e '/^[ 	]*#/d'`
+                            CUSTOMERLAYERS=`echo $CUSTOMERLAYERS | sed -e 's/\n//g'`
+                            OPTIONALLAYERS="$OPTIONALLAYERS $CUSTOMERLAYERS"
+                            unset CUSTOMERLAYERS
+                        fi
+                        break
+                    fi
+                done
+                unset _layercheck2
+            done <"$_layercheck/customer.conf"
+            unset _customer
+            break
+        fi
+    done
+    unset _layercheck
 
     # Hotfix layers handling
     if [ -e "$layerdir/../hotfixes/hotfix.conf" ] ; then
