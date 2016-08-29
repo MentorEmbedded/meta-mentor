@@ -13,7 +13,8 @@ SRC_URI = "\
     file://*.png \
 "
 
-INSANE_SKIP_${PN} += "already-stripped license-checksum"
+INSANE_SKIP_${PN} += "already-stripped"
+ERROR_QA_remove = "license-checksum"
 
 do_install () {
     install -d -m 0755 "${D}${datadir}/plymouth/themes/mel"
