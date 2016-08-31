@@ -74,12 +74,6 @@ EOF
 
 cat <<EOF >> "$BUILDDIR"/custom.xml
 
-  <!-- Bitbake version which correspond to our local release -->
-
-  <object model="orm.bitbakeversion" pk="2">
-    <field type="CharField" name="name">HEAD</field>
-  </object>
-
   <!-- Default layers for each release -->
 
 EOF
