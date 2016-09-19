@@ -217,6 +217,13 @@ prepare_templates () {
     if [ -n "$sourcery_version" ]; then
         sed -i "s,^#*\(SOURCERY_VERSION_REQUIRED =\).*,\1 \"$sourcery_version\"," local.conf.sample
     fi
+
+    pdk_version="${PDK_DISTRO_VERSION}"
+    if [ -n "$pdk_version" ]; then
+        echo >>local.conf.sample
+        echo 'PDK_DISTRO_VERSION = "$pdk_version"' >>local.conf.sample
+    fi
+
     {
         echo
         echo '# Prefer the cached upstream SCM revisions'
