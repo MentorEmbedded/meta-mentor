@@ -18,7 +18,7 @@ sdkpath_to_bindir = "${@os.path.relpath('${SDKPATHNATIVE}${bindir_nativesdk}', '
 
 toolchain_env_script_reloc_fragment () {
     mv "$script" "$script.fragment"
-    sed -ie "s#${SDKPATH}#\$scriptdir#g" "$script.fragment" 
+    sed -i -e "s#${SDKPATH}#\$scriptdir#g" "$script.fragment" 
     cat >"$script" <<END
 if [ -z "\$SDK_RELOCATING" ]; then
     if [ -n "\$BASH_SOURCE" ] || [ -n "\$ZSH_NAME" ]; then
