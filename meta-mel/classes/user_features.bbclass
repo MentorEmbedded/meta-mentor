@@ -34,12 +34,12 @@ python process_user_features () {
             defvalue = set((d.getVar(defvar, True) or '').split())
             to_add_here = set(a for a in to_add if a in defvalue)
             to_add -= to_add_here
-            d.appendVar(var, ' ' + ' '.join(to_add_here))
+            d.appendVar(var, ' ' + ' '.join(sorted(to_add_here)))
 
-        d.setVar(var + '_remove', ' '.join(to_remove))
+        d.setVar(var + '_remove', ' '.join(sorted(to_remove)))
 
     if to_add:
-        d.appendVar('DISTRO_FEATURES', ' ' + ' '.join(to_add))
+        d.appendVar('DISTRO_FEATURES', ' ' + ' '.join(sorted(to_add)))
 }
 process_user_features[eventmask] = "bb.event.ConfigParsed"
 addhandler process_user_features
