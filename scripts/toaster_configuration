@@ -10,6 +10,7 @@ echo "Creating toaster configuration"
 
 BUILDDIR="$1"
 MELDIR="$2"
+BITBAKEDIR="$3"
 
 
 BBLAYERS=
@@ -150,6 +151,15 @@ cat <<EOF >> "$BUILDDIR"/custom.xml
 EOF
 }
 
+create_toaster_venv () {
+    python -m virtualenv -p python3 "$BUILDDIR/venv"
+    python -m virtualenv -p python2 "$BUILDDIR/venv"
+    (
+        . "$BUILDDIR/venv/bin/activate"
+        pip3 install -r "$BITBAKEDIR/toaster-requirements.txt"
+    )
+}
+
 create_toaster_setupscript() {
 POKYDIR=$(configured_layers | while read layer; do
     layername=$(basename "$layer")
@@ -164,11 +174,16 @@ if [ -d "${MELDIR}/downloads" ]; then
 fi
 
    cat <<EOF > "$BUILDDIR"/toaster-setup-environment
-. $POKYDIR/bitbake/bin/toaster start
+. $BUILDDIR/venv/bin/activate
+. $BITBAKEDIR/bin/toaster start
 EOF
 }
 
 create_toaster_configuration
+if [ ! -e "$BUILDDIR/venv/bin/python2" ] || [ ! -e "$BUILDDIR/venv/bin/python3" ]; then
+    rm -f "$BUILDDIR/venv/bin/python"*
+    create_toaster_venv
+fi
 create_toaster_setupscript
 
 echo >&2 "Toaster configuration created, source $BUILDDIR/toaster-setup-environment to start toaster"

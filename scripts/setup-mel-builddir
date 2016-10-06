@@ -342,5 +342,5 @@ if [ -e $BUILDDIR/conf/local.conf ]; then
 fi
 
 if [ $toasterconfig -eq 1 ]; then
-    $layerdir/scripts/toaster_configuration "$BUILDDIR" "$MELDIR"
+    $layerdir/scripts/toaster_configuration "$BUILDDIR" "$MELDIR" "$BITBAKEDIR"
 fi
