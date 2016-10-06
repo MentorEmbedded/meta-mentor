@@ -30,4 +30,7 @@ echo "Installing packages required to build Mentor Embedded Linux"
 sudo apt-get update
 sudo apt-get -y install $PKGS
 
+echo "Generating the en_US.UTF-8 locale"
+locale-gen en_US.UTF-8
+
 echo "Setup complete"
