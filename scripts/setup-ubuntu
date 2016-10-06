@@ -27,6 +27,7 @@ if [ "$(uname -m)" = "x86_64" ]; then
 fi
 
 echo "Installing packages required to build Mentor Embedded Linux"
+sudo apt-get update
 sudo apt-get -y install $PKGS
 
 echo "Setup complete"
