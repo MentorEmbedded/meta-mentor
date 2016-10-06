@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2007-2013 Mentor Graphics Corporation
+# Copyright 2007-2016 Mentor Graphics Corporation
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -9,11 +9,12 @@
 echo "Verifying access to sudo, please enter your password if prompted."
 sudo -v
 if [ $? -ne 0 ]; then
-        echo "Could not use sudo, exiting"
-        exit 1
+    echo >&2 "Could not use sudo, exiting"
+    exit 1
 fi
 
-PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release"
+PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release python python3"
+
 # These are needed for the qemu-native build
 PKGS="$PKGS libgl1-mesa-dev libglu1-mesa-dev libsdl1.2-dev"
 
