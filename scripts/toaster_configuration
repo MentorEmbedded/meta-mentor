@@ -170,3 +170,5 @@ EOF
 
 create_toaster_configuration
 create_toaster_setupscript
+
+echo >&2 "Toaster configuration created, source $BUILDDIR/toaster-setup-environment to start toaster"
