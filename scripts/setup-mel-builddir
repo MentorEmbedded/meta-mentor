@@ -267,7 +267,11 @@ setup_builddir () {
         echo "created for you with some default values."
 
         if [ -d "$MELDIR/../../codebench" ]; then
-            sed -i -e 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "${MELDIR}/../../codebench",' "$BUILDDIR/conf/local.conf"
+            if [ -d "$MELDIR/../../toolchains" ]; then
+                sed -i -e 's,^#\?EXTERNAL_TOOLCHAIN.*,CODEBENCH_PATH ?= "${MELDIR}/../../codebench",' "$BUILDDIR/conf/local.conf"
+            else
+                sed -i -e 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "${MELDIR}/../../codebench",' "$BUILDDIR/conf/local.conf"
+            fi
         fi
 
         (
