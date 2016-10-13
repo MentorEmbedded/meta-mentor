@@ -430,7 +430,7 @@ do_prepare_release () {
 
     mv deploy/* ${DEPLOY_DIR_RELEASE}/
 }
-addtask prepare_release before do_build after do_dump_headrevs do_patch
+addtask prepare_release before do_build after do_patch
 
 do_prepare_release[dirs] =+ "${DEPLOY_DIR_RELEASE} ${MELDIR} ${S}"
 do_prepare_release[cleandirs] = "${S}"
