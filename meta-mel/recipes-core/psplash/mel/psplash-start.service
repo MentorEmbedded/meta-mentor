@@ -1,7 +1,7 @@
 [Unit]
 Description=Starts Psplash Boot screen
 Wants=systemd-vconsole-setup.service
-After=systemd-vconsole-setup.service systemd-udev-trigger.service systemd-udevd.service
+After=systemd-vconsole-setup.service
 DefaultDependencies=no
 
 [Service]

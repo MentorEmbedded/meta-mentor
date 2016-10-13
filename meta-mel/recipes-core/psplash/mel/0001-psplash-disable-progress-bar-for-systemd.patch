@@ -1,0 +1,44 @@
+From 5dc4fd6245a837bb367600ab4f478a3f852e5cc5 Mon Sep 17 00:00:00 2001
+From: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+Date: Fri, 30 Sep 2016 13:51:02 +0530
+Subject: [PATCH] psplash: disable progress-bar for systemd
+
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ psplash.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/psplash.c b/psplash.c
+index 992e199..523f0f4 100644
+--- a/psplash.c
++++ b/psplash.c
+@@ -115,7 +115,9 @@ parse_command (PSplashFB *fb, char *string)
+ 
+   if (!strcmp(command,"PROGRESS")) 
+     {
+-      psplash_draw_progress (fb, atoi(strtok(NULL,"\0")));
++       /* Do not draw any progress in case of systemd.
++       psplash_draw_progress (fb, atoi(strtok(NULL,"\0")));
++        */
+     } 
+   else if (!strcmp(command,"MSG")) 
+     {
+@@ -293,6 +295,7 @@ main (int argc, char** argv)
+ 			 POKY_IMG_ROWSTRIDE,
+ 			 POKY_IMG_RLE_PIXEL_DATA);
+ 
++#if 0
+   /* Draw progress bar border */
+   psplash_fb_draw_image (fb, 
+ 			 (fb->width  - BAR_IMG_WIDTH)/2, 
+@@ -308,6 +311,7 @@ main (int argc, char** argv)
+ #ifdef PSPLASH_STARTUP_MSG
+   psplash_draw_msg (fb, PSPLASH_STARTUP_MSG);
+ #endif
++#endif /* Disable progress bar for systemd*/
+ 
+   psplash_main (fb, pipe_fd, 0);
+ 
+-- 
+2.7.4
+
