@@ -7,7 +7,7 @@ RDEPENDS_${PN} += "\
     bonnie++ \
     lmbench \
     iozone3 \
-    iperf \
+    iperf3 \
     dbench \
     tbench \
     tiobench \
