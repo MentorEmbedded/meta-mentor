@@ -26,7 +26,7 @@ def configured_update_layers(d):
         basename = os.path.basename(layer)
         if basename.startswith('update-'):
             update_layers.add(layer)
-    return ' '.join(update_layers)
+    return ' '.join(sorted(update_layers))
 
 def configured_mx6_layers(d):
     """Return the mx6 layers to be archived as individual tarballs"""
@@ -35,7 +35,7 @@ def configured_mx6_layers(d):
         basename = os.path.basename(layer)
         if 'mx6' in basename:
             mx6_layers.add(layer)
-    return ' '.join(mx6_layers)
+    return ' '.join(sorted(mx6_layers))
 
 # Sub-layers to archive individually, rather than grabbing the entire
 # repository they're in
@@ -102,7 +102,7 @@ python () {
             continue
         extension = d.getVar('IMAGE_EXTENSION_%s' % type, True) or type
         extensions.add(extension)
-    d.setVar('IMAGE_EXTENSIONS', ' '.join(extensions))
+    d.setVar('IMAGE_EXTENSIONS', ' '.join(sorted(extensions)))
 
     # Make sure MELDIR is absolute, as we use it in transforms
     d.setVar('MELDIR', os.path.abspath(d.getVar('MELDIR', True)))
