@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2007-2013 Mentor Graphics Corporation
+# Copyright 2007-2016 Mentor Graphics Corporation
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -9,22 +9,55 @@
 echo "Verifying access to sudo, please enter your password if prompted."
 sudo -v
 if [ $? -ne 0 ]; then
-        echo "Could not use sudo, exiting"
-        exit 1
+    echo >&2 "Could not use sudo, exiting"
+    exit 1
 fi
 
-PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release"
+PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release python python3"
+
 # These are needed for the qemu-native build
 PKGS="$PKGS libgl1-mesa-dev libglu1-mesa-dev libsdl1.2-dev"
-
-# Install 32-bit compatibility libraries
-[ "$(uname -m)" = "x86_64" ] && PKGS="$PKGS libncurses5:i386 libc6-dev-i386"
 
 # This is needed for Windows ADE
 PKGS="$PKGS zip"
 
-echo "Installing packages required to build Mentor Embedded Linux"
+if [ "$(uname -m)" = "x86_64" ]; then
+    sudo dpkg --add-architecture i386
+    PKGS="$PKGS libc6-dev-i386 libncurses5:i386"
+fi
 
+echo "Installing packages required to build Mentor Embedded Linux"
+sudo apt-get update
 sudo apt-get -y install $PKGS
+
+PYTHONUSERBASE="${PYTHONUSERBASE:-$(python -c 'import site; print(site.USER_BASE)')}"
+PATH="$PYTHONUSERBASE/bin:$PATH"
+if ! which pip >/dev/null 2>&1; then
+    if ! sudo apt-get -y install python-pip 2>/dev/null; then
+        # Install pip & deps into PYTHONUSERBASE if we can't via apt
+        if which curl >/dev/null 2>&1; then
+            curl https://bootstrap.pypa.io/get-pip.py | python - --user
+        else
+            wget -O- https://bootstrap.pypa.io/get-pip.py | python - --user
+        fi
+    fi
+    if ! which pip >/dev/null 2>&1; then
+        echo >&2 "Error: after installing pip, we are not able to execute it"
+        exit 2
+    fi
+fi
+
+if ! which virtualenv >/dev/null 2>&1; then
+    if ! sudo apt-get -y install python-virtualenv 2>/dev/null; then
+        pip install --user virtualenv
+    fi
+    if ! which virtualenv >/dev/null 2>&1; then
+        echo >&2 "Error: after installing virtualenv, we are not able to execute it"
+        exit 2
+    fi
+fi
+
+echo "Generating the en_US.UTF-8 locale"
+locale-gen en_US.UTF-8
 
 echo "Setup complete"
