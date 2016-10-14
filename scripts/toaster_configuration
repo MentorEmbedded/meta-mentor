@@ -142,7 +142,7 @@ cat <<EOF >> "$BUILDDIR"/custom.xml
     <field rel="ManyToOneRel" to="orm.layer" name="layer">$pk</field>
     <field type="IntegerField" name="layer_source">0</field>
     <field rel="ManyToOneRel" to="orm.release" name="release">2</field>
-    <field type="CharField" name="dirpath">$dirpath</field>
+    <field type="CharField" name="dirpath"></field>
   </object>
 
 EOF
@@ -165,7 +165,7 @@ for layer in $(echo "$LAYER_PATHS"); do
     <field rel="ManyToOneRel" to="orm.layer" name="layer">$pk</field>
     <field type="IntegerField" name="layer_source">0</field>
     <field rel="ManyToOneRel" to="orm.release" name="release">2</field>
-    <field type="CharField" name="dirpath">$dirpath</field>
+    <field type="CharField" name="dirpath"></field>
   </object>
 
 EOF
