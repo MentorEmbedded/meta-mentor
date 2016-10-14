@@ -86,15 +86,23 @@ LAYER_PATHS=$(configured_layers | while read -r layer; do
 done)
 LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
 
+cat <<EOF >> "$BUILDDIR"/custom.xml
+  <object model="orm.releasedefaultlayer" pk="1">
+    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>
+    <field type="CharField" name="layer_name">openembedded-core</field>
+  </object>
+
+EOF
+
 pk=3
 for layer in $(echo "$LAYER_PATHS"); do
-   pk=$((pk+1))
    name=
    layername=$(basename "$layer")
-   cd $layer
    if [ "$layername" = "meta" ]; then
-        layername="openembedded-core"
+        continue
    fi
+   pk=$((pk+1))
+   cd $layer
    cat <<EOF >> "$BUILDDIR"/custom.xml
   <object model="orm.releasedefaultlayer" pk="$pk">
     <field rel="ManyToOneRel" to="orm.release" name="release">2</field>
@@ -120,16 +128,34 @@ LAYER_PATHS=$(configured_layers | while read -r layer; do
 done)
 LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
 
-pk=0
+pk=1
+# Openembedded-core is poky's meta layer.
+layer=$(dirname "$BITBAKEDIR")
+layer="$layer"/meta
+dirpath=$(basename "$layer")
+cat <<EOF >> "$BUILDDIR"/custom.xml
+  <object model="orm.layer" pk="$pk">
+    <field type="CharField" name="name">openembedded-core</field>
+    <field type="CharField" name="local_source_dir">$layer</field>
+  </object>
+  <object model="orm.layer_version" pk="$pk">
+    <field rel="ManyToOneRel" to="orm.layer" name="layer">$pk</field>
+    <field type="IntegerField" name="layer_source">0</field>
+    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>
+    <field type="CharField" name="dirpath">$dirpath</field>
+  </object>
+
+EOF
+
 for layer in $(echo "$LAYER_PATHS"); do
-   pk=$((pk+1))
    name=
    layername=$(basename "$layer")
+   if [ "$layername" = "meta" ]; then
+        continue
+   fi
    dirpath=$(basename "$layer")
    cd $layer
-   if [ "$layername" = "meta" ]; then
-        layername="openembedded-core"
-   fi
+   pk=$((pk+1))
    cat <<EOF >> "$BUILDDIR"/custom.xml
   <object model="orm.layer" pk="$pk">
     <field type="CharField" name="name">$layername</field>
