@@ -10,7 +10,7 @@ cull_win_files () {
             bbnote "Keeping first case duplicate '$(grep -xi "$case_dupe" cull.filelist | sed -n '1p')'"
             grep -xi "$case_dupe" cull.filelist | sed '1d' | while read actual; do
                 bbwarn "Removing case duplicate '${actual#.}' for windows SDKMACHINE"
-                rm -r "$actual"
+                rm -rf "$actual"
             done
         done
 
