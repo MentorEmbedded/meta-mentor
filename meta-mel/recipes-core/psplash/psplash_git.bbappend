@@ -4,11 +4,17 @@ SRC_URI_append = " ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', '\
                    file://psplash-quit.service \
                    file://psplash-start.service \
                    file://psplash-final.service \
-                   file://0001-psplash-disable-progress-bar-for-systemd.patch \
                    ', '', d)}"
 
+# Change background color and splash image with no progress bar
+SRC_URI_append = "file://0001-psplash-disable-progress-bar-for-systemd.patch \
+		  file://0001-psplash-config-enable-fullscreen-image.patch \
+		  file://0001-plash-colors.h-color-change.patch \
+		 "
 # Update to latest version of psplash
 SRCREV = "5b3c1cc28f5abdc2c33830150b48b278cc4f7bca"
+
+SPLASH_IMAGES = "file://mel.png;outsuffix=default"
 
 inherit systemd
 SYSTEMD_SERVICE_${PN} = "psplash-start.service psplash-quit.service psplash-final.service"
