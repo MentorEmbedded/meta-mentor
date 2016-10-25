@@ -2,10 +2,12 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 ICEDTEAPATCHES += "\
     file://icedtea-flags-to-compile-with-GCC-6.patch;apply=no \
+    file://icedtea-specify-overloaded-variant-of-fmod.patch;apply=no \
 "
 
 DISTRIBUTION_PATCHES += "\
     patches/icedtea-flags-to-compile-with-GCC-6.patch \
+    patches/icedtea-specify-overloaded-variant-of-fmod.patch \
 "
 
 export DISTRIBUTION_PATCHES
