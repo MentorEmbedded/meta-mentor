@@ -17,7 +17,7 @@ PROBECONFIGS ?= "${@bb.utils.which('${BBPATH}', 'conf/probe-configs/${MACHINE}')
 BSPFILES_INSTALL_PATH ?= "${MACHINE}"
 BINARY_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/binary"
 CONF_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/conf"
-PROBECONFIGS_INSTALL_PATH ?= "probe-configs-${MACHINE}"
+PROBECONFIGS_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/probe-configs"
 
 # Add a default in case the user doesn't inherit copyleft_compliance
 ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
