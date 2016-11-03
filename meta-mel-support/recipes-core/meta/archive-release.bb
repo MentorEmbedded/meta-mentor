@@ -14,6 +14,11 @@ TEMPLATECONF ?= "${FILE_DIRNAME}/../../../conf"
 
 PROBECONFIGS ?= "${@bb.utils.which('${BBPATH}', 'conf/probe-configs/${MACHINE}')}" 
 
+BSPFILES_INSTALL_PATH ?= "${MACHINE}"
+BINARY_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/binary"
+CONF_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/conf"
+PROBECONFIGS_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/probe-configs"
+
 # Add a default in case the user doesn't inherit copyleft_compliance
 ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
 ARCHIVE_RELEASE_DL_TOPDIR ?= "${DL_DIR}"
@@ -362,18 +367,18 @@ do_prepare_release () {
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw images; then
         if [ -e "${BUILDHISTORY_DIR}" ]; then
-            echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >include
+            echo "--transform=s,${BUILDHISTORY_DIR},${BINARY_INSTALL_PATH}/buildhistory," >include
             echo ${BUILDHISTORY_DIR} >>include
         fi
 
         if echo "${RELEASE_ARTIFACTS}" | grep -qw templates; then
-            echo "--transform=s,${S}/,${MACHINE}/conf/," >>include
+            echo "--transform=s,${S}/,${CONF_INSTALL_PATH}/," >>include
             echo "${S}/local.conf.sample" >>include
             echo "${S}/bblayers.conf.sample" >>include
         fi
 
         echo "--transform=s,-${MACHINE},,i" >>include
-        echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
+        echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
 
         find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 \( -type f -o -type l \) | \
             grep -Ev '^${DEPLOY_DIR_IMAGE}/${DEPLOY_IMAGES_EXCLUDE_PATTERN}' >>include
@@ -381,14 +386,14 @@ do_prepare_release () {
         # Lock down any autorevs
         buildhistory-collect-srcrevs -p "${BUILDHISTORY_DIR}" >"${WORKDIR}/autorevs.conf"
         if [ -s "${WORKDIR}/autorevs.conf" ]; then
-            echo "--transform=s,${WORKDIR}/autorevs.conf,${MACHINE}/conf/autorevs.conf," >>include
+            echo "--transform=s,${WORKDIR}/autorevs.conf,${CONF_INSTALL_PATH}/autorevs.conf," >>include
             echo "${WORKDIR}/autorevs.conf" >>include
         fi
 
         release_tar --files-from=include -cf deploy/${MACHINE}.tar
 
         echo "--transform=s,-${MACHINE},,i" >include
-        echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
+        echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
         {
             ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1  -iname "%s" || true' % pattern for pattern in DEPLOY_IMAGES.split())}
         } >>include
@@ -406,7 +411,7 @@ do_prepare_release () {
             sed -e "s/##ROOTFS##/${RELEASE_IMAGE}.$ext/; s/##KERNEL##/$kernel/" ${WORKDIR}/runqemu.in >runqemu
             chmod +x runqemu
             echo ./runqemu >>include
-            echo "--transform=s,./runqemu$,${MACHINE}/binary/runqemu," >>include
+            echo "--transform=s,./runqemu$,${BINARY_INSTALL_PATH}/runqemu," >>include
         fi
         release_tar --files-from=include -rhf deploy/${MACHINE}.tar
 
@@ -420,9 +425,8 @@ do_prepare_release () {
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw probeconfigs; then
-        if [ -d ${PROBECONFIGS} ]
-        then
-            release_tar "--transform=s,${PROBECONFIGS},probe-configs-${MACHINE}," -rf deploy/${MACHINE}.tar ${PROBECONFIGS}
+        if [ -d "${PROBECONFIGS}" ]; then
+            release_tar "--transform=s,${PROBECONFIGS},${PROBECONFIGS_INSTALL_PATH}," -rf deploy/${MACHINE}.tar "${PROBECONFIGS}"
         fi
     fi
 
