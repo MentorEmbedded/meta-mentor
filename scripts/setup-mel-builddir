@@ -346,5 +346,30 @@ if [ -e $BUILDDIR/conf/local.conf ]; then
 fi
 
 if [ $toasterconfig -eq 1 ]; then
-    $layerdir/scripts/toaster_configuration "$BUILDDIR" "$MELDIR" "$BITBAKEDIR"
+    machine=$(echo "$@" | awk -F" " {'print $NF'})
+    cmdline_string="$MELDIR/meta-mentor/setup-environment "
+    check_layer_option=0
+    for i in "$@"; do
+       if [ "$i" = "-t" ]; then
+          continue
+       fi
+       if [ "$i" = "-l" ]; then
+          check_layer_option=1
+          cmdline_string="$cmdline_string $i"
+          continue
+       fi
+       if [ $check_layer_option -eq 1 ]; then
+            check_layer_option=0
+            i="\"$i\""
+            cmdline_string="$cmdline_string $i"
+            continue
+       fi
+       if [ "$i" = "$machine" ]; then
+           cmdline_string="$cmdline_string -f -b \"%BUILDDIR%\" $machine"
+           continue
+       fi
+       cmdline_string="$cmdline_string $i"
+    done
+    CMD_LINE="$cmdline_string"
+    $layerdir/scripts/toaster_configuration "$BUILDDIR" "$MELDIR" "$BITBAKEDIR" "$CMD_LINE"
 fi
