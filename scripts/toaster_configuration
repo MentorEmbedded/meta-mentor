@@ -11,7 +11,7 @@ echo "Creating toaster configuration"
 BUILDDIR="$1"
 MELDIR="$2"
 BITBAKEDIR="$3"
-
+CMD_LINE="$4"
 
 BBLAYERS=
 configured_layers () {
@@ -21,7 +21,7 @@ configured_layers () {
 }
 
 create_toaster_configuration() {
-DISTRO=$(grep "DISTRO =" "$BUILDDIR/conf/local.conf"  | awk {'print $3'} | sed -e s:\'::g)
+DISTRO=$(grep "DISTRO =" "$BUILDDIR/conf/local.conf"  | awk {'print $3'} | sed -e s:\'::g | head -n 1)
 MACHINE=$(grep -i "MACHINE ??=" "$BUILDDIR/conf/local.conf" | awk {'print $3'} | sed -e s:\"::g)
 EXTERNAL_TOOLCHAIN=$(grep -i "^EXTERNAL_TOOLCHAIN" "$BUILDDIR/conf/local.conf" | awk {'print $3'})
 
@@ -32,6 +32,16 @@ fi
 cat <<EOF > "$BUILDDIR"/custom.xml
 <?xml version="1.0" encoding="utf-8"?>
 <django-objects version="1.0">
+
+  <!-- Reset to MEL -->
+
+  <object model="orm.release" pk="2">
+    <field type="CharField" name="name">local</field>
+    <field type="CharField" name="description">Mentor Embedded Linux</field>
+    <field rel="ManyToOneRel" to="orm.bitbakeversion" name="bitbake_version">2</field>
+    <field type="CharField" name="branch_name">HEAD</field>
+    <field type="TextField" name="helptext">Toaster will run your builds with the version of the Yocto Project you have cloned or downloaded to your computer.</field>
+  </object>
 
   <!-- Default project settings -->
   <object model="orm.toastersetting" pk="1">
@@ -69,6 +79,10 @@ cat <<EOF > "$BUILDDIR"/custom.xml
   <object model="orm.toastersetting" pk="9">
     <field type="CharField" name="name">DEFCONF_DL_DIR</field>
     <field type="CharField" name="value">${BUILDDIR}/../downloads</field>
+  </object>
+  <object model="orm.toastersetting" pk="10">
+    <field type="CharField" name="name">CUSTOM_BUILD_INIT_SCRIPT</field>
+    <field type="CharField" name="value">${CMD_LINE}</field>
   </object>
 
 EOF
@@ -128,6 +142,7 @@ LAYER_PATHS=$(configured_layers | while read -r layer; do
 done)
 LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
 
+collectLayers="meta"
 pk=1
 # Openembedded-core is poky's meta layer.
 layer=$(dirname "$BITBAKEDIR")
@@ -153,6 +168,7 @@ for layer in $(echo "$LAYER_PATHS"); do
    if [ "$layername" = "meta" ]; then
         continue
    fi
+   collectLayers="$collectLayers,$layername"
    dirpath=$(basename "$layer")
    cd $layer
    pk=$((pk+1))
@@ -171,6 +187,10 @@ for layer in $(echo "$LAYER_PATHS"); do
 EOF
 cd - > /dev/null 2>&1
 done
+
+# Time to grab rest of the layers in MELDIR
+"$MELDIR"/meta-mentor/scripts/toaster-layers-recipes-config.py "$collectLayers" "$BUILDDIR" "$MELDIR"
+
 
 cat <<EOF >> "$BUILDDIR"/custom.xml
 </django-objects>
