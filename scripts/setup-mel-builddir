@@ -371,5 +371,10 @@ if [ $toasterconfig -eq 1 ]; then
        cmdline_string="$cmdline_string $i"
     done
     CMD_LINE="$cmdline_string"
+    cd "${MELDIR}"
+    if [ ! -e "${BUILDDIR}/conf/recipes-list.txt" ] && [ -e "${MACHINE}/recipes-list.txt" ]; then
+        cp -f "${MACHINE}/recipes-list.txt" "${BUILDDIR}/conf/recipes-list.txt"
+    fi
+    ${MELDIR}/meta-mentor/scripts/list-recipes "$BUILDDIR/conf/recipes-list.txt"
     $layerdir/scripts/toaster_configuration "$BUILDDIR" "$MELDIR" "$BITBAKEDIR" "$CMD_LINE"
 fi
