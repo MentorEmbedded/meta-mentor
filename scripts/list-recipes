@@ -1,0 +1,17 @@
+#!/bin/sh
+
+list_layers() {
+    find . -mindepth 3 -maxdepth 4 -wholename \*/conf/layer.conf |
+        sed 's,^\./,,; s,/conf/layer\.conf$,,'
+}
+
+list_recipes() {
+    find "$1" -iname \*.bb
+}
+
+list_layers | while read -r layer; do
+    if ! grep -qFx "$layer/" "$1"; then
+        echo "$layer/"
+        list_recipes "$layer"
+    fi
+done >>"$1"
