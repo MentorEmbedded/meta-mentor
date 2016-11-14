@@ -5,6 +5,7 @@ After=systemd-vconsole-setup.service
 DefaultDependencies=no
 
 [Service]
+Environment=TMPDIR=/run
 ExecStart=/usr/bin/psplash
 
 [Install]
