@@ -24,6 +24,7 @@ create_toaster_configuration() {
 DISTRO=$(grep "DISTRO =" "$BUILDDIR/conf/local.conf"  | awk {'print $3'} | sed -e s:\'::g | head -n 1)
 MACHINE=$(grep -i "MACHINE ??=" "$BUILDDIR/conf/local.conf" | awk {'print $3'} | sed -e s:\"::g)
 EXTERNAL_TOOLCHAIN=$(grep -i "^EXTERNAL_TOOLCHAIN" "$BUILDDIR/conf/local.conf" | awk {'print $3'})
+MGLS_LICENSE_FILE=$(env | grep "MGLS_LICENSE_FILE=" | sed -e 's:^.*=::' | sed -e 's:\:$::')
 
 if [ -n "$EXTERNAL_TOOLCHAIN" ]; then
    EXTERNAL_TOOLCHAIN=$(eval echo "$EXTERNAL_TOOLCHAIN" &>/dev/null)
@@ -66,7 +67,7 @@ cat <<EOF > "$BUILDDIR"/custom.xml
   </object>
   <object model="orm.toastersetting" pk="6">
     <field type="CharField" name="name">DEFCONF_MGLS_LICENSE_FILE</field>
-    <field type="CharField" name="value"></field>
+    <field type="CharField" name="value">$MGLS_LICENSE_FILE</field>
   </object>
   <object model="orm.toastersetting" pk="7">
     <field type="CharField" name="name">DEFCONF_ACCEPT_FSL_EULA</field>
