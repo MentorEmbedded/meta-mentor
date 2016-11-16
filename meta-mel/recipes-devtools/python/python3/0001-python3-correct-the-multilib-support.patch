@@ -1,0 +1,48 @@
+From 2c3cbf6f7774a646aa322b357f30df75d1a9e89a Mon Sep 17 00:00:00 2001
+From: Adeel Arshad <adeel_arshad@mentor.com>
+Date: Wed, 16 Nov 2016 15:00:02 +0500
+Subject: [PATCH] python3: correct the multilib support
+
+When python3 rebased its multilib patch, the hard coded "lib" path
+isn't really changed because of the rebasing's error, and cause
+phthon3's failure when running on 64bit platforms as below:
+Could not find platform independent libraries <prefix>
+Could not find platform dependent libraries <exec_prefix>
+Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]
+Fatal Python error: Py_Initialize: Unable to get the locale encoding
+ImportError: No module named 'encodings'
+
+Here correct the rebasing error and solve this issue.
+
+Upstream-Status: Pending
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+Signed-off-by: Adeel Arshad <adeel_arshad@mentor.com>
+---
+ Modules/getpath.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/Modules/getpath.c b/Modules/getpath.c
+index 9e933e3..28f314a 100644
+--- a/Modules/getpath.c
++++ b/Modules/getpath.c
+@@ -120,7 +120,6 @@ static wchar_t prefix[MAXPATHLEN+1];
+ static wchar_t exec_prefix[MAXPATHLEN+1];
+ static wchar_t progpath[MAXPATHLEN+1];
+ static wchar_t *module_search_path = NULL;
+-static wchar_t *lib_python = L"" LIB_PYTHON;
+ 
+ /* Get file status. Encode the path to the locale encoding. */
+ 
+@@ -502,7 +501,7 @@ calculate_path(void)
+     _pythonpath = Py_DecodeLocale(PYTHONPATH, NULL);
+     _prefix = Py_DecodeLocale(PREFIX, NULL);
+     _exec_prefix = Py_DecodeLocale(EXEC_PREFIX, NULL);
+-    lib_python = Py_DecodeLocale("lib/python" VERSION, NULL);
++    lib_python = Py_DecodeLocale(LIB_PYTHON, NULL);
+ 
+     if (!_pythonpath || !_prefix || !_exec_prefix || !lib_python) {
+         Py_FatalError(
+-- 
+1.9.1
+
