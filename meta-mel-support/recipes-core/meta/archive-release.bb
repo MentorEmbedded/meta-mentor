@@ -229,15 +229,6 @@ prepare_templates () {
         echo 'PDK_DISTRO_VERSION = "$pdk_version"' >>local.conf.sample
     fi
 
-    {
-        echo
-        echo '# Prefer the cached upstream SCM revisions'
-        echo '# This lets us support BB_NO_NETWORK with shipped MEL releases,'
-        echo '# but it will interfere with the use of AUTOREV. If you want to'
-        echo '# use AUTOREV, comment out or remove this line.'
-        echo 'BB_SRCREV_POLICY = "cache"'
-    } >>local.conf.sample
-
     sed -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' ${TEMPLATECONF}/bblayers.conf.sample >bblayers.conf.sample
     echo 'BBLAYERS = "\' >>bblayers.conf.sample
     bb_layers | while read path relpath name; do
