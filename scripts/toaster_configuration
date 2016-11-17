@@ -227,6 +227,7 @@ else
   if [ "\$1" == "start" ]; then
     . $BUILDDIR/venv/bin/activate
     . $BITBAKEDIR/bin/toaster start
+    xdg-open "http://localhost:8000"
   elif [ "\$1" == "stop" ]; then
     . $BITBAKEDIR/bin/toaster stop
     deactivate
