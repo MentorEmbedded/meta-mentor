@@ -221,8 +221,20 @@ if [ -d "${MELDIR}/downloads" ]; then
 fi
 
    cat <<EOF > "$BUILDDIR"/toaster-setup-environment
-. $BUILDDIR/venv/bin/activate
-. $BITBAKEDIR/bin/toaster start
+if [ "\$#" -ne 1 ]; then
+    echo >&2 "Usage: . ./toaster-setup-environment {start|stop}"
+else
+  if [ "\$1" == "start" ]; then
+    . $BUILDDIR/venv/bin/activate
+    . $BITBAKEDIR/bin/toaster start
+  elif [ "\$1" == "stop" ]; then
+    . $BITBAKEDIR/bin/toaster stop
+    deactivate
+  else
+     echo >&2 "Usage: . ./toaster-setup-environment {start|stop}"
+  fi
+fi
+
 EOF
 }
 
