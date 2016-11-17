@@ -226,7 +226,7 @@ prepare_templates () {
     pdk_version="${PDK_DISTRO_VERSION}"
     if [ -n "$pdk_version" ]; then
         echo >>local.conf.sample
-        echo 'PDK_DISTRO_VERSION = "$pdk_version"' >>local.conf.sample
+        echo "PDK_DISTRO_VERSION = \"$pdk_version\"" >>local.conf.sample
     fi
 
     {
