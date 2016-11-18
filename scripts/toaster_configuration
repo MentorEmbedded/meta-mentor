@@ -24,7 +24,6 @@ create_toaster_configuration() {
 DISTRO=$(grep "DISTRO =" "$BUILDDIR/conf/local.conf"  | awk {'print $3'} | sed -e s:\'::g | head -n 1)
 MACHINE=$(grep -i "MACHINE ??=" "$BUILDDIR/conf/local.conf" | awk {'print $3'} | sed -e s:\"::g)
 EXTERNAL_TOOLCHAIN=$(grep -i "^EXTERNAL_TOOLCHAIN" "$BUILDDIR/conf/local.conf" | awk {'print $3'})
-MGLS_LICENSE_FILE=$(env | grep "MGLS_LICENSE_FILE=" | sed -e 's:^.*=::' | sed -e 's:\:$::')
 
 if [ -n "$EXTERNAL_TOOLCHAIN" ]; then
    EXTERNAL_TOOLCHAIN=$(eval echo "$EXTERNAL_TOOLCHAIN" &>/dev/null)
