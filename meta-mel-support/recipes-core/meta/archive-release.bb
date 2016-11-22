@@ -1,5 +1,4 @@
 DESCRIPTION = "Archive the artifacts for a ${DISTRO_NAME} release"
-SRC_URI_append_qemuall = "file://runqemu.in"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=4d92cd373abda3937c2bc47fbc49d690 \
                     file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
@@ -9,6 +8,10 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 PACKAGES = ""
 EXCLUDE_FROM_WORLD = "1"
 
+SRC_URI += "${@' '.join(uninative_urls(d)) if 'downloads' in '${RELEASE_ARTIFACTS}'.split() else ''}"
+SRC_URI_append_qemuall = "file://runqemu.in"
+
+UNINATIVE_BUILD_ARCHES ?= "x86_64 i686"
 MELDIR ?= "${COREBASE}/.."
 TEMPLATECONF ?= "${FILE_DIRNAME}/../../../conf"
 
@@ -112,6 +115,16 @@ python () {
     # Make sure MELDIR is absolute, as we use it in transforms
     d.setVar('MELDIR', os.path.abspath(d.getVar('MELDIR', True)))
 }
+
+def uninative_urls(d):
+    l = d.createCopy()
+    for arch in d.getVar('UNINATIVE_BUILD_ARCHES', True).split():
+        chksum = d.getVarFlag("UNINATIVE_CHECKSUM", arch, True)
+        if chksum:
+            l.setVar('BUILD_ARCH', arch)
+            srcuri = l.expand("${UNINATIVE_URL}${UNINATIVE_TARBALL};sha256sum=%s;unpack=no;subdir=uninative/%s" % (chksum, chksum))
+            yield srcuri
+
 
 release_tar () {
     if [ -z ${BINARY_ARTIFACTS_COMPRESSION} ]; then
@@ -289,12 +302,12 @@ do_prepare_release () {
             ${@bb.utils.which('${BBPATH}', '../scripts/bb-print-layer-data')} "$layer/conf/layer.conf"
         done 2>/dev/null | sed -n 's/^\([^:]*\):[^|]*|\([^|]*\)|.*/\1|\2/p' >layermap.txt
 
-        if [ -n "${UNINATIVE_DLDIR}" ]; then
-            tarball="${UNINATIVE_DLDIR}/${UNINATIVE_TARBALL}"
-            if [ -e "$tarball" ]; then
-                mkdir -p downloads/uninative
-                cp -a "$tarball" downloads/uninative
-            fi
+        mkdir -p downloads
+        if [ -e ${WORKDIR}/uninative ]; then
+            cp -a ${WORKDIR}/uninative downloads/
+            # We symlink to the root of downloads so the downloads dir can be
+            # used either as a mirror or directly as the DL_DIR
+            (cd downloads && find uninative -type f -print0 | xargs -0 -I"{}" sh -c 'touch "{}.done"; ln -s "{}" .; ln -s "{}.done" .')
         fi
 
         if [ "${ARCHIVE_RELEASE_DL_TOPDIR}" != "${ARCHIVE_RELEASE_DL_DIR}" ]; then
@@ -330,8 +343,8 @@ do_prepare_release () {
                             deploy/$layerbase-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/$name
                 fi
             done
-            if [ -e downloads/uninative ]; then
-                release_tar -chf deploy/${MACHINE}-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/uninative
+            if [ -n "${UNINATIVE_TARBALL}" ]; then
+                release_tar -chf deploy/${MACHINE}-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/uninative $(find downloads/uninative -type f | sed 's,^.*/,downloads/,')
             fi
         else
             mkdir -p downloads
