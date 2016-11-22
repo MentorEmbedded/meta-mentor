@@ -289,6 +289,14 @@ do_prepare_release () {
             ${@bb.utils.which('${BBPATH}', '../scripts/bb-print-layer-data')} "$layer/conf/layer.conf"
         done 2>/dev/null | sed -n 's/^\([^:]*\):[^|]*|\([^|]*\)|.*/\1|\2/p' >layermap.txt
 
+        if [ -n "${UNINATIVE_DLDIR}" ]; then
+            tarball="${UNINATIVE_DLDIR}/${UNINATIVE_TARBALL}"
+            if [ -e "$tarball" ]; then
+                mkdir -p downloads/uninative
+                cp -a "$tarball" downloads/uninative
+            fi
+        fi
+
         if [ "${ARCHIVE_RELEASE_DL_TOPDIR}" != "${ARCHIVE_RELEASE_DL_DIR}" ]; then
             for dir in ${ARCHIVE_RELEASE_DL_TOPDIR}/*; do
                 name=$(basename $dir)
@@ -322,6 +330,9 @@ do_prepare_release () {
                             deploy/$layerbase-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/$name
                 fi
             done
+            if [ -e downloads/uninative ]; then
+                release_tar -chf deploy/${MACHINE}-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/uninative
+            fi
         else
             mkdir -p downloads
             find -L ${ARCHIVE_RELEASE_DL_DIR} -type f -maxdepth 2 | while read source; do
