@@ -1,5 +1,4 @@
 DESCRIPTION = "Archive the artifacts for a ${DISTRO_NAME} release"
-SRC_URI_append_qemuall = "file://runqemu.in"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=4d92cd373abda3937c2bc47fbc49d690 \
                     file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
@@ -9,10 +8,19 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 PACKAGES = ""
 EXCLUDE_FROM_WORLD = "1"
 
+SRC_URI += "${@' '.join(uninative_urls(d)) if 'downloads' in '${RELEASE_ARTIFACTS}'.split() else ''}"
+SRC_URI_append_qemuall = "file://runqemu.in"
+
+UNINATIVE_BUILD_ARCHES ?= "x86_64 i686"
 MELDIR ?= "${COREBASE}/.."
 TEMPLATECONF ?= "${FILE_DIRNAME}/../../../conf"
 
 PROBECONFIGS ?= "${@bb.utils.which('${BBPATH}', 'conf/probe-configs/${MACHINE}')}" 
+
+BSPFILES_INSTALL_PATH ?= "${MACHINE}"
+BINARY_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/binary"
+CONF_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/conf"
+PROBECONFIGS_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/probe-configs"
 
 # Add a default in case the user doesn't inherit copyleft_compliance
 ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
@@ -107,6 +115,16 @@ python () {
     # Make sure MELDIR is absolute, as we use it in transforms
     d.setVar('MELDIR', os.path.abspath(d.getVar('MELDIR', True)))
 }
+
+def uninative_urls(d):
+    l = d.createCopy()
+    for arch in d.getVar('UNINATIVE_BUILD_ARCHES', True).split():
+        chksum = d.getVarFlag("UNINATIVE_CHECKSUM", arch, True)
+        if chksum:
+            l.setVar('BUILD_ARCH', arch)
+            srcuri = l.expand("${UNINATIVE_URL}${UNINATIVE_TARBALL};sha256sum=%s;unpack=no;subdir=uninative/%s" % (chksum, chksum))
+            yield srcuri
+
 
 release_tar () {
     if [ -z ${BINARY_ARTIFACTS_COMPRESSION} ]; then
@@ -221,17 +239,8 @@ prepare_templates () {
     pdk_version="${PDK_DISTRO_VERSION}"
     if [ -n "$pdk_version" ]; then
         echo >>local.conf.sample
-        echo 'PDK_DISTRO_VERSION = "$pdk_version"' >>local.conf.sample
+        echo "PDK_DISTRO_VERSION = \"$pdk_version\"" >>local.conf.sample
     fi
-
-    {
-        echo
-        echo '# Prefer the cached upstream SCM revisions'
-        echo '# This lets us support BB_NO_NETWORK with shipped MEL releases,'
-        echo '# but it will interfere with the use of AUTOREV. If you want to'
-        echo '# use AUTOREV, comment out or remove this line.'
-        echo 'BB_SRCREV_POLICY = "cache"'
-    } >>local.conf.sample
 
     sed -n '/^BBLAYERS/{n; :start; /\\$/{n; b start}; /^ *"$/d; :done}; p' ${TEMPLATECONF}/bblayers.conf.sample >bblayers.conf.sample
     echo 'BBLAYERS = "\' >>bblayers.conf.sample
@@ -293,6 +302,14 @@ do_prepare_release () {
             ${@bb.utils.which('${BBPATH}', '../scripts/bb-print-layer-data')} "$layer/conf/layer.conf"
         done 2>/dev/null | sed -n 's/^\([^:]*\):[^|]*|\([^|]*\)|.*/\1|\2/p' >layermap.txt
 
+        mkdir -p downloads
+        if [ -e ${WORKDIR}/uninative ]; then
+            cp -a ${WORKDIR}/uninative downloads/
+            # We symlink to the root of downloads so the downloads dir can be
+            # used either as a mirror or directly as the DL_DIR
+            (cd downloads && find uninative -type f -print0 | xargs -0 -I"{}" sh -c 'touch "{}.done"; ln -s "{}" .; ln -s "{}.done" .')
+        fi
+
         if [ "${ARCHIVE_RELEASE_DL_TOPDIR}" != "${ARCHIVE_RELEASE_DL_DIR}" ]; then
             for dir in ${ARCHIVE_RELEASE_DL_TOPDIR}/*; do
                 name=$(basename $dir)
@@ -326,6 +343,9 @@ do_prepare_release () {
                             deploy/$layerbase-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/$name
                 fi
             done
+            if [ -n "${UNINATIVE_TARBALL}" ]; then
+                release_tar -chf deploy/${MACHINE}-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/uninative $(find downloads/uninative -type f | sed 's,^.*/,downloads/,')
+            fi
         else
             mkdir -p downloads
             find -L ${ARCHIVE_RELEASE_DL_DIR} -type f -maxdepth 2 | while read source; do
@@ -362,18 +382,18 @@ do_prepare_release () {
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw images; then
         if [ -e "${BUILDHISTORY_DIR}" ]; then
-            echo "--transform=s,${BUILDHISTORY_DIR},${MACHINE}/binary/buildhistory," >include
+            echo "--transform=s,${BUILDHISTORY_DIR},${BINARY_INSTALL_PATH}/buildhistory," >include
             echo ${BUILDHISTORY_DIR} >>include
         fi
 
         if echo "${RELEASE_ARTIFACTS}" | grep -qw templates; then
-            echo "--transform=s,${S}/,${MACHINE}/conf/," >>include
+            echo "--transform=s,${S}/,${CONF_INSTALL_PATH}/," >>include
             echo "${S}/local.conf.sample" >>include
             echo "${S}/bblayers.conf.sample" >>include
         fi
 
         echo "--transform=s,-${MACHINE},,i" >>include
-        echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
+        echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
 
         find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 \( -type f -o -type l \) | \
             grep -Ev '^${DEPLOY_DIR_IMAGE}/${DEPLOY_IMAGES_EXCLUDE_PATTERN}' >>include
@@ -381,14 +401,14 @@ do_prepare_release () {
         # Lock down any autorevs
         buildhistory-collect-srcrevs -p "${BUILDHISTORY_DIR}" >"${WORKDIR}/autorevs.conf"
         if [ -s "${WORKDIR}/autorevs.conf" ]; then
-            echo "--transform=s,${WORKDIR}/autorevs.conf,${MACHINE}/conf/autorevs.conf," >>include
+            echo "--transform=s,${WORKDIR}/autorevs.conf,${CONF_INSTALL_PATH}/autorevs.conf," >>include
             echo "${WORKDIR}/autorevs.conf" >>include
         fi
 
         release_tar --files-from=include -cf deploy/${MACHINE}.tar
 
         echo "--transform=s,-${MACHINE},,i" >include
-        echo "--transform=s,${DEPLOY_DIR_IMAGE},${MACHINE}/binary," >>include
+        echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
         {
             ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1  -iname "%s" || true' % pattern for pattern in DEPLOY_IMAGES.split())}
         } >>include
@@ -406,7 +426,7 @@ do_prepare_release () {
             sed -e "s/##ROOTFS##/${RELEASE_IMAGE}.$ext/; s/##KERNEL##/$kernel/" ${WORKDIR}/runqemu.in >runqemu
             chmod +x runqemu
             echo ./runqemu >>include
-            echo "--transform=s,./runqemu$,${MACHINE}/binary/runqemu," >>include
+            echo "--transform=s,./runqemu$,${BINARY_INSTALL_PATH}/runqemu," >>include
         fi
         release_tar --files-from=include -rhf deploy/${MACHINE}.tar
 
@@ -420,9 +440,8 @@ do_prepare_release () {
     fi
 
     if echo "${RELEASE_ARTIFACTS}" | grep -qw probeconfigs; then
-        if [ -d ${PROBECONFIGS} ]
-        then
-            release_tar "--transform=s,${PROBECONFIGS},probe-configs-${MACHINE}," -rf deploy/${MACHINE}.tar ${PROBECONFIGS}
+        if [ -d "${PROBECONFIGS}" ]; then
+            release_tar "--transform=s,${PROBECONFIGS},${PROBECONFIGS_INSTALL_PATH}," -rf deploy/${MACHINE}.tar "${PROBECONFIGS}"
         fi
     fi
 

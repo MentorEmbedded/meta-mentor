@@ -1,9 +1,9 @@
-# Uncomment to alter the identifier for this build for the ADE. This mechanism
-# is used to support installation of multiple ADEs side-by-side. By default,
-# every ADE build gets its own identifier, so is self-contained already.
-# Default: ${MACHINE}-${ADE_VERSION}
-#ADE_IDENTIFIER ?= "${MACHINE}-${ADE_VERSION}.some-configuration"
-#
-# Uncomment to set a site name (shown in CodeBench) for this ADE build.
+# Uncomment to set a site name (shown in CodeBench) for the ADE
 # Default: ADE for ${ADE_IDENTIFIER}
 #ADE_SITENAME ?= "My Company's ADE for ${ADE_IDENTIFIER}"
+
+# Uncomment to alter the identifier for the ADE. This mechanism is used to
+# support installation of multiple ADEs side-by-side. By default, every ADE
+# build gets its own identifier, so is self-contained already.
+# Default: ${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}
+#ADE_IDENTIFIER ?= "${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}.customized"
