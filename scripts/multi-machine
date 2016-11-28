@@ -93,6 +93,7 @@ for machine; do
             echo >&2 "Warning: build for $machine failed with exit code $ret"
         fi
     fi
+    cp -a "$TMPDIR/log/." "$builddir/log/"
     if [ $clean -eq 1 ]; then
         eval $(bitbake -e | grep '^TMPDIR=')
         if [ -z "$TMPDIR" ]; then
