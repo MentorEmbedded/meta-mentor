@@ -44,7 +44,7 @@ do_install_append () {
 }
 
 # This version doesn't provide these
-USE_ALTERNATIVES_FOR_remove = "ld.bfd elfedit"
+USE_ALTERNATIVES_FOR_remove = "ld.bfd elfedit ld.gold dwp"
 
 python () {
     '''This binutils version has no elfedit.'''
