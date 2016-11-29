@@ -44,4 +44,10 @@ do_install_append () {
 }
 
 # This version doesn't provide these
-USE_ALTERNATIVES_FOR := "${@oe_filter_out('ld.bfd|elfedit', USE_ALTERNATIVES_FOR, d)}"
+USE_ALTERNATIVES_FOR_remove = "ld.bfd elfedit"
+
+python () {
+    '''This binutils version has no elfedit.'''
+    compilefunc = d.getVar('do_compile', False).replace('chrpath -d ${B}/binutils/elfedit', '')
+    d.setVar('do_compile', compilefunc)
+}
