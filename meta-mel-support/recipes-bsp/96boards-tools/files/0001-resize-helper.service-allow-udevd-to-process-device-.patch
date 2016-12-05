@@ -1,0 +1,26 @@
+From 0a3f648ddb8d5301bb5566889225926ec4bb58ac Mon Sep 17 00:00:00 2001
+From: Fahad Arslan <Fahad_Arslan@mentor.com>
+Date: Fri, 2 Dec 2016 20:48:36 +0500
+Subject: [PATCH 1/1] resize-helper.service: allow udevd to process device
+ creation events
+
+Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
+---
+ resize-helper.service | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/resize-helper.service b/resize-helper.service
+index c1354a6..d62ecfe 100644
+--- a/resize-helper.service
++++ b/resize-helper.service
+@@ -4,6 +4,7 @@ After=systemd-remount-fs.service
+ 
+ [Service]
+ Type=oneshot
++ExecStartPre=-/bin/udevadm settle
+ ExecStart=-/usr/sbin/resize-helper
+ ExecStartPost=/bin/systemctl disable resize-helper.service
+ 
+-- 
+2.8.1
+
