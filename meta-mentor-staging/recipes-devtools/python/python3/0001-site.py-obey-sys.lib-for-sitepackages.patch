@@ -1,0 +1,37 @@
+From 3676ed4021e7ceedb2e06c801910b919a0d732c4 Mon Sep 17 00:00:00 2001
+From: Christopher Larson <chris_larson@mentor.com>
+Date: Mon, 5 Dec 2016 20:47:42 -0700
+Subject: [PATCH] site.py: obey sys.lib for sitepackages
+
+Upstream-Status: Inappropriate [configuration]
+Signed-off-by: Christopher Larson <chris_larson@mentor.com>
+---
+ Lib/site.py | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/Lib/site.py b/Lib/site.py
+index 3f78ef5..117741d 100644
+--- a/Lib/site.py
++++ b/Lib/site.py
+@@ -303,12 +303,16 @@ def getsitepackages(prefixes=None):
+         seen.add(prefix)
+ 
+         if os.sep == '/':
+-            sitepackages.append(os.path.join(prefix, "lib",
++            sitepackages.append(os.path.join(prefix, sys.lib,
+                                         "python" + sys.version[:3],
+                                         "site-packages"))
++            if sys.lib != "lib":
++                sitepackages.append(os.path.join(prefix, "lib",
++                                            "python" + sys.version[:3],
++                                            "site-packages"))
+         else:
+             sitepackages.append(prefix)
+-            sitepackages.append(os.path.join(prefix, "lib", "site-packages"))
++            sitepackages.append(os.path.join(prefix, sys.lib, "site-packages"))
+         if sys.platform == "darwin":
+             # for framework builds *only* we add the standard Apple
+             # locations.
+-- 
+2.8.0
+
