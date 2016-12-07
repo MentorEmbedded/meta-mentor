@@ -7,6 +7,7 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/GPL-2.0;md5=80
 
 SRCREV = "193f355823d9dc38f370759153ac950a2833b0e2"
 SRC_URI = "git://github.com/96boards/96boards-tools;branch=master;protocol=https"
+SRC_URI_append_imx6ulevk-mel = " file://0001-resize-helper.service-allow-udevd-to-process-device-.patch"
 
 S = "${WORKDIR}/git"
 
