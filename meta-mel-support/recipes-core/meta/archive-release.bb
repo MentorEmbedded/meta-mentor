@@ -9,7 +9,7 @@ PACKAGES = ""
 EXCLUDE_FROM_WORLD = "1"
 
 SRC_URI += "${@' '.join(uninative_urls(d)) if 'downloads' in '${RELEASE_ARTIFACTS}'.split() else ''}"
-SRC_URI_append_qemuall = "file://runqemu.in"
+SRC_URI_append_qemuall = " file://runqemu.in"
 
 UNINATIVE_BUILD_ARCHES ?= "x86_64 i686"
 MELDIR ?= "${COREBASE}/.."
