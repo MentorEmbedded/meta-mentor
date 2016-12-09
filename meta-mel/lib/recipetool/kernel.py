@@ -155,7 +155,7 @@ def _kernel_add_fragments(destlayer, rd, fragments, files=None, extralines=None)
 
 def get_next_fragment_name(src_uri):
     fragpat = re.compile('file://recipetool([0-9]+)\.cfg$')
-    matches = filter(None, [re.match(fragpat, u) for u in src_uri])
+    matches = list(filter(None, [re.match(fragpat, u) for u in src_uri]))
     if matches:
         fragnums = sorted((int(m.group(1)) for m in matches), reverse=True)
         num = fragnums[0] + 1
