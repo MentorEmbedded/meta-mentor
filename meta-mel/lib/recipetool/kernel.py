@@ -64,15 +64,14 @@ def _get_recipe_file(cooker, pn):
     return recipefile
 
 
-def _parse_recipe(provide, tinfoil):
+def _parse_recipe(pn, tinfoil):
     import oe.recipeutils
-    recipefile = _get_recipe_file(tinfoil.cooker, provide)
+    recipefile = _get_recipe_file(tinfoil.cooker, pn)
     if not recipefile:
         # Error already logged
         return None
     append_files = tinfoil.cooker.collection.get_file_appends(recipefile)
-    rd = oe.recipeutils.parse_recipe(recipefile, append_files,
-                                     tinfoil.config_data)
+    rd = oe.recipeutils.parse_recipe(tinfoil.cooker, recipefile, append_files)
     return rd
 
 
