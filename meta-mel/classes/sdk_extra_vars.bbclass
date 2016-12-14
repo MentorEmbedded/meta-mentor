@@ -8,10 +8,18 @@ EXTRA_SDK_LINES ?= ""
 def sdk_extra_var_lines(d):
     lines = []
     for var in d.getVar('EXTRA_SDK_VARS', True).split():
-        lines.append('%s="%s"' % (var, d.getVar(var, True) or ""))
+        try:
+            var, shvar = var.split(':', 1)
+        except ValueError:
+            shvar = var
+        lines.append('%s="%s"' % (shvar, d.getVar(var, True) or ""))
 
     for var in d.getVar('EXTRA_EXPORTED_SDK_VARS', True).split():
-        lines.append('export %s="%s"' % (var, d.getVar(var, True) or ""))
+        try:
+            var, shvar = var.split(':', 1)
+        except ValueError:
+            shvar = var
+        lines.append('export %s="%s"' % (shvar, d.getVar(var, True) or ""))
 
     extra_lines = d.getVar('EXTRA_SDK_LINES', True).replace('\\n', '\n').split('\n')
     lines.extend(extra_lines)

@@ -20,6 +20,7 @@ python assemble_intercepts () {
     bb.utils.mkdirhier(intercepts_dir)
     bb.process.run(['cp'] + intercepts + [intercepts_dir])
 }
+assemble_intercepts[cleandirs] += "${POSTINST_INTERCEPTS_DIR}"
+
 do_rootfs[prefuncs] += "assemble_intercepts"
-do_rootfs[cleandirs] += "${POSTINST_INTERCEPTS_DIR}"
 do_rootfs[file-checksums] += "${@' '.join('%s:True' % f for f in '${POSTINST_INTERCEPTS}'.split())}"
