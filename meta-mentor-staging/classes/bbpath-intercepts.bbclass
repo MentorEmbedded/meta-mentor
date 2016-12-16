@@ -15,7 +15,7 @@ def find_intercepts(d):
 
 python assemble_intercepts () {
     intercepts = d.getVar('POSTINST_INTERCEPTS', True).split()
-    bb.debug(1, 'Collected intercepts:\n%s' % ('  %s\n' % i for i in intercepts))
+    bb.debug(1, 'Collected intercepts:\n%s' % ''.join('  %s\n' % i for i in intercepts))
     intercepts_dir = d.getVar('POSTINST_INTERCEPTS_DIR', True)
     bb.utils.mkdirhier(intercepts_dir)
     bb.process.run(['cp'] + intercepts + [intercepts_dir])
