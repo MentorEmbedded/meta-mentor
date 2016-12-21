@@ -40,14 +40,9 @@ with open(recipeListFile, 'r') as f:
 
 # Now time to populate custom.xml
 
-del_layers = []
-
 for layername in list(layer_and_recipes):
     if len(layer_and_recipes[layername]) == 1:
-        del_layers.append(layername)
-
-for layername in del_layers:
-    del layer_and_recipes[layername]
+        del layer_and_recipes[layername]
 
 pk = len(bblayers) + 1
 
