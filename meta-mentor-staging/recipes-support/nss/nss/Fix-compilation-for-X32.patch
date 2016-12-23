@@ -10,22 +10,20 @@ Signed-off-by: Christopher Larson <chris_larson@mentor.com>
  nss/lib/freebl/poly1305-donna-x64-sse2-incremental-source.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/nss/lib/freebl/poly1305-donna-x64-sse2-incremental-source.c b/nss/lib/freebl/poly1305-donna-x64-sse2-incremental-source.c
-index 2a3301e..d4ade41 100644
---- a/nss/lib/freebl/poly1305-donna-x64-sse2-incremental-source.c
-+++ b/nss/lib/freebl/poly1305-donna-x64-sse2-incremental-source.c
-@@ -87,7 +87,11 @@ static poly1305_state_internal INLINE
-     *
-     poly1305_aligned_state(poly1305_state *state)
- {
+Index: nss-3.25/nss/lib/freebl/poly1305-donna-x64-sse2-incremental-source.c
+===================================================================
+--- nss-3.25.orig/nss/lib/freebl/poly1305-donna-x64-sse2-incremental-source.c
++++ nss-3.25/nss/lib/freebl/poly1305-donna-x64-sse2-incremental-source.c
+@@ -79,7 +79,11 @@ typedef struct poly1305_state_internal_t
+ 
+ static poly1305_state_internal INLINE
+ *poly1305_aligned_state(poly1305_state *state) {
+-	return (poly1305_state_internal *)(((uint64_t)state + 63) & ~63);
 +#ifdef __ILP32__
 +    return (poly1305_state_internal *)(((uint32_t)state + 63) & ~63);
 +#else
-     return (poly1305_state_internal *)(((uint64_t)state + 63) & ~63);
++     return (poly1305_state_internal *)(((uint64_t)state + 63) & ~63);
 +#endif
  }
  
  /* copy 0-63 bytes */
--- 
-2.8.0
-
