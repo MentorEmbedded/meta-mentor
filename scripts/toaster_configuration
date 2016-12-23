@@ -189,6 +189,12 @@ EOF
 }
 
 create_toaster_venv () {
+    if [ -f /etc/redhat-release ]; then
+        # If its RHEL 7 there is a bug in virtualenv which has to be tweaked
+        if [ $(cat /etc/redhat-release  | awk {'print $7'} | cut -d "." -f1) -eq 7 ]; then
+            easy_install --user --upgrade virtualenv
+        fi
+    fi
     python -m virtualenv -p python3 "$BUILDDIR/venv"
     python -m virtualenv -p python2 "$BUILDDIR/venv"
     (
