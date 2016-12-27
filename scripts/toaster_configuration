@@ -56,22 +56,18 @@ cat <<EOF > "$BUILDDIR"/custom.xml
     <field type="CharField" name="value">$DISTRO</field>
   </object>
   <object model="orm.toastersetting" pk="5">
-    <field type="CharField" name="name">DEFCONF_MGLS_LICENSE_FILE</field>
-    <field type="CharField" name="value">$MGLS_LICENSE_FILE</field>
-  </object>
-  <object model="orm.toastersetting" pk="6">
     <field type="CharField" name="name">DEFCONF_ACCEPT_FSL_EULA</field>
     <field type="CharField" name="value"></field>
   </object>
-  <object model="orm.toastersetting" pk="7">
+  <object model="orm.toastersetting" pk="6">
     <field type="CharField" name="name">DEFCONF_SSTATE_DIR</field>
     <field type="CharField" name="value">${BUILDDIR}/../sstate-cache</field>
   </object>
-  <object model="orm.toastersetting" pk="8">
+  <object model="orm.toastersetting" pk="7">
     <field type="CharField" name="name">DEFCONF_DL_DIR</field>
     <field type="CharField" name="value">${MELDIR}/downloads</field>
   </object>
-  <object model="orm.toastersetting" pk="9">
+  <object model="orm.toastersetting" pk="8">
     <field type="CharField" name="name">CUSTOM_BUILD_INIT_SCRIPT</field>
     <field type="CharField" name="value">${CMD_LINE}</field>
   </object>
