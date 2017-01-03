@@ -2,13 +2,38 @@
 
 import sys
 import os
+import re
 from collections import OrderedDict
 
 bblayers, builddir, meldir = sys.argv[1], sys.argv[2], sys.argv[3]
 
-bblayers = bblayers.split(",")
+OE_CORE_NAME = "openembedded-core"
 
-totalLayers = bblayers
+configured_layers = [OE_CORE_NAME]
+
+def get_layer_name(lpath):
+    layerconf = lpath + "/conf/layer.conf"
+    lc = open(layerconf, "r")
+    for ln in lc:
+        ln = ln.rstrip("\n")
+        layer = re.match("BBFILE_COLLECTIONS *\+= *\"", ln)
+        if layer:
+            layer = ln.split("\"")[1]
+            if layer == "core":
+                layer = OE_CORE_NAME
+            break
+    lc.close()
+    return layer
+
+# Parse through layers from bblayers.conf and pick up layer names
+for base_layer in bblayers.split():
+    layer = get_layer_name(base_layer)
+    if layer:
+        if layer == OE_CORE_NAME:
+            continue
+        configured_layers.append(layer)
+
+totalLayers = list(configured_layers)
 
 layer_and_recipes = OrderedDict()
 
@@ -20,36 +45,28 @@ layerabsPath = []
 toStrip = None
 layer = None
 
-#Populate layer_and_recipes 
-
+# Populate layer_and_recipes
 with open(recipeListFile, 'r') as f:
     for line in f:
         line = line.rstrip("\n")
+        # Check if it's a layer or a recipe
         if line.endswith("/"):
-            line = line.rstrip("/")
             toStrip = line
-            if len(line.split("/")) > 1:
-                layer = line.split("/")[-1]
-            else:
-                layer = line
-            layer_and_recipes[layer] = [line]
+            line = line.rstrip("/")
+            layer = get_layer_name(line)
+            if layer:
+                layer_and_recipes[layer] = [line]
         else:
             if line.endswith('.bb'):
-                layer_and_recipes[layer].append(line.replace(toStrip + "/", ""))
+                layer_and_recipes[layer].append(line.replace(toStrip, ""))
 
-
-# Now time to populate custom.xml
-
-for layername in list(layer_and_recipes):
-    if len(layer_and_recipes[layername]) == 1:
-        del layer_and_recipes[layername]
-
-pk = len(bblayers) + 1
-
+# Now we need to add all layers that are found in the MEL install dir
+# to custom.xml, layers from bblayers.conf are already added
+pk = len(configured_layers) + 1
 fd = open(customXML, 'a')
-
 for layername in layer_and_recipes:
-    if len(layer_and_recipes[layername]) == 0 or layername in bblayers:
+    # Skip the layer entry if it's already configured
+    if len(layer_and_recipes[layername]) == 0 or layername in configured_layers:
         continue
     totalLayers.append(layername)
     fd.write('  <object model="orm.layer" pk="%s">\n' %(str(pk)))
@@ -64,13 +81,14 @@ for layername in layer_and_recipes:
     fd.write('  </object>\n\n')
     pk += 1
 
+# Reset pk and populate recipes
 pk = 1
-
-# Populate recipes
-
+fd.write('  <!-- Recipe entries -->\n')
 for layername in layer_and_recipes:
+    # Skip layers which don't have a .bb
     if len(layer_and_recipes[layername]) == 1:
         continue
+    # For each .bb in the current layer add an orm.recipe type custom.xml entry
     for recipePath in layer_and_recipes[layername]:
         if '.bb' not in recipePath:
             continue
@@ -99,5 +117,4 @@ for layername in layer_and_recipes:
         else:
            fd.write('    <field name="is_image" type="BooleanField">False</field>\n')
         fd.write('  </object>\n')
-
 fd.close()
