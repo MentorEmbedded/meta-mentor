@@ -13,11 +13,21 @@ MELDIR="$2"
 BITBAKEDIR="$3"
 CMD_LINE="$4"
 
+OE_CORE_NAME="openembedded-core"
+
 BBLAYERS=
 configured_layers () {
    tac "$BUILDDIR/conf/bblayers.conf" | \
    sed -n -e '/^"/,/^BBLAYERS = /{ /^BBLAYERS =/d; /^"/d; p;}' | \
    awk {'print $1'}
+}
+
+get_layer_name () {
+   name=$(grep "BBFILE_COLLECTIONS *+= *\"" ${1}/conf/layer.conf | head -n 1 | cut -d '"' -f2)
+   if [ "$name" = "core" ]; then
+      name="$OE_CORE_NAME"
+   fi
+   echo $name
 }
 
 create_toaster_configuration() {
@@ -90,7 +100,7 @@ LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
 cat <<EOF >> "$BUILDDIR"/custom.xml
   <object model="orm.releasedefaultlayer" pk="1">
     <field rel="ManyToOneRel" to="orm.release" name="release">2</field>
-    <field type="CharField" name="layer_name">openembedded-core</field>
+    <field type="CharField" name="layer_name">$OE_CORE_NAME</field>
   </object>
 
 EOF
@@ -98,8 +108,8 @@ EOF
 pk=3
 for layer in $(echo "$LAYER_PATHS"); do
    name=
-   layername=$(basename "$layer")
-   if [ "$layername" = "meta" ]; then
+   layername=$(get_layer_name ${layer})
+   if [ "$layername" = "$OE_CORE_NAME" ]; then
         continue
    fi
    pk=$((pk+1))
@@ -129,15 +139,13 @@ LAYER_PATHS=$(configured_layers | while read -r layer; do
 done)
 LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
 
-collectLayers="meta"
 pk=1
 # Openembedded-core is poky's meta layer.
 layer=$(dirname "$BITBAKEDIR")
 layer="$layer"/meta
-dirpath=$(basename "$layer")
 cat <<EOF >> "$BUILDDIR"/custom.xml
   <object model="orm.layer" pk="$pk">
-    <field type="CharField" name="name">openembedded-core</field>
+    <field type="CharField" name="name">$OE_CORE_NAME</field>
     <field type="CharField" name="local_source_dir">$layer</field>
   </object>
   <object model="orm.layer_version" pk="$pk">
@@ -151,12 +159,10 @@ EOF
 
 for layer in $(echo "$LAYER_PATHS"); do
    name=
-   layername=$(basename "$layer")
-   if [ "$layername" = "meta" ]; then
+   layername=$(get_layer_name ${layer})
+   if [ "$layername" = "$OE_CORE_NAME" ]; then
         continue
    fi
-   collectLayers="$collectLayers,$layername"
-   dirpath=$(basename "$layer")
    cd $layer
    pk=$((pk+1))
    cat <<EOF >> "$BUILDDIR"/custom.xml
@@ -176,7 +182,7 @@ cd - > /dev/null 2>&1
 done
 
 # Time to grab rest of the layers in MELDIR
-"$MELDIR"/meta-mentor/scripts/toaster-layers-recipes-config.py "$collectLayers" "$BUILDDIR" "$MELDIR"
+"$MELDIR"/meta-mentor/scripts/toaster-layers-recipes-config.py "$LAYER_PATHS" "$BUILDDIR" "$MELDIR"
 
 
 cat <<EOF >> "$BUILDDIR"/custom.xml
