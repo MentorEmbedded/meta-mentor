@@ -1,0 +1,11 @@
+--- a/src/charconv.c
++++ b/src/charconv.c
+@@ -24,7 +24,7 @@
+  */
+ static int init_conversion(int codepage)
+ {
+-    static int initialized = -1;
++    static int initialized = 0; /* Disable iconv() conversion */
+     if (initialized < 0) {
+ 	initialized = 1;
+ 	if (codepage < 0)

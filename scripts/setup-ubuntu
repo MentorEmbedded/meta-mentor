@@ -21,11 +21,6 @@ PKGS="$PKGS libgl1-mesa-dev libglu1-mesa-dev libsdl1.2-dev"
 # This is needed for Windows ADE
 PKGS="$PKGS zip"
 
-if [ "$(uname -m)" = "x86_64" ]; then
-    sudo dpkg --add-architecture i386
-    PKGS="$PKGS libc6-dev-i386 libncurses5:i386"
-fi
-
 echo "Installing packages required to build Mentor Embedded Linux"
 sudo apt-get update
 sudo apt-get -y install $PKGS

@@ -13,6 +13,8 @@ MELDIR="$2"
 BITBAKEDIR="$3"
 CMD_LINE="$4"
 
+OE_CORE_NAME="openembedded-core"
+
 BBLAYERS=
 configured_layers () {
    tac "$BUILDDIR/conf/bblayers.conf" | \
@@ -20,14 +22,17 @@ configured_layers () {
    awk {'print $1'}
 }
 
+get_layer_name () {
+   name=$(grep "BBFILE_COLLECTIONS *+= *\"" ${1}/conf/layer.conf | head -n 1 | cut -d '"' -f2)
+   if [ "$name" = "core" ]; then
+      name="$OE_CORE_NAME"
+   fi
+   echo $name
+}
+
 create_toaster_configuration() {
 DISTRO=$(grep "DISTRO =" "$BUILDDIR/conf/local.conf"  | awk {'print $3'} | sed -e s:\'::g | head -n 1)
 MACHINE=$(grep -i "MACHINE ??=" "$BUILDDIR/conf/local.conf" | awk {'print $3'} | sed -e s:\"::g)
-EXTERNAL_TOOLCHAIN=$(grep -i "^EXTERNAL_TOOLCHAIN" "$BUILDDIR/conf/local.conf" | awk {'print $3'})
-
-if [ -n "$EXTERNAL_TOOLCHAIN" ]; then
-   EXTERNAL_TOOLCHAIN=$(eval echo "$EXTERNAL_TOOLCHAIN" &>/dev/null)
-fi
 
 cat <<EOF > "$BUILDDIR"/custom.xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -61,26 +66,18 @@ cat <<EOF > "$BUILDDIR"/custom.xml
     <field type="CharField" name="value">$DISTRO</field>
   </object>
   <object model="orm.toastersetting" pk="5">
-    <field type="CharField" name="name">DEFCONF_EXTERNAL_TOOLCHAIN</field>
-    <field type="CharField" name="value">$EXTERNAL_TOOLCHAIN</field>
-  </object>
-  <object model="orm.toastersetting" pk="6">
-    <field type="CharField" name="name">DEFCONF_MGLS_LICENSE_FILE</field>
-    <field type="CharField" name="value">$MGLS_LICENSE_FILE</field>
-  </object>
-  <object model="orm.toastersetting" pk="7">
     <field type="CharField" name="name">DEFCONF_ACCEPT_FSL_EULA</field>
     <field type="CharField" name="value"></field>
   </object>
-  <object model="orm.toastersetting" pk="8">
+  <object model="orm.toastersetting" pk="6">
     <field type="CharField" name="name">DEFCONF_SSTATE_DIR</field>
     <field type="CharField" name="value">${BUILDDIR}/../sstate-cache</field>
   </object>
-  <object model="orm.toastersetting" pk="9">
+  <object model="orm.toastersetting" pk="7">
     <field type="CharField" name="name">DEFCONF_DL_DIR</field>
-    <field type="CharField" name="value">${BUILDDIR}/../downloads</field>
+    <field type="CharField" name="value">${MELDIR}/downloads</field>
   </object>
-  <object model="orm.toastersetting" pk="10">
+  <object model="orm.toastersetting" pk="8">
     <field type="CharField" name="name">CUSTOM_BUILD_INIT_SCRIPT</field>
     <field type="CharField" name="value">${CMD_LINE}</field>
   </object>
@@ -103,7 +100,7 @@ LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
 cat <<EOF >> "$BUILDDIR"/custom.xml
   <object model="orm.releasedefaultlayer" pk="1">
     <field rel="ManyToOneRel" to="orm.release" name="release">2</field>
-    <field type="CharField" name="layer_name">openembedded-core</field>
+    <field type="CharField" name="layer_name">$OE_CORE_NAME</field>
   </object>
 
 EOF
@@ -111,8 +108,8 @@ EOF
 pk=3
 for layer in $(echo "$LAYER_PATHS"); do
    name=
-   layername=$(basename "$layer")
-   if [ "$layername" = "meta" ]; then
+   layername=$(get_layer_name ${layer})
+   if [ "$layername" = "$OE_CORE_NAME" ]; then
         continue
    fi
    pk=$((pk+1))
@@ -142,15 +139,13 @@ LAYER_PATHS=$(configured_layers | while read -r layer; do
 done)
 LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
 
-collectLayers="meta"
 pk=1
 # Openembedded-core is poky's meta layer.
 layer=$(dirname "$BITBAKEDIR")
 layer="$layer"/meta
-dirpath=$(basename "$layer")
 cat <<EOF >> "$BUILDDIR"/custom.xml
   <object model="orm.layer" pk="$pk">
-    <field type="CharField" name="name">openembedded-core</field>
+    <field type="CharField" name="name">$OE_CORE_NAME</field>
     <field type="CharField" name="local_source_dir">$layer</field>
   </object>
   <object model="orm.layer_version" pk="$pk">
@@ -164,12 +159,10 @@ EOF
 
 for layer in $(echo "$LAYER_PATHS"); do
    name=
-   layername=$(basename "$layer")
-   if [ "$layername" = "meta" ]; then
+   layername=$(get_layer_name ${layer})
+   if [ "$layername" = "$OE_CORE_NAME" ]; then
         continue
    fi
-   collectLayers="$collectLayers,$layername"
-   dirpath=$(basename "$layer")
    cd $layer
    pk=$((pk+1))
    cat <<EOF >> "$BUILDDIR"/custom.xml
@@ -189,7 +182,7 @@ cd - > /dev/null 2>&1
 done
 
 # Time to grab rest of the layers in MELDIR
-"$MELDIR"/meta-mentor/scripts/toaster-layers-recipes-config.py "$collectLayers" "$BUILDDIR" "$MELDIR"
+"$MELDIR"/meta-mentor/scripts/toaster-layers-recipes-config.py "$LAYER_PATHS" "$BUILDDIR" "$MELDIR"
 
 
 cat <<EOF >> "$BUILDDIR"/custom.xml
@@ -198,6 +191,12 @@ EOF
 }
 
 create_toaster_venv () {
+    if [ -f /etc/redhat-release ]; then
+        # If its RHEL 7 there is a bug in virtualenv which has to be tweaked
+        if [ $(cat /etc/redhat-release  | awk {'print $7'} | cut -d "." -f1) -eq 7 ]; then
+            easy_install --user --upgrade virtualenv
+        fi
+    fi
     python -m virtualenv -p python3 "$BUILDDIR/venv"
     python -m virtualenv -p python2 "$BUILDDIR/venv"
     (
@@ -215,9 +214,6 @@ POKYDIR=$(configured_layers | while read layer; do
     fi
 done)
 
-if [ -d "${MELDIR}/downloads" ]; then
-  ln -sf "${MELDIR}/downloads" "${BUILDDIR}/"
-fi
 
    cat <<EOF > "$BUILDDIR"/toaster-setup-environment
 if [ "\$#" -ne 1 ]; then
