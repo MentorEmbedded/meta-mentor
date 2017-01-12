@@ -1,0 +1,62 @@
+From 0a6011294769c49652bda6f37b0282a29c55cbe9 Mon Sep 17 00:00:00 2001
+From: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+Date: Mon, 19 Dec 2016 14:04:39 +0530
+Subject: [PATCH] alsa-utils: interrupt streaming via signal
+
+aplay/arecord (alsa-utils v1.1.2) cannot interrupt streaming
+via CTRL-C. Fixed the issue by properly handling 'in_aborting'
+flag in appropriate functions.
+
+Upstream-Status: Pending
+
+Signed-off-by: Anant Agrawal <Anant_Agrawal@mentor.com>
+Signed-off-by: Mikhail Durnev <mikhail_durnev@mentor.com>
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ aplay/aplay.c | 20 ++++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/aplay/aplay.c b/aplay/aplay.c
+index 2da7dda..6095bb6 100644
+--- a/aplay/aplay.c
++++ b/aplay/aplay.c
+@@ -392,14 +392,22 @@ static void signal_handler(int sig)
+ 		putchar('\n');
+ 	if (!quiet_mode)
+ 		fprintf(stderr, _("Aborted by signal %s...\n"), strsignal(sig));
+-	if (handle)
++	if (stream == SND_PCM_STREAM_CAPTURE) {
++		if (fmt_rec_table[file_type].end) {
++			fmt_rec_table[file_type].end(fd);
++			fd = -1;
++		}
++		stream = -1;
++	}
++	if (fd > 1) {
++		close(fd);
++		fd = -1;
++	}
++	if (handle && sig != SIGABRT) {
+ 		snd_pcm_abort(handle);
+-	if (sig == SIGABRT) {
+-		/* do not call snd_pcm_close() and abort immediately */
+ 		handle = NULL;
+-		prg_exit(EXIT_FAILURE);
+ 	}
+-	signal(sig, SIG_DFL);
++	prg_exit(EXIT_FAILURE);
+ }
+ 
+ /* call on SIGUSR1 signal. */
+@@ -2161,7 +2169,7 @@ static ssize_t voc_pcm_write(u_char *data, size_t count)
+ 	ssize_t result = count, r;
+ 	size_t size;
+ 
+-	while (count > 0) {
++	while (count > 0 && !in_aborting) {
+ 		size = count;
+ 		if (size > chunk_bytes - buffer_pos)
+ 			size = chunk_bytes - buffer_pos;
+-- 
+2.7.4
+
