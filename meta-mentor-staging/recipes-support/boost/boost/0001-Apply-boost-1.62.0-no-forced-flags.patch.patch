@@ -12,45 +12,40 @@ Signed-off-by: Christopher Larson <chris_larson@mentor.com>
  libs/log/src/dump_ssse3.cpp         |  4 ++++
  4 files changed, 18 insertions(+), 10 deletions(-)
 
-Index: boost_1_61_0/libs/log/build/Jamfile.v2
-===================================================================
---- boost_1_61_0.orig/libs/log/build/Jamfile.v2
-+++ boost_1_61_0/libs/log/build/Jamfile.v2
-@@ -335,11 +335,11 @@ rule avx2-targets-cond ( properties * )
-             result = ;
-             if <toolset>gcc in $(properties)
-             {
--                result = <cxxflags>"-march=core-avx2 -mavx -mavx2 -fabi-version=0" ;
-+                result = <cxxflags>"-fabi-version=0" ;
+diff --git a/libs/log/build/Jamfile.v2 b/libs/log/build/Jamfile.v2
+index 4abbdbc..b3016fc 100644
+--- a/libs/log/build/Jamfile.v2
++++ b/libs/log/build/Jamfile.v2
+@@ -373,7 +373,7 @@ rule avx2-targets-cond ( properties * )
              }
              else if <toolset>clang in $(properties)
              {
--                result = <cxxflags>"-march=core-avx2 -mavx -mavx2" ;
+-                result = <cxxflags>"-mavx -mavx2" ;
 +                result = <cxxflags> ;
              }
              else if <toolset>intel in $(properties)
              {
-@@ -349,7 +349,7 @@ rule avx2-targets-cond ( properties * )
+@@ -383,7 +383,7 @@ rule avx2-targets-cond ( properties * )
                  }
                  else
                  {
--                    result = <cxxflags>"-march=core-avx2 -fabi-version=0" ;
+-                    result = <cxxflags>"-xCORE-AVX2 -fabi-version=0" ;
 +                    result = <cxxflags>"-fabi-version=0" ;
                  }
              }
              else if <toolset>msvc in $(properties)
-Index: boost_1_61_0/libs/log/config/x86-ext/Jamfile.jam
-===================================================================
---- boost_1_61_0.orig/libs/log/config/x86-ext/Jamfile.jam
-+++ boost_1_61_0/libs/log/config/x86-ext/Jamfile.jam
+diff --git a/libs/log/config/x86-ext/Jamfile.jam b/libs/log/config/x86-ext/Jamfile.jam
+index 0e9695a..dcc394d 100644
+--- a/libs/log/config/x86-ext/Jamfile.jam
++++ b/libs/log/config/x86-ext/Jamfile.jam
 @@ -15,19 +15,19 @@ project /boost/log/x86-extensions
  
  obj ssse3 : ssse3.cpp
      :
--        <toolset>gcc:<cxxflags>"-march=core2 -msse -msse2 -msse3 -mssse3"
--        <toolset>clang:<cxxflags>"-march=core2 -msse -msse2 -msse3 -mssse3"
--        <toolset>intel-linux:<cxxflags>"-march=core2"
--        <toolset>intel-darwin:<cxxflags>"-march=core2"
+-        <toolset>gcc:<cxxflags>"-msse -msse2 -msse3 -mssse3"
+-        <toolset>clang:<cxxflags>"-msse -msse2 -msse3 -mssse3"
+-        <toolset>intel-linux:<cxxflags>"-xSSSE3"
+-        <toolset>intel-darwin:<cxxflags>"-xSSSE3"
 +        <toolset>gcc:<cxxflags>
 +        <toolset>clang:<cxxflags>
 +        <toolset>intel-linux:<cxxflags>
@@ -60,21 +55,21 @@ Index: boost_1_61_0/libs/log/config/x86-ext/Jamfile.jam
  
  obj avx2 : avx2.cpp
      :
--        <toolset>gcc:<cxxflags>"-march=core-avx2 -mavx -mavx2 -fabi-version=0"
--        <toolset>clang:<cxxflags>"-march=core-avx2 -mavx -mavx2"
--        <toolset>intel-linux:<cxxflags>"-march=core-avx2 -fabi-version=0"
--        <toolset>intel-darwin:<cxxflags>"-march=core-avx2 -fabi-version=0"
-+        <toolset>gcc:<cxxflags>
+-        <toolset>gcc:<cxxflags>"-mavx -mavx2 -fabi-version=0"
+-        <toolset>clang:<cxxflags>"-mavx -mavx2"
+-        <toolset>intel-linux:<cxxflags>"-xCORE-AVX2 -fabi-version=0"
+-        <toolset>intel-darwin:<cxxflags>"-xCORE-AVX2 -fabi-version=0"
++        <toolset>gcc:<cxxflags>"-fabi-version=0"
 +        <toolset>clang:<cxxflags>
-+        <toolset>intel-linux:<cxxflags>
-+        <toolset>intel-darwin:<cxxflags>
++        <toolset>intel-linux:<cxxflags>"-fabi-version=0"
++        <toolset>intel-darwin:<cxxflags>"-fabi-version=0"
          <toolset>intel-win:<cxxflags>"/arch:CORE-AVX2"
          <toolset>msvc:<cxxflags>"/arch:AVX"
      ;
-Index: boost_1_61_0/libs/log/src/dump_avx2.cpp
-===================================================================
---- boost_1_61_0.orig/libs/log/src/dump_avx2.cpp
-+++ boost_1_61_0/libs/log/src/dump_avx2.cpp
+diff --git a/libs/log/src/dump_avx2.cpp b/libs/log/src/dump_avx2.cpp
+index 4ab1250..610fc6d 100644
+--- a/libs/log/src/dump_avx2.cpp
++++ b/libs/log/src/dump_avx2.cpp
 @@ -22,6 +22,10 @@
  #include <boost/cstdint.hpp>
  #include <boost/log/detail/header.hpp>
@@ -86,10 +81,10 @@ Index: boost_1_61_0/libs/log/src/dump_avx2.cpp
  #if defined(__x86_64) || defined(__x86_64__) || \
      defined(__amd64__) || defined(__amd64) || \
      defined(_M_X64)
-Index: boost_1_61_0/libs/log/src/dump_ssse3.cpp
-===================================================================
---- boost_1_61_0.orig/libs/log/src/dump_ssse3.cpp
-+++ boost_1_61_0/libs/log/src/dump_ssse3.cpp
+diff --git a/libs/log/src/dump_ssse3.cpp b/libs/log/src/dump_ssse3.cpp
+index 1325b49..60d4112 100644
+--- a/libs/log/src/dump_ssse3.cpp
++++ b/libs/log/src/dump_ssse3.cpp
 @@ -22,6 +22,10 @@
  #include <boost/cstdint.hpp>
  #include <boost/log/detail/header.hpp>
@@ -101,3 +96,6 @@ Index: boost_1_61_0/libs/log/src/dump_ssse3.cpp
  #if defined(__x86_64) || defined(__x86_64__) || \
      defined(__amd64__) || defined(__amd64) || \
      defined(_M_X64)
+-- 
+2.8.0
+
