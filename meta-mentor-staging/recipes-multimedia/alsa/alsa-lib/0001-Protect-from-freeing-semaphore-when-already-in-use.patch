@@ -1,7 +1,10 @@
-From 7e7003004af17dd548d623178573236c8011631c Mon Sep 17 00:00:00 2001
+Upstream-Status: Backport
+
+From 2dd78251ff0c4009b478574cca7aef2eb05c2279 Mon Sep 17 00:00:00 2001
 From: Joshua Frkuska <joshua_frkuska@mentor.com>
-Date: Wed, 20 Aug 2014 16:18:52 +0900
-Subject: [PATCH] Protect from freeing semaphore when already in use
+Date: Fri, 25 Nov 2016 15:43:40 +0530
+Subject: [PATCH 02/30] pcm: direct: Protect from freeing semaphore when
+ already in use
 
 In the case of dshare, dsnoop, and dmix when a device is opened twice
 and fails the second time, the semaphore is completely discarded. This
@@ -13,17 +16,14 @@ or not. If the shared memory cannot be released it means both it and the
 semaphore are still in use and therefore the semaphore is just released.
 
 Signed-off-by: Joshua Frkuska <joshua_frkuska@mentor.com>
----
- src/pcm/pcm_dmix.c   |    7 ++++---
- src/pcm/pcm_dshare.c |    7 ++++---
- src/pcm/pcm_dsnoop.c |    8 +++++---
- 3 files changed, 13 insertions(+), 9 deletions(-)
+Signed-off-by: Takashi Iwai <tiwai@suse.de>
+Signed-off-by: Mounesh Sutar <sutar.mounesh@gmail.com>
 
 diff --git a/src/pcm/pcm_dmix.c b/src/pcm/pcm_dmix.c
-index 2bd5d39..b17f759 100644
+index 2714fb9..2fedb1c 100644
 --- a/src/pcm/pcm_dmix.c
 +++ b/src/pcm/pcm_dmix.c
-@@ -1128,9 +1128,10 @@ int snd_pcm_dmix_open(snd_pcm_t **pcmp, const char *name,
+@@ -1154,9 +1154,10 @@ int snd_pcm_dmix_open(snd_pcm_t **pcmp, const char *name,
  		snd_pcm_close(spcm);
  	if (dmix->u.dmix.shmid_sum >= 0)
  		shm_sum_discard(dmix);
@@ -38,10 +38,10 @@ index 2bd5d39..b17f759 100644
   _err_nosem:
  	if (dmix) {
 diff --git a/src/pcm/pcm_dshare.c b/src/pcm/pcm_dshare.c
-index 5b32951..c080e7a 100644
+index 9b478a7..01f5eed 100644
 --- a/src/pcm/pcm_dshare.c
 +++ b/src/pcm/pcm_dshare.c
-@@ -813,9 +813,10 @@ int snd_pcm_dshare_open(snd_pcm_t **pcmp, const char *name,
+@@ -846,9 +846,10 @@ int snd_pcm_dshare_open(snd_pcm_t **pcmp, const char *name,
  		snd_pcm_direct_client_discard(dshare);
  	if (spcm)
  		snd_pcm_close(spcm);
@@ -56,10 +56,10 @@ index 5b32951..c080e7a 100644
   _err_nosem:
  	if (dshare) {
 diff --git a/src/pcm/pcm_dsnoop.c b/src/pcm/pcm_dsnoop.c
-index 055e4f4..74a3531 100644
+index 4efbc53..1aedf3c 100644
 --- a/src/pcm/pcm_dsnoop.c
 +++ b/src/pcm/pcm_dsnoop.c
-@@ -712,10 +712,12 @@ int snd_pcm_dsnoop_open(snd_pcm_t **pcmp, const char *name,
+@@ -719,10 +719,12 @@ int snd_pcm_dsnoop_open(snd_pcm_t **pcmp, const char *name,
  		snd_pcm_direct_client_discard(dsnoop);
  	if (spcm)
  		snd_pcm_close(spcm);
@@ -76,5 +76,5 @@ index 055e4f4..74a3531 100644
  	if (dsnoop) {
  		free(dsnoop->bindings);
 -- 
-1.7.9.5
+2.7.4
 
