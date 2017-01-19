@@ -35,6 +35,7 @@ sed -i -e "s#\$DEFAULT_INSTALL_DIR\>#\$installdir#g" "\$env_setup_script"
 END
     cat "${COREBASE}/meta/files/toolchain-shar-relocate.sh" >>sdk-relocate
     sed -i -e 's#grep -v "\$target_sdk_dir/.*"#grep -Ev "(sdk-relocate|$target_sdk_dir/(environment-setup-*|\.installpath))"#' sdk-relocate
+    sed -i -e '/native_sysroot=/a native_sysroot=$($SUDO_EXEC echo $native_sysroot | sed -e "s:\\$scriptdir:$target_sdk_dir:")' sdk-relocate
     chmod +x sdk-relocate
     cat <<END >sdk-auto-relocate
 #!/bin/sh
