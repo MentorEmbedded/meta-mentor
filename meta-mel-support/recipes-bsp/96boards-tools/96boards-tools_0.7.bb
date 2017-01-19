@@ -6,11 +6,12 @@ LICENSE = "GPLv2+"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/GPL-2.0;md5=801f80980d171dd6425610833a22dbe6"
 
 SRCREV = "193f355823d9dc38f370759153ac950a2833b0e2"
-SRC_URI = "git://github.com/96boards/96boards-tools;branch=master;protocol=https"
+SRC_URI = "git://github.com/96boards/96boards-tools;branch=master;protocol=https \
+		file://resize-helper.sh.in"
 
 S = "${WORKDIR}/git"
 
-inherit systemd allarch
+inherit systemd allarch update-rc.d
 
 do_compile () {
     # The parted version we're using doesn't want this argument
@@ -26,7 +27,16 @@ do_install () {
 
     install -d ${D}${sbindir}
     install -m 0755 ${S}/resize-helper ${D}${sbindir}
+
+	install -d ${D}${sysconfdir}/init.d
+	install -m 0755 ${WORKDIR}/resize-helper.sh.in ${D}${sysconfdir}/init.d/resize-helper.sh
+
+	sed -i -e "s:@bindir@:${bindir}:; s:@sbindir@:${sbindir}:; s:@sysconfdir@:${sysconfdir}:" \
+			${D}${sysconfdir}/init.d/resize-helper.sh
 }
 
 SYSTEMD_SERVICE_${PN} = "resize-helper.service"
 RDEPENDS_${PN} += "e2fsprogs-resize2fs gptfdisk parted util-linux udev"
+
+INITSCRIPT_NAME = "resize-helper.sh"
+INITSCRIPT_PARAMS = "start 22 5 3 ."

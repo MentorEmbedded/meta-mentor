@@ -1,11 +1,20 @@
---- alsa-lib-1.0.27_orig/src/pcm/pcm_dshare.c	2013-04-11 13:43:05.000000000 +0200
-+++ alsa-lib-1.0.27/src/pcm/pcm_dshare.c	2014-01-27 14:06:38.798040657 +0100
-@@ -224,7 +224,7 @@
-		break;
-	}
-	memset(status, 0, sizeof(*status));
+Upstream-Status: Pending
+
+Alsa plugin dshare is reporting incorrect stream state when it detects underrun
+Update stream state from pcm handle than slave pcm of dshare plugin
+
+Signed-off-by: Sanjeev Chugh <sanjeev_chugh@mentor.com>
+Signed-off-by: Mikhail Durnev <mikhail_durnev@mentor.com>
+
+diff -Naurp old/src/pcm/pcm_dshare.c new/src/pcm/pcm_dshare.c
+--- old/src/pcm/pcm_dshare.c	2017-01-16 21:24:10.000000000 -0600
++++ new/src/pcm/pcm_dshare.c	2017-01-16 21:36:58.302219228 -0600
+@@ -225,7 +225,7 @@ static int snd_pcm_dshare_status(snd_pcm
+ 	}
+ 	memset(status, 0, sizeof(*status));
+ 	snd_pcm_status(dshare->spcm, status);
 -	status->state = snd_pcm_state(dshare->spcm);
 +	status->state = snd_pcm_state(pcm);
-	status->trigger_tstamp = dshare->trigger_tstamp;
-	gettimestamp(&status->tstamp, pcm->monotonic);
-	status->avail = snd_pcm_mmap_playback_avail(pcm);
+ 	status->trigger_tstamp = dshare->trigger_tstamp;
+ 	status->avail = snd_pcm_mmap_playback_avail(pcm);
+ 	status->avail_max = status->avail > dshare->avail_max ? status->avail : dshare->avail_max;
