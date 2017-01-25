@@ -69,6 +69,10 @@ EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-pr
 # using a distro which sets it that way (atp).
 #ALLOW_GPLV3_GDBSERVER = "1"
 
+# Example of how to add additional image types beyond the default. If the
+# machine doesn't define them, the default types are tar.bz2 and ext3.
+#IMAGE_FSTYPES_append = " jffs2"
+
 # User features lets you manipulate the distro features. To add a distro
 # feature, simply add it to USER_FEATURES. To remove, prefix it with ~.
 #
