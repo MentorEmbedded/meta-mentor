@@ -9,7 +9,8 @@ SECTION = "console/utils"
 LICENSE = "GPLv2"
 LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263"
 
-SRC_URI = "ftp://ftp.infradead.org/pub/${BPN}/${BPN}-${PV}.tgz"
+SRC_URI = "ftp://ftp.infradead.org/pub/${BPN}/${BPN}-${PV}.tgz \
+           file://Fiemap-synchronize-the-file-before-invoking-the-ioct.patch"
 SRC_URI[md5sum] = "843522001b2aa2f7718f254f6942ad80"
 SRC_URI[sha256sum] = "40fb0022ea5475e392fb2ef74b1e086e570951caec1745565e1a50ca35e75616"
 
