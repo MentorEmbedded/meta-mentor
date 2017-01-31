@@ -1,6 +1,23 @@
---- alsa-lib-1.0.29.orig/src/pcm/pcm_dshare.c	2015-04-28 08:20:44.662995477 -0700
-+++ alsa-lib-1.0.29/src/pcm/pcm_dshare.c	2015-04-28 08:20:59.603077419 -0700
-@@ -195,6 +195,7 @@
+Upstream-Status: Backport
+
+From 876563c824bdecbf771a0e7bda472b0a1c19d900 Mon Sep 17 00:00:00 2001
+From: Anant Agrawal <Anant_Agrawal@mentor.com>
+Date: Fri, 25 Nov 2016 16:43:34 +0530
+Subject: [PATCH 03/30] pcm: dshare: Fix endless playback of buffer
+
+On snd_pcm_drain() the slave PCM driven via plugin DSHARE is not filled with
+silence. Result is endless playback of buffer content until pcm is closed.
+In ALSA pcm dshare plugin, called do_silence method to fix the issue.
+
+Signed-off-by: Anant Agrawal <Anant_Agrawal@mentor.com>
+Signed-off-by: Takashi Iwai <tiwai@suse.de>
+Signed-off-by: Mounesh Sutar <sutar.mounesh@gmail.com>
+
+diff --git a/src/pcm/pcm_dshare.c b/src/pcm/pcm_dshare.c
+index 01f5eed..29cd6c6 100644
+--- a/src/pcm/pcm_dshare.c
++++ b/src/pcm/pcm_dshare.c
+@@ -186,6 +186,7 @@ static int snd_pcm_dshare_sync_ptr0(snd_pcm_t *pcm, snd_pcm_uframes_t slave_hw_p
  		dshare->avail_max = avail;
  	if (avail >= pcm->stop_threshold) {
  		snd_timer_stop(dshare->timer);
@@ -8,3 +25,6 @@
  		gettimestamp(&dshare->trigger_tstamp, pcm->tstamp_type);
  		if (dshare->state == SND_PCM_STATE_RUNNING) {
  			dshare->state = SND_PCM_STATE_XRUN;
+-- 
+2.7.4
+

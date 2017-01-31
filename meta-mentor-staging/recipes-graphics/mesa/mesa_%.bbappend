@@ -6,3 +6,6 @@ PROVIDES_remove = "\
 
 # gbm requires dri, so disable it when dri is disabled
 PACKAGECONFIG[dri] = "--enable-dri --with-dri-drivers=${DRIDRIVERS} --enable-gbm, --disable-dri --disable-gbm, dri2proto libdrm"
+
+# Adding GLES3 headers to libgles2-mesa-dev package
+FILES_libgles2-mesa-dev += "${includedir}/GLES3"
