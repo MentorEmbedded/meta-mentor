@@ -1,38 +1,39 @@
-From 59b6ff4d066a74ce7e19d5c659325fe74248cb17 Mon Sep 17 00:00:00 2001
+Upstream-Status: Backport
+
+From 0a61c796810fcec8b386e5311e871b1744b45a67 Mon Sep 17 00:00:00 2001
 From: Joshua Frkuska <joshua_frkuska@mentor.com>
-Date: Thu, 11 Sep 2014 16:31:01 +0900
-Subject: [PATCH] pcm direct plugins: allow users to configure different
- period sizes.
+Date: Fri, 30 Dec 2016 11:56:15 +0530
+Subject: [PATCH 20/30] pcm: direct: allow users to configure different period
+ sizes
 
-This patch allows the effective period size to be a multiple of the slave-pcm period size.
-Allowing only exact multiple of original period size is achieved by borrowing code from the
-kernel hwrules implemention.
+This patch allows the effective period size to be a multiple of the
+slave-pcm period size.
+Allowing only exact multiple of original period size is achieved by
+borrowing code from the kernel hwrules implementation.
 
-This patch is intended to save cpu workload when for example, the slave operates with very
-small periods but a user does not need that small periods.
+This patch is intended to save cpu workload when for example, the
+slave operates with very small periods but a user does not need that
+small periods.
 
-This feature is enabled by default and can be disabled by adding config option 'var_periodsize 0'.
+This feature is enabled by default and can be disabled by adding
+config option 'var_periodsize 0'.
 
+Signed-off-by: Alexander Jahn <ajahn@de.adit-jv.com>
 Signed-off-by: Andreas Pape <apape@de.adit-jv.com>
-Signed-off-by: Joshua Frkuska <joshua_frkuska@mentor.com>
----
- src/pcm/pcm_direct.c |   83 ++++++++++++++++++++++++++++++++++++++++++++------
- src/pcm/pcm_direct.h |    3 ++
- src/pcm/pcm_dmix.c   |    1 +
- src/pcm/pcm_dshare.c |    1 +
- src/pcm/pcm_dsnoop.c |    1 +
- 5 files changed, 79 insertions(+), 10 deletions(-)
+Signed-off-by: Takashi Iwai <tiwai@suse.de>
+Signed-off-by: Mounesh Sutar <sutar.mounesh@gmail.com>
 
 diff --git a/src/pcm/pcm_direct.c b/src/pcm/pcm_direct.c
-index 1a5f1cf..4008073 100644
+index 6434983..f5d922f 100644
 --- a/src/pcm/pcm_direct.c
 +++ b/src/pcm/pcm_direct.c
-@@ -656,6 +656,28 @@ static int hw_param_interval_refine_minmax(snd_pcm_hw_params_t *params,
+@@ -660,6 +660,29 @@ static int hw_param_interval_refine_minmax(snd_pcm_hw_params_t *params,
  	return hw_param_interval_refine_one(params, var, &t);
  }
  
 +/* this code is used 'as-is' from the alsa kernel code */
-+static int snd_interval_step(struct snd_interval *i, unsigned int min, unsigned int step)
++static int snd_interval_step(struct snd_interval *i, unsigned int min,
++			     unsigned int step)
 +{
 +	unsigned int n;
 +	int changed = 0;
@@ -56,7 +57,7 @@ index 1a5f1cf..4008073 100644
  #undef REFINE_DEBUG
  
  int snd_pcm_direct_hw_refine(snd_pcm_t *pcm, snd_pcm_hw_params_t *params)
-@@ -706,15 +728,17 @@ int snd_pcm_direct_hw_refine(snd_pcm_t *pcm, snd_pcm_hw_params_t *params)
+@@ -710,15 +733,16 @@ int snd_pcm_direct_hw_refine(snd_pcm_t *pcm, snd_pcm_hw_params_t *params)
  					   &dshare->shmptr->hw.rate);
  	if (err < 0)
  		return err;
@@ -78,11 +79,10 @@ index 1a5f1cf..4008073 100644
 +						   &dshare->shmptr->hw.period_time);
 +		if (err < 0)
 +			return err;
-+
  		err = hw_param_interval_refine_one(params, SND_PCM_HW_PARAM_BUFFER_SIZE,
  						   &dshare->shmptr->hw.buffer_size);
  		if (err < 0)
-@@ -726,11 +750,33 @@ int snd_pcm_direct_hw_refine(snd_pcm_t *pcm, snd_pcm_hw_params_t *params)
+@@ -730,11 +754,38 @@ int snd_pcm_direct_hw_refine(snd_pcm_t *pcm, snd_pcm_hw_params_t *params)
  	} else if (params->rmask & ((1<<SND_PCM_HW_PARAM_PERIODS)|
  				    (1<<SND_PCM_HW_PARAM_BUFFER_BYTES)|
  				    (1<<SND_PCM_HW_PARAM_BUFFER_SIZE)|
@@ -98,11 +98,16 @@ index 1a5f1cf..4008073 100644
  		if (max_periods < 2)
  			max_periods = dshare->slave_buffer_size / dshare->slave_period_size;
 +
++		/* make sure buffer size does not exceed slave buffer size */
++		err = hw_param_interval_refine_minmax(params, SND_PCM_HW_PARAM_BUFFER_SIZE,
++					2 * dshare->slave_period_size, dshare->slave_buffer_size);
++		if (err < 0)
++			return err;
 +		if (dshare->var_periodsize) {
-+			/*more tolerant settings...*/
-+			if((dshare->shmptr->hw.buffer_size.max / 2) > period_size.max)
++			/* more tolerant settings... */
++			if (dshare->shmptr->hw.buffer_size.max / 2 > period_size.max)
 +				period_size.max = dshare->shmptr->hw.buffer_size.max / 2;
-+			if((dshare->shmptr->hw.buffer_time.max / 2) > period_time.max)
++			if (dshare->shmptr->hw.buffer_time.max / 2 > period_time.max)
 +				period_time.max = dshare->shmptr->hw.buffer_time.max / 2;
 +		}
 +
@@ -117,7 +122,7 @@ index 1a5f1cf..4008073 100644
  		do {
  			changed = 0;
  			err = hw_param_interval_refine_minmax(params, SND_PCM_HW_PARAM_PERIODS,
-@@ -742,8 +788,16 @@ int snd_pcm_direct_hw_refine(snd_pcm_t *pcm, snd_pcm_hw_params_t *params)
+@@ -746,8 +797,16 @@ int snd_pcm_direct_hw_refine(snd_pcm_t *pcm, snd_pcm_hw_params_t *params)
  			if (err < 0)
  				return err;
  			changed |= err;
@@ -127,31 +132,31 @@ index 1a5f1cf..4008073 100644
 +				return err;
 +			changed |= err;
 +			if (err)
-+				params->rmask |= (1<<SND_PCM_HW_PARAM_PERIOD_SIZE);
++				params->rmask |= (1 << SND_PCM_HW_PARAM_PERIOD_SIZE);
  		} while (changed);
  	}
-+	dshare->timer_ticks = hw_param_interval(params, SND_PCM_HW_PARAM_PERIOD_SIZE)->max/dshare->slave_period_size;
++	dshare->timer_ticks = hw_param_interval(params, SND_PCM_HW_PARAM_PERIOD_SIZE)->max / dshare->slave_period_size;
  	params->info = dshare->shmptr->s.info;
  #ifdef REFINE_DEBUG
  	snd_output_puts(log, "DMIX REFINE (end):\n");
-@@ -1197,6 +1251,7 @@ int snd_pcm_direct_initialize_poll_fd(snd_pcm_direct_t *dmix)
+@@ -1183,6 +1242,7 @@ int snd_pcm_direct_initialize_poll_fd(snd_pcm_direct_t *dmix)
  
  	dmix->tread = 1;
  	dmix->timer_need_poll = 0;
 +	dmix->timer_ticks = 1;
- 	snd_pcm_info_alloca(&info);
- 	ret = snd_pcm_info(dmix->spcm, info);
+ 	ret = snd_pcm_info(dmix->spcm, &info);
  	if (ret < 0) {
-@@ -1380,7 +1435,7 @@ int snd_pcm_direct_set_timer_params(snd_pcm_direct_t *dmix)
- 	snd_timer_params_set_auto_start(params, 1);
+ 		SNDERR("unable to info for slave pcm");
+@@ -1366,7 +1426,7 @@ int snd_pcm_direct_set_timer_params(snd_pcm_direct_t *dmix)
+ 	snd_timer_params_set_auto_start(&params, 1);
  	if (dmix->type != SND_PCM_TYPE_DSNOOP)
- 		snd_timer_params_set_early_event(params, 1);
--	snd_timer_params_set_ticks(params, 1);
-+	snd_timer_params_set_ticks(params, dmix->timer_ticks);
+ 		snd_timer_params_set_early_event(&params, 1);
+-	snd_timer_params_set_ticks(&params, 1);
++	snd_timer_params_set_ticks(&params, dmix->timer_ticks);
  	if (dmix->tread) {
  		filter = (1<<SND_TIMER_EVENT_TICK) |
  			 dmix->timer_events;
-@@ -1670,6 +1725,7 @@ int snd_pcm_direct_parse_open_conf(snd_config_t *root, snd_config_t *conf,
+@@ -1656,6 +1716,7 @@ int snd_pcm_direct_parse_open_conf(snd_config_t *root, snd_config_t *conf,
  	rec->ipc_gid = -1;
  	rec->slowptr = 1;
  	rec->max_periods = 0;
@@ -159,7 +164,7 @@ index 1a5f1cf..4008073 100644
  
  	/* read defaults */
  	if (snd_config_search(root, "defaults.pcm.dmix_max_periods", &n) >= 0) {
-@@ -1776,6 +1832,13 @@ int snd_pcm_direct_parse_open_conf(snd_config_t *root, snd_config_t *conf,
+@@ -1762,6 +1823,13 @@ int snd_pcm_direct_parse_open_conf(snd_config_t *root, snd_config_t *conf,
  			rec->max_periods = val;
  			continue;
  		}
@@ -174,10 +179,10 @@ index 1a5f1cf..4008073 100644
  		return -EINVAL;
  	}
 diff --git a/src/pcm/pcm_direct.h b/src/pcm/pcm_direct.h
-index ea1a9ba..2a7d860 100644
+index 611ad29..91e816c 100644
 --- a/src/pcm/pcm_direct.h
 +++ b/src/pcm/pcm_direct.h
-@@ -148,12 +148,14 @@ struct snd_pcm_direct {
+@@ -147,12 +147,14 @@ struct snd_pcm_direct {
  	int tread: 1;
  	int timer_need_poll: 1;
  	unsigned int timer_events;
@@ -191,8 +196,8 @@ index ea1a9ba..2a7d860 100644
 +	int var_periodsize;		/* allow variable period size if max_periods is != -1*/
  	unsigned int channels;		/* client's channels */
  	unsigned int *bindings;
- 	unsigned int recoveries;	/* mirror of executed recoveries on slave */
-@@ -327,6 +329,7 @@ struct snd_pcm_direct_open_conf {
+ 	union {
+@@ -326,6 +328,7 @@ struct snd_pcm_direct_open_conf {
  	int ipc_gid;
  	int slowptr;
  	int max_periods;
@@ -201,41 +206,41 @@ index ea1a9ba..2a7d860 100644
  	snd_config_t *bindings;
  };
 diff --git a/src/pcm/pcm_dmix.c b/src/pcm/pcm_dmix.c
-index 96f5ac5..1ff8ce0 100644
+index 825677f..0ab7323 100644
 --- a/src/pcm/pcm_dmix.c
 +++ b/src/pcm/pcm_dmix.c
-@@ -1027,6 +1027,7 @@ int snd_pcm_dmix_open(snd_pcm_t **pcmp, const char *name,
+@@ -1040,6 +1040,7 @@ int snd_pcm_dmix_open(snd_pcm_t **pcmp, const char *name,
  	dmix->state = SND_PCM_STATE_OPEN;
  	dmix->slowptr = opts->slowptr;
  	dmix->max_periods = opts->max_periods;
 +	dmix->var_periodsize = opts->var_periodsize;
  	dmix->sync_ptr = snd_pcm_dmix_sync_ptr;
  
- 	if (first_instance) {
+  retry:
 diff --git a/src/pcm/pcm_dshare.c b/src/pcm/pcm_dshare.c
-index bcb9002..ba8cd47 100644
+index 29cd6c6..a1fed5d 100644
 --- a/src/pcm/pcm_dshare.c
 +++ b/src/pcm/pcm_dshare.c
-@@ -716,6 +716,7 @@ int snd_pcm_dshare_open(snd_pcm_t **pcmp, const char *name,
+@@ -725,6 +725,7 @@ int snd_pcm_dshare_open(snd_pcm_t **pcmp, const char *name,
  	dshare->state = SND_PCM_STATE_OPEN;
  	dshare->slowptr = opts->slowptr;
  	dshare->max_periods = opts->max_periods;
 +	dshare->var_periodsize = opts->var_periodsize;
  	dshare->sync_ptr = snd_pcm_dshare_sync_ptr;
  
- 	if (first_instance) {
+  retry:
 diff --git a/src/pcm/pcm_dsnoop.c b/src/pcm/pcm_dsnoop.c
-index a9ae92a..d25538f 100644
+index 1aedf3c..85f0ff4 100644
 --- a/src/pcm/pcm_dsnoop.c
 +++ b/src/pcm/pcm_dsnoop.c
-@@ -618,6 +618,7 @@ int snd_pcm_dsnoop_open(snd_pcm_t **pcmp, const char *name,
+@@ -606,6 +606,7 @@ int snd_pcm_dsnoop_open(snd_pcm_t **pcmp, const char *name,
  	dsnoop->state = SND_PCM_STATE_OPEN;
  	dsnoop->slowptr = opts->slowptr;
  	dsnoop->max_periods = opts->max_periods;
 +	dsnoop->var_periodsize = opts->var_periodsize;
  	dsnoop->sync_ptr = snd_pcm_dsnoop_sync_ptr;
  
- 	if (first_instance) {
+  retry:
 -- 
-1.7.9.5
+2.7.4
 
