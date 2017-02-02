@@ -1,2 +1,2 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/lttng-tools:"
-SRC_URI += "file://x32.patch"
+SRC_URI_append_linux-gnux32 = " file://x32.patch"
