@@ -1,0 +1,43 @@
+From e346421ca6852fbf9f95cf0e764ecc345e5ce21d Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Tue, 3 Jan 2017 14:01:56 +0000
+Subject: [PATCH] Work around clock_gettime kernel bug on Linux x32
+
+On Linux x32, the clock_gettime VDSO currently falls back to the x86-64
+syscall, so allow that as well as its x32 sibling.
+
+Bug-Debian: https://bugs.debian.org/849923
+Forwarded: no
+Last-Update: 2017-01-03
+
+Patch-Name: sandbox-x32-workaround.patch
+
+Signed-off-by: Christopher Larson <chris_larson@mentor.com>
+Upstream-Status: Pending
+---
+ sandbox-seccomp-filter.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/sandbox-seccomp-filter.c b/sandbox-seccomp-filter.c
+index 2e1ed2c..62c578d 100644
+--- a/sandbox-seccomp-filter.c
++++ b/sandbox-seccomp-filter.c
+@@ -137,6 +137,15 @@ static const struct sock_filter preauth_insns[] = {
+ #endif
+ #ifdef __NR_clock_gettime
+ 	SC_ALLOW(clock_gettime),
++# if defined(__x86_64__) && defined(__ILP32__)
++	/* On Linux x32, the clock_gettime VDSO currently falls back to the
++	 * x86-64 syscall (see https://bugs.debian.org/849923), so allow
++	 * that too.
++	 */
++	BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K,
++	    __NR_clock_gettime & ~__X32_SYSCALL_BIT, 0, 1),
++	BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_ALLOW),
++# endif
+ #endif
+ #ifdef __NR_close
+ 	SC_ALLOW(close),
+-- 
+2.8.0
+
