@@ -1,0 +1,88 @@
+From 78e222a2332c4dc79d88004d51e1304d3d80ee88 Mon Sep 17 00:00:00 2001
+From: Pedro Alves <palves@redhat.com>
+Date: Tue, 26 Jul 2016 22:21:27 +0100
+Subject: [PATCH 2/3] Fix PR server/20414 - x32 gdbserver always crashes
+ inferior
+
+Debugging an x32 process with an x32 gdbserver always results in:
+
+ (gdb) c
+ Continuing.
+
+ Program received signal SIGSEGV, Segmentation fault.
+ 0xf7de9600 in _dl_debug_state () from target:/libx32/ld-linux-x32.so.2
+ (gdb)
+
+Looking at the remote debug logs reveals the problem, here:
+
+  Packet received: T05swbreak:;06:a0d4ffff00000000;07:b8d3ffff00000000;10:0096def701000000;thread:p7d7a.7d7a;core:1;
+                                                                          ^^^^^^^^^^^^^^^^
+
+The underlined value is the expedited value of RIP (in little endian).
+But notice that 01 in 0x01f7de9600, while gdb says the program stopped
+at 0xf7de9600.  0x01ffffffff is over 32 bits, which indicates that
+something wen't wrong somewhere in gdbserver.
+
+The problem turns out to be in gdbserver's x86_get_pc / x86_set_pc
+routines, where "unsigned long" is used assuming that it can fit a
+64-bit value, while unsigned long is actually 32-bit on x32.  The
+result is that collect_register_by_name / supply_register_by_name end
+up reading/writing random bytes off the stack.
+
+Fix this by using explicit uint64_t instead of unsigned long.
+For consistency, use uint32_t instead of unsigned int in the 32-bit
+paths.
+
+gdb/gdbserver/ChangeLog:
+2016-07-26  Pedro Alves  <palves@redhat.com>
+
+	PR server/20414
+	* linux-x86-low.c (x86_get_pc, x86_set_pc): Use uint64_t instead
+	of unsigned long for 64-bit registers and use uint32_t instead of
+	unsigned int for 32-bit registers.
+---
+ gdb/gdbserver/linux-x86-low.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/gdb/gdbserver/linux-x86-low.c b/gdb/gdbserver/linux-x86-low.c
+index 423b3ca..4d09da9 100644
+--- a/gdb/gdbserver/linux-x86-low.c
++++ b/gdb/gdbserver/linux-x86-low.c
+@@ -427,13 +427,15 @@ x86_get_pc (struct regcache *regcache)
+ 
+   if (use_64bit)
+     {
+-      unsigned long pc;
++      uint64_t pc;
++
+       collect_register_by_name (regcache, "rip", &pc);
+       return (CORE_ADDR) pc;
+     }
+   else
+     {
+-      unsigned int pc;
++      uint32_t pc;
++
+       collect_register_by_name (regcache, "eip", &pc);
+       return (CORE_ADDR) pc;
+     }
+@@ -446,12 +448,14 @@ x86_set_pc (struct regcache *regcache, CORE_ADDR pc)
+ 
+   if (use_64bit)
+     {
+-      unsigned long newpc = pc;
++      uint64_t newpc = pc;
++
+       supply_register_by_name (regcache, "rip", &newpc);
+     }
+   else
+     {
+-      unsigned int newpc = pc;
++      uint32_t newpc = pc;
++
+       supply_register_by_name (regcache, "eip", &newpc);
+     }
+ }
+-- 
+2.8.0
+

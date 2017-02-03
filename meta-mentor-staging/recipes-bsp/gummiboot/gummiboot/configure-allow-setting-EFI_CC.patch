@@ -1,0 +1,28 @@
+From e18c86d8eb1fb6166b8c386446123790e503d28c Mon Sep 17 00:00:00 2001
+From: Marc-Antoine Perennou <Marc-Antoine@Perennou.com>
+Date: Wed, 8 Apr 2015 22:33:53 +0200
+Subject: [PATCH] configure: allow setting EFI_CC
+
+Upstream-Status: Backport [from systemd-boot]
+Signed-off-by: Christopher Larson <chris_larson@mentor.com>
+---
+ configure.ac | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 27bbe1d..3efb810 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -37,8 +37,7 @@ AC_SYS_LARGEFILE
+ AC_PROG_CC
+ 
+ dnl Don't try to use things like -std=c99 for efi compilation
+-EFI_CC=$CC
+-AC_SUBST([EFI_CC])
++AC_CHECK_TOOL(EFI_CC, gcc)
+ 
+ AC_PROG_CC_C99
+ AM_PROG_CC_C_O
+-- 
+2.8.0
+
