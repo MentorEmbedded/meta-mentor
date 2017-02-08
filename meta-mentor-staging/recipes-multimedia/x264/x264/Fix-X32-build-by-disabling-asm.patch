@@ -16,14 +16,14 @@ Signed-off-by: Christopher Larson <chris_larson@mentor.com>
  configure | 14 ++++++++++++--
  1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/configure b/configure
-index 3109ec4..844aeae 100755
---- a/configure
-+++ b/configure
-@@ -703,7 +703,13 @@ case $host_cpu in
+Index: git/configure
+===================================================================
+--- git.orig/configure
++++ git/configure
+@@ -644,7 +644,13 @@ case $host_cpu in
+         AS="yasm"
          AS_EXT=".asm"
          ASFLAGS="$ASFLAGS -DARCH_X86_64=1 -I\$(SRCPATH)/common/x86/"
-         stack_alignment=16
 -        [ $compiler = GNU ] && CFLAGS="-m64 $CFLAGS" && LDFLAGS="-m64 $LDFLAGS"
 +        if [ $compiler = GNU ]; then
 +            if cpp_check "" "" "__ILP32__" ; then
@@ -33,21 +33,18 @@ index 3109ec4..844aeae 100755
 +            fi
 +        fi
          if [ "$SYS" = MACOSX ]; then
-             ASFLAGS="$ASFLAGS -f macho64 -DPIC -DPREFIX"
+             ASFLAGS="$ASFLAGS -f macho64 -m amd64 -DPIC -DPREFIX"
              if cc_check '' "-arch x86_64"; then
-@@ -722,7 +728,11 @@ case $host_cpu in
-                 RCFLAGS="--target=pe-x86-64 $RCFLAGS"
-             fi
+@@ -658,7 +664,11 @@ case $host_cpu in
+             [ $compiler = GNU ] && LDFLAGS="$LDFLAGS -Wl,--nxcompat -Wl,--dynamicbase"
+             [ $compiler = GNU ] && RCFLAGS="--target=pe-x86-64 $RCFLAGS"
          else
--            ASFLAGS="$ASFLAGS -f elf64"
+-            ASFLAGS="$ASFLAGS -f elf -m amd64"
 +            if cpp_check "" "" "__ILP32__" ; then
 +                asm=no
 +            else
-+                ASFLAGS="$ASFLAGS -f elf64"
++                ASFLAGS="$ASFLAGS -f elf -m amd64"
 +            fi
          fi
          ;;
-     powerpc*)
--- 
-2.8.0
-
+     powerpc|powerpc64)
