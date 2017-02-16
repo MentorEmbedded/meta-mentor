@@ -15,7 +15,7 @@ MACHINE ??= "qemux86"
 # Uncomment these, adjusting the path appropriately, to use an external
 # toolchain, but rebuild the toolchain's C library from source.
 #TCMODE = "external-sourcery-rebuild-libc"
-#CSL_SRC_FILE = "/path/to/sourcery/src.tar.gz"
+#SOURCERY_SRC_FILE = "/path/to/sourcery/src.tar.gz"
 
 # Uncomment to switch the built toolchain from eglibc to uclibc
 #TCLIBC = "uclibc"

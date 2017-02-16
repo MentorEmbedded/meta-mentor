@@ -17,7 +17,7 @@ python resize_gpl_check () {
     if (is_incompatible(d, ['96boards-tools'], 'GPL-3.0') and
             '96boards-tools' in rrecs):
         wks_file = d.getVar('WKS_FILE', True)
-        if wks_file.endswith('-sd.wks.in'):
+        if wks_file.endswith('-sd.wks.in') or wks_file.endswith('.wks'):
             d.setVar('WARN_RESIZE_GPL', '1')
         d.setVar('MACHINE_EXTRA_RRECOMMENDS_remove', '96boards-tools')
 }
