@@ -9,8 +9,6 @@ builddir, meldir, cmdline = sys.argv[1], sys.argv[2], sys.argv[3]
 
 OE_CORE_NAME = "openembedded-core"
 
-configured_layers = [OE_CORE_NAME]
-
 def get_layer_name(lpath):
     layerconf = lpath + "/conf/layer.conf"
     lc = open(layerconf, "r")
@@ -99,14 +97,17 @@ fd.write('  <object model="orm.toastersetting" pk="8">\n')
 fd.write('    <field type="CharField" name="name">CUSTOM_BUILD_INIT_SCRIPT</field>\n')
 fd.write('    <field type="CharField" name="value">%s</field>\n' % (cmdline))
 fd.write('  </object>\n\n\n')
+
+# Now fill up the default layers section
+# i.e. layers found in bblayers.conf
 fd.write('  <!-- Default layers for each release -->\n\n')
+# oe-core the special case
 fd.write('  <object model="orm.releasedefaultlayer" pk="1">\n')
 fd.write('    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>\n')
 fd.write('    <field type="CharField" name="layer_name">%s</field>\n' % (OE_CORE_NAME))
 fd.write('  </object>\n\n')
-
+# Now populate the rest from bblayers.conf
 pk=4
-# Parse through layers from bblayers.conf and fill up
 for base_layer in bblayers:
     layername = get_layer_name(base_layer)
     if layername:
@@ -118,12 +119,15 @@ for base_layer in bblayers:
         fd.write('    <field type="CharField" name="layer_name">%s</field>\n' % (layername))
         fd.write('  </object>\n\n')
         pk += 1
+
+# Now we populate all the local layers (including everything added already) so
+# recipes can be tied up to these
 fd.write('\n  <!-- Layers for the Local release\n')
 fd.write('       layersource TYPE_LOCAL = 0\n')
 fd.write('  -->\n\n')
-
-pk=1
 # Openembedded-core is poky's meta layer.
+# We need to preconfigure this as it is a special case.
+pk=1
 fd.write('  <object model="orm.layer" pk="%s">\n' % str(pk))
 fd.write('    <field type="CharField" name="name">%s</field>\n' % (OE_CORE_NAME))
 fd.write('    <field type="CharField" name="local_source_dir">%s</field>\n' % (oe_core_path))
@@ -134,36 +138,14 @@ fd.write('    <field type="IntegerField" name="layer_source">0</field>\n')
 fd.write('    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>\n')
 fd.write('    <field type="CharField" name="dirpath"></field>\n')
 fd.write('  </object>\n\n')
-
-for base_layer in bblayers:
-    layername = get_layer_name(base_layer)
-    if layername:
-        if layername == OE_CORE_NAME:
-            continue
-        pk += 1
-        fd.write('  <object model="orm.layer" pk="%s">\n' % str(pk))
-        fd.write('    <field type="CharField" name="name">%s</field>\n' % (layername))
-        fd.write('    <field type="CharField" name="local_source_dir">%s</field>\n' % (base_layer))
-        fd.write('  </object>\n')
-        fd.write('  <object model="orm.layer_version" pk="%s">\n' % str(pk))
-        fd.write('    <field rel="ManyToOneRel" to="orm.layer" name="layer">%s</field>\n' % str(pk))
-        fd.write('    <field type="IntegerField" name="layer_source">0</field>\n')
-        fd.write('    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>\n')
-        fd.write('    <field type="CharField" name="dirpath"></field>\n')
-        fd.write('  </object>\n\n')
-        configured_layers.append(layername)
 fd.close()
 
-totalLayers = list(configured_layers)
-
+# Populate a dictionary of local layers/recipes available through
+# the recipe-list file.
 layer_and_recipes = OrderedDict()
-
-recipeListFile = builddir + "/conf/recipes-list.txt"
-
 toStrip = None
 layer = None
-
-# Populate layer_and_recipes
+recipeListFile = builddir + "/conf/recipes-list.txt"
 with open(recipeListFile, 'r') as f:
     for line in f:
         line = line.rstrip("\n")
@@ -179,12 +161,13 @@ with open(recipeListFile, 'r') as f:
                 layer_and_recipes[layer].append(line.replace(toStrip, ""))
 
 # Now we need to add all layers that are found in the MEL install dir
-# to custom.xml, layers from bblayers.conf are already added
-pk = len(configured_layers) + 1
+# to custom.xml, oe-core should be added on the top manually
+totalLayers = [OE_CORE_NAME]
+pk = len(totalLayers) + 1
 fd = open(customXML, 'a')
 for layername in layer_and_recipes:
     # Skip the layer entry if it's already configured
-    if len(layer_and_recipes[layername]) == 0 or layername in configured_layers:
+    if len(layer_and_recipes[layername]) == 0 or layername in totalLayers:
         continue
     totalLayers.append(layername)
     fd.write('  <object model="orm.layer" pk="%s">\n' %(str(pk)))
