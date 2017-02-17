@@ -13,181 +13,8 @@ MELDIR="$2"
 BITBAKEDIR="$3"
 CMD_LINE="$4"
 
-OE_CORE_NAME="openembedded-core"
-
-BBLAYERS=
-configured_layers () {
-   tac "$BUILDDIR/conf/bblayers.conf" | \
-   sed -n -e '/^"/,/^BBLAYERS = /{ /^BBLAYERS =/d; /^"/d; p;}' | \
-   awk {'print $1'}
-}
-
-get_layer_name () {
-   name=$(grep "BBFILE_COLLECTIONS *+= *\"" ${1}/conf/layer.conf | head -n 1 | cut -d '"' -f2)
-   if [ "$name" = "core" ]; then
-      name="$OE_CORE_NAME"
-   fi
-   echo $name
-}
-
-create_toaster_configuration() {
-DISTRO=$(grep "DISTRO =" "$BUILDDIR/conf/local.conf"  | awk {'print $3'} | sed -e s:\'::g | head -n 1)
-MACHINE=$(grep -i "MACHINE ??=" "$BUILDDIR/conf/local.conf" | awk {'print $3'} | sed -e s:\"::g)
-
-cat <<EOF > "$BUILDDIR"/custom.xml
-<?xml version="1.0" encoding="utf-8"?>
-<django-objects version="1.0">
-
-  <!-- Reset to MEL -->
-
-  <object model="orm.release" pk="2">
-    <field type="CharField" name="name">local</field>
-    <field type="CharField" name="description">Mentor Embedded Linux</field>
-    <field rel="ManyToOneRel" to="orm.bitbakeversion" name="bitbake_version">2</field>
-    <field type="CharField" name="branch_name">HEAD</field>
-    <field type="TextField" name="helptext">Toaster will run your builds with the version of the Yocto Project you have cloned or downloaded to your computer.</field>
-  </object>
-
-  <!-- Default project settings -->
-  <object model="orm.toastersetting" pk="1">
-    <field type="CharField" name="name">DEFAULT_RELEASE</field>
-    <field type="CharField" name="value">local</field>
-  </object>
-  <object model="orm.toastersetting" pk="2">
-    <field type="CharField" name="name">DEFCONF_PACKAGE_CLASSES</field>
-    <field type="CharField" name="value">package_ipk</field>
-  </object>
-  <object model="orm.toastersetting" pk="3">
-    <field type="CharField" name="name">DEFCONF_MACHINE</field>
-    <field type="CharField" name="value">$MACHINE</field>
-  </object>
-  <object model="orm.toastersetting" pk="4">
-    <field type="CharField" name="name">DEFCONF_DISTRO</field>
-    <field type="CharField" name="value">$DISTRO</field>
-  </object>
-  <object model="orm.toastersetting" pk="5">
-    <field type="CharField" name="name">DEFCONF_ACCEPT_FSL_EULA</field>
-    <field type="CharField" name="value"></field>
-  </object>
-  <object model="orm.toastersetting" pk="6">
-    <field type="CharField" name="name">DEFCONF_SSTATE_DIR</field>
-    <field type="CharField" name="value">${BUILDDIR}/../sstate-cache</field>
-  </object>
-  <object model="orm.toastersetting" pk="7">
-    <field type="CharField" name="name">DEFCONF_DL_DIR</field>
-    <field type="CharField" name="value">${MELDIR}/downloads</field>
-  </object>
-  <object model="orm.toastersetting" pk="8">
-    <field type="CharField" name="name">CUSTOM_BUILD_INIT_SCRIPT</field>
-    <field type="CharField" name="value">${CMD_LINE}</field>
-  </object>
-
-EOF
-
-cat <<EOF >> "$BUILDDIR"/custom.xml
-
-  <!-- Default layers for each release -->
-
-EOF
-
-LAYER_PATHS=""
-LAYER_PATHS=$(configured_layers | while read -r layer; do
-    LAYER_PATHS="\"$layer\",$LAYER_PATHS"
-    echo "$LAYER_PATHS"
-done)
-LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
-
-cat <<EOF >> "$BUILDDIR"/custom.xml
-  <object model="orm.releasedefaultlayer" pk="1">
-    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>
-    <field type="CharField" name="layer_name">$OE_CORE_NAME</field>
-  </object>
-
-EOF
-
-pk=3
-for layer in $(echo "$LAYER_PATHS"); do
-   name=
-   layername=$(get_layer_name ${layer})
-   if [ "$layername" = "$OE_CORE_NAME" ]; then
-        continue
-   fi
-   pk=$((pk+1))
-   cd $layer
-   cat <<EOF >> "$BUILDDIR"/custom.xml
-  <object model="orm.releasedefaultlayer" pk="$pk">
-    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>
-    <field type="CharField" name="layer_name">$layername</field>
-  </object>
-
-EOF
-cd - > /dev/null 2>&1
-done
-
-cat <<EOF >> "$BUILDDIR"/custom.xml
-
-  <!-- Layers for the Local release
-       layersource TYPE_LOCAL = 0
-  -->
-
-EOF
-
-LAYER_PATHS=""
-LAYER_PATHS=$(configured_layers | while read -r layer; do
-    LAYER_PATHS="\"$layer\",$LAYER_PATHS"
-    echo "$LAYER_PATHS"
-done)
-LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
-
-pk=1
-# Openembedded-core is poky's meta layer.
-layer=$(dirname "$BITBAKEDIR")
-layer="$layer"/meta
-cat <<EOF >> "$BUILDDIR"/custom.xml
-  <object model="orm.layer" pk="$pk">
-    <field type="CharField" name="name">$OE_CORE_NAME</field>
-    <field type="CharField" name="local_source_dir">$layer</field>
-  </object>
-  <object model="orm.layer_version" pk="$pk">
-    <field rel="ManyToOneRel" to="orm.layer" name="layer">$pk</field>
-    <field type="IntegerField" name="layer_source">0</field>
-    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>
-    <field type="CharField" name="dirpath"></field>
-  </object>
-
-EOF
-
-for layer in $(echo "$LAYER_PATHS"); do
-   name=
-   layername=$(get_layer_name ${layer})
-   if [ "$layername" = "$OE_CORE_NAME" ]; then
-        continue
-   fi
-   cd $layer
-   pk=$((pk+1))
-   cat <<EOF >> "$BUILDDIR"/custom.xml
-  <object model="orm.layer" pk="$pk">
-    <field type="CharField" name="name">$layername</field>
-    <field type="CharField" name="local_source_dir">$layer</field>
-  </object>
-  <object model="orm.layer_version" pk="$pk">
-    <field rel="ManyToOneRel" to="orm.layer" name="layer">$pk</field>
-    <field type="IntegerField" name="layer_source">0</field>
-    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>
-    <field type="CharField" name="dirpath"></field>
-  </object>
-
-EOF
-cd - > /dev/null 2>&1
-done
-
-# Time to grab rest of the layers in MELDIR
-"$MELDIR"/meta-mentor/scripts/toaster-layers-recipes-config.py "$LAYER_PATHS" "$BUILDDIR" "$MELDIR"
-
-
-cat <<EOF >> "$BUILDDIR"/custom.xml
-</django-objects>
-EOF
+create_custom_xml() {
+    "$MELDIR"/meta-mentor/scripts/toaster-layers-recipes-config.py "$BUILDDIR" "$MELDIR" "$CMD_LINE"
 }
 
 create_toaster_venv () {
@@ -206,15 +33,6 @@ create_toaster_venv () {
 }
 
 create_toaster_setupscript() {
-POKYDIR=$(configured_layers | while read layer; do
-    layername=$(basename "$layer")
-    if [ "$layername" = "meta" ]; then
-          POKYDIR=$(dirname "$layer")
-          echo "$POKYDIR"
-    fi
-done)
-
-
    cat <<EOF > "$BUILDDIR"/toaster-setup-environment
 if [ "\$#" -ne 1 ]; then
     echo >&2 "Usage: . ./toaster-setup-environment {start|stop}"
@@ -234,7 +52,7 @@ fi
 EOF
 }
 
-create_toaster_configuration
+create_custom_xml
 if [ ! -e "$BUILDDIR/venv/bin/python2" ] || [ ! -e "$BUILDDIR/venv/bin/python3" ]; then
     rm -f "$BUILDDIR/venv/bin/python"*
     create_toaster_venv

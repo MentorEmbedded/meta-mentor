@@ -5,7 +5,7 @@ import os
 import re
 from collections import OrderedDict
 
-bblayers, builddir, meldir = sys.argv[1], sys.argv[2], sys.argv[3]
+builddir, meldir, cmdline = sys.argv[1], sys.argv[2], sys.argv[3]
 
 OE_CORE_NAME = "openembedded-core"
 
@@ -25,22 +25,140 @@ def get_layer_name(lpath):
     lc.close()
     return layer
 
-# Parse through layers from bblayers.conf and pick up layer names
-for base_layer in bblayers.split():
-    layer = get_layer_name(base_layer)
-    if layer:
-        if layer == OE_CORE_NAME:
+bblayers = []
+bblayerconf = builddir + "/conf/bblayers.conf"
+start_found = False
+blc = open(bblayerconf, "r")
+for ln in blc:
+    if start_found:
+        if ln.startswith("\""):
+            break
+        bblayers.append(ln.strip().split()[0])
+    elif ln.startswith("BBLAYERS = \""):
+        start_found = True
+blc.close()
+
+localconf = builddir + "/conf/local.conf"
+lc = open(localconf, "r")
+distro_found, machine_found = False, False
+for ln in lc:
+    dist = re.match("DISTRO *\= *\'", ln)
+    if dist:
+        distro = ln.split("\'")[1]
+        distro_found = True
+    mch = re.match("MACHINE *\?\?\= *\"", ln)
+    if mch:
+        machine = ln.split("\"")[1]
+        machine_found = True
+    if distro_found and machine_found:
+        break
+lc.close()
+
+customXML = builddir + "/custom.xml"
+fd = open(customXML, 'w')
+fd.write('<?xml version="1.0" encoding="utf-8"?>\n')
+fd.write('<django-objects version="1.0">\n\n')
+fd.write('  <!-- Reset to MEL -->\n\n')
+fd.write('  <object model="orm.release" pk="2">\n')
+fd.write('    <field type="CharField" name="name">local</field>\n')
+fd.write('    <field type="CharField" name="description">Mentor Embedded Linux</field>\n')
+fd.write('    <field rel="ManyToOneRel" to="orm.bitbakeversion" name="bitbake_version">2</field>\n')
+fd.write('    <field type="CharField" name="branch_name">HEAD</field>\n')
+fd.write('    <field type="TextField" name="helptext">Toaster will run your builds with the version of the Yocto Project you have cloned or downloaded to your computer.</field>\n')
+fd.write('  </object>\n\n')
+fd.write('  <!-- Default project settings -->\n')
+fd.write('  <object model="orm.toastersetting" pk="1">\n')
+fd.write('    <field type="CharField" name="name">DEFAULT_RELEASE</field>\n')
+fd.write('    <field type="CharField" name="value">local</field>\n')
+fd.write('  </object>\n')
+fd.write('  <object model="orm.toastersetting" pk="2">\n')
+fd.write('    <field type="CharField" name="name">DEFCONF_PACKAGE_CLASSES</field>\n')
+fd.write('    <field type="CharField" name="value">package_ipk</field>\n')
+fd.write('  </object>\n')
+fd.write('  <object model="orm.toastersetting" pk="3">\n')
+fd.write('    <field type="CharField" name="name">DEFCONF_MACHINE</field>\n')
+fd.write('    <field type="CharField" name="value">%s</field>\n' % (machine))
+fd.write('  </object>\n')
+fd.write('  <object model="orm.toastersetting" pk="4">\n')
+fd.write('    <field type="CharField" name="name">DEFCONF_DISTRO</field>\n')
+fd.write('    <field type="CharField" name="value">%s</field>\n' % (distro))
+fd.write('  </object>\n')
+fd.write('  <object model="orm.toastersetting" pk="5">\n')
+fd.write('    <field type="CharField" name="name">DEFCONF_ACCEPT_FSL_EULA</field>\n')
+fd.write('    <field type="CharField" name="value"></field>\n')
+fd.write('  </object>\n')
+fd.write('  <object model="orm.toastersetting" pk="6">\n')
+fd.write('    <field type="CharField" name="name">DEFCONF_SSTATE_DIR</field>\n')
+fd.write('    <field type="CharField" name="value">%s/../sstate-cache</field>\n' % (builddir))
+fd.write('  </object>\n')
+fd.write('  <object model="orm.toastersetting" pk="7">\n')
+fd.write('    <field type="CharField" name="name">DEFCONF_DL_DIR</field>\n')
+fd.write('    <field type="CharField" name="value">%s/downloads</field>\n' % (meldir))
+fd.write('  </object>\n')
+fd.write('  <object model="orm.toastersetting" pk="8">\n')
+fd.write('    <field type="CharField" name="name">CUSTOM_BUILD_INIT_SCRIPT</field>\n')
+fd.write('    <field type="CharField" name="value">%s</field>\n' % (cmdline))
+fd.write('  </object>\n\n\n')
+fd.write('  <!-- Default layers for each release -->\n\n')
+fd.write('  <object model="orm.releasedefaultlayer" pk="1">\n')
+fd.write('    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>\n')
+fd.write('    <field type="CharField" name="layer_name">%s</field>\n' % (OE_CORE_NAME))
+fd.write('  </object>\n\n')
+
+pk=4
+# Parse through layers from bblayers.conf and fill up
+for base_layer in bblayers:
+    layername = get_layer_name(base_layer)
+    if layername:
+        if layername == OE_CORE_NAME:
+            oe_core_path = base_layer
             continue
-        configured_layers.append(layer)
+        fd.write('  <object model="orm.releasedefaultlayer" pk="%s">\n' % str(pk))
+        fd.write('    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>\n')
+        fd.write('    <field type="CharField" name="layer_name">%s</field>\n' % (layername))
+        fd.write('  </object>\n\n')
+        pk += 1
+fd.write('\n  <!-- Layers for the Local release\n')
+fd.write('       layersource TYPE_LOCAL = 0\n')
+fd.write('  -->\n\n')
+
+pk=1
+# Openembedded-core is poky's meta layer.
+fd.write('  <object model="orm.layer" pk="%s">\n' % str(pk))
+fd.write('    <field type="CharField" name="name">%s</field>\n' % (OE_CORE_NAME))
+fd.write('    <field type="CharField" name="local_source_dir">%s</field>\n' % (oe_core_path))
+fd.write('  </object>\n')
+fd.write('  <object model="orm.layer_version" pk="%s">\n' % str(pk))
+fd.write('    <field rel="ManyToOneRel" to="orm.layer" name="layer">%s</field>\n' % str(pk))
+fd.write('    <field type="IntegerField" name="layer_source">0</field>\n')
+fd.write('    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>\n')
+fd.write('    <field type="CharField" name="dirpath"></field>\n')
+fd.write('  </object>\n\n')
+
+for base_layer in bblayers:
+    layername = get_layer_name(base_layer)
+    if layername:
+        if layername == OE_CORE_NAME:
+            continue
+        pk += 1
+        fd.write('  <object model="orm.layer" pk="%s">\n' % str(pk))
+        fd.write('    <field type="CharField" name="name">%s</field>\n' % (layername))
+        fd.write('    <field type="CharField" name="local_source_dir">%s</field>\n' % (base_layer))
+        fd.write('  </object>\n')
+        fd.write('  <object model="orm.layer_version" pk="%s">\n' % str(pk))
+        fd.write('    <field rel="ManyToOneRel" to="orm.layer" name="layer">%s</field>\n' % str(pk))
+        fd.write('    <field type="IntegerField" name="layer_source">0</field>\n')
+        fd.write('    <field rel="ManyToOneRel" to="orm.release" name="release">2</field>\n')
+        fd.write('    <field type="CharField" name="dirpath"></field>\n')
+        fd.write('  </object>\n\n')
+        configured_layers.append(layername)
+fd.close()
 
 totalLayers = list(configured_layers)
 
 layer_and_recipes = OrderedDict()
 
 recipeListFile = builddir + "/conf/recipes-list.txt"
-customXML = builddir + "/custom.xml"
-
-layerabsPath = []
 
 toStrip = None
 layer = None
@@ -117,4 +235,5 @@ for layername in layer_and_recipes:
         else:
            fd.write('    <field name="is_image" type="BooleanField">False</field>\n')
         fd.write('  </object>\n')
+fd.write('</django-objects>\n')
 fd.close()
