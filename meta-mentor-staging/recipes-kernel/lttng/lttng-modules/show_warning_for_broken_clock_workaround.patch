@@ -1,0 +1,52 @@
+From 5b06448bb01e44326c1579a9c6b9457aeb73fed7 Mon Sep 17 00:00:00 2001
+From: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+Date: Thu, 6 Oct 2016 07:45:35 -0400
+Subject: [PATCH] Fix: show warning for broken clock work-around
+
+Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+
+Upstream-Status: Backport
+
+Signed-off-by: Abdur Rehman <abdur_rehman@mentor.com>
+---
+ wrapper/trace-clock.c |  4 ++++
+ wrapper/trace-clock.h | 12 ++++++++----
+ 2 files changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/wrapper/trace-clock.c b/wrapper/trace-clock.c
+index 23869ca..d9bc956 100644
+--- a/wrapper/trace-clock.c
++++ b/wrapper/trace-clock.c
+@@ -27,3 +27,7 @@
+ DEFINE_PER_CPU(local_t, lttng_last_tsc);
+ EXPORT_PER_CPU_SYMBOL(lttng_last_tsc);
+ #endif /* #else #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0)) */
++
++#ifdef LTTNG_CLOCK_NMI_SAFE_BROKEN
++#warning "Your kernel implements a bogus nmi-safe clock source. Falling back to the non-nmi-safe clock source, which discards events traced from NMI context. Upgrade your kernel to resolve this situation."
++#endif
+diff --git a/wrapper/trace-clock.h b/wrapper/trace-clock.h
+index 649c93f..14d41af 100644
+--- a/wrapper/trace-clock.h
++++ b/wrapper/trace-clock.h
+@@ -52,11 +52,15 @@ extern struct lttng_trace_clock *lttng_trace_clock;
+  * CONFIG_DEBUG_TIMEKEEPING") introduces a buggy ktime_get_mono_fast_ns().
+  * This is fixed by patch "timekeeping: Fix __ktime_get_fast_ns() regression".
+  */
++#if (LTTNG_KERNEL_RANGE(4,8,0, 4,8,1) \
++	|| LTTNG_KERNEL_RANGE(4,7,4, 4,7,7) \
++	|| LTTNG_KERNEL_RANGE(4,4,20, 4,4,24) \
++	|| LTTNG_KERNEL_RANGE(4,1,32, 4,1,34))
++#define LTTNG_CLOCK_NMI_SAFE_BROKEN
++#endif
++
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0) \
+-	&& !LTTNG_KERNEL_RANGE(4,8,0, 4,8,1) \
+-	&& !LTTNG_KERNEL_RANGE(4,7,4, 4,7,7) \
+-	&& !LTTNG_KERNEL_RANGE(4,4,20, 4,4,24) \
+-	&& !LTTNG_KERNEL_RANGE(4,1,32, 4,1,34))
++	&& !defined(LTTNG_CLOCK_NMI_SAFE_BROKEN))
+ 
+ DECLARE_PER_CPU(local_t, lttng_last_tsc);
+ 
+
