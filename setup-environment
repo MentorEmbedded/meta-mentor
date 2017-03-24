@@ -29,7 +29,11 @@ else
         esac
     done
 
-    OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private tracing-layer}"
+    if [ "${MEL_DISTRO}" = "mel-lite" ]; then
+        OPTIONALLAYERS="${OPTIONALLAYERS:-tracing-layer}"
+    else
+        OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private tracing-layer}"
+    fi
     EXCLUDEDLAYERS="$EXCLUDEDLAYERS"
     # Customer directory layers handling (e.g. <customername>-custom)
     for _layercheck in . $layerdir/..; do
