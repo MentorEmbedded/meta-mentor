@@ -29,7 +29,7 @@ else
         esac
     done
 
-    if [ "${MEL_DISTRO}" == "mel-lite" ]; then
+    if [ "${MEL_DISTRO}" = "mel-lite" ]; then
         OPTIONALLAYERS="${OPTIONALLAYERS:-tracing-layer}"
     else
         OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private tracing-layer}"
