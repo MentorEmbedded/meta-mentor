@@ -20,15 +20,6 @@ diff --git a/Modules/getpath.c b/Modules/getpath.c
 index 18deb60..d22af53 100644
 --- a/Modules/getpath.c
 +++ b/Modules/getpath.c
-@@ -494,7 +494,7 @@ calculate_path(void)
-     _pythonpath = Py_DecodeLocale(PYTHONPATH, NULL);
-     _prefix = Py_DecodeLocale(PREFIX, NULL);
-     _exec_prefix = Py_DecodeLocale(EXEC_PREFIX, NULL);
--    lib_python = Py_DecodeLocale("lib/python" VERSION, NULL);
-+    lib_python = Py_DecodeLocale(LIB_PYTHON, NULL);
- 
-     if (!_pythonpath || !_prefix || !_exec_prefix || !lib_python) {
-         Py_FatalError(
 @@ -683,7 +683,7 @@ calculate_path(void)
      }
      else
