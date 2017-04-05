@@ -9,16 +9,12 @@ Signed-off-by: Christopher Larson <chris_larson@mentor.com>
  Lib/site.py | 8 ++++++--
  1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/Lib/site.py b/Lib/site.py
-index 3f78ef5..117741d 100644
---- a/Lib/site.py
-+++ b/Lib/site.py
-@@ -303,12 +303,16 @@ def getsitepackages(prefixes=None):
-         seen.add(prefix)
- 
-         if os.sep == '/':
--            sitepackages.append(os.path.join(prefix, "lib",
-+            sitepackages.append(os.path.join(prefix, sys.lib,
+Index: Python-3.5.2/Lib/site.py
+===================================================================
+--- Python-3.5.2.orig/Lib/site.py	2017-04-04 00:53:24.878200401 +0500
++++ Python-3.5.2/Lib/site.py	2017-04-04 00:54:53.062201987 +0500
+@@ -306,6 +306,10 @@
+             sitepackages.append(os.path.join(prefix, sys.lib,
                                          "python" + sys.version[:3],
                                          "site-packages"))
 +            if sys.lib != "lib":
@@ -27,11 +23,4 @@ index 3f78ef5..117741d 100644
 +                                            "site-packages"))
          else:
              sitepackages.append(prefix)
--            sitepackages.append(os.path.join(prefix, "lib", "site-packages"))
-+            sitepackages.append(os.path.join(prefix, sys.lib, "site-packages"))
-         if sys.platform == "darwin":
-             # for framework builds *only* we add the standard Apple
-             # locations.
--- 
-2.8.0
-
+             sitepackages.append(os.path.join(prefix, sys.lib, "site-packages"))
