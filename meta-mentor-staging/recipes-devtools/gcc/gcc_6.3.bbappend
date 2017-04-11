@@ -1,0 +1,1 @@
+DEPENDS += "flex-native"
