@@ -61,8 +61,8 @@ SUBLAYERS_INDIVIDUAL_ONLY ?= "${@configured_mx6_layers(d)} ${@' '.join(layers_by
 SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL ?= "${@configured_update_layers(d)}"
 
 DEPLOY_DIR_RELEASE ?= "${DEPLOY_DIR}/release-artifacts"
-RELEASE_ARTIFACTS ?= "layers bitbake templates images downloads sstate probeconfigs"
-RELEASE_ARTIFACTS[doc] = "List of artifacts to include (available: layers, bitbake, templates, images, downloads, sstate, probeconfigs"
+RELEASE_ARTIFACTS ?= "layers bitbake templates images downloads probeconfigs"
+RELEASE_ARTIFACTS[doc] = "List of artifacts to include (available: layers, bitbake, templates, images, downloads, probeconfigs"
 RELEASE_IMAGE ?= "core-image-base"
 RELEASE_IMAGE[doc] = "The image to build and archive in this release"
 RELEASE_USE_TAGS ?= "false"
@@ -71,17 +71,11 @@ RELEASE_USE_TAGS[type] = "boolean"
 RELEASE_EXCLUDED_SOURCES ?= ""
 RELEASE_EXCLUDED_SOURCES[doc] = "Patterns of files in ARCHIVE_RELEASE_DL_DIR to exclude"
 BINARY_ARTIFACTS_COMPRESSION ?= ""
-BINARY_ARTIFACTS_COMPRESSION[doc] = "Compression type for images, downloads and sstate artifacts.\
+BINARY_ARTIFACTS_COMPRESSION[doc] = "Compression type for images and downloads artifacts.\
  Available: '.bz2' and '.gz'. No compression if empty"
 
 LAYERS_OWN_DOWNLOADS ?= "${@' '.join(l for l in '${BBFILE_COLLECTIONS}'.split() if l.startswith('update-'))}"
 LAYERS_OWN_DOWNLOADS[doc] = "Names of layers whose downloads should be shipped inside the layer itself, self contained."
-
-# If we have an isolated set of shared state archives, use that, so as to
-# avoid archiving sstates which were unused.
-ARCHIVE_SSTATE_DIR = "${@ISOLATED_SSTATE_DIR \
-                         if oe.utils.inherits(d, 'isolated-sstate-dir') \
-                            else SSTATE_DIR}"
 
 # Kernel images and filesystems are handled separately, as they produce
 # timestamped filenames, and we only want the current ones (symlinked ones).
@@ -368,17 +362,6 @@ do_prepare_release () {
         fi
     fi
 
-    if echo "${RELEASE_ARTIFACTS}" | grep -qw sstate; then
-        # Kill dead links
-        find ${ARCHIVE_SSTATE_DIR} -type l | while read fn; do
-            if [ ! -e "$fn" ]; then
-                rm -f "$fn"
-            fi
-        done
-        release_tar "--transform=s,^${ARCHIVE_SSTATE_DIR},cached-binaries," --exclude=\*.done \
-                -chf deploy/${MACHINE}-sstate.tar${BINARY_ARTIFACTS_COMPRESSION} ${ARCHIVE_SSTATE_DIR}
-    fi
-
     if echo "${RELEASE_ARTIFACTS}" | grep -qw templates; then
         prepare_templates
         cp bblayers.conf.sample local.conf.sample conf-notes.txt deploy/
@@ -469,10 +452,3 @@ do_configure[noexec] = "1"
 do_compile[noexec] = "1"
 do_install[noexec] = "1"
 do_populate_sysroot[noexec] = "1"
-
-python () {
-    if not bb.utils.contains('RELEASE_ARTIFACTS', 'sstate', True, False, d):
-        # If we aren't packaging sstate, there's no need to suck in all the
-        # packaging functions recursively
-        d.delVarFlag('do_build', 'recrdeptask')
-}
