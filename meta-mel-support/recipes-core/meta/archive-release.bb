@@ -13,7 +13,7 @@ SRC_URI_append_qemuall = " file://runqemu.in"
 
 # We're using image fstypes data, inherit the class in case variables from it
 # are needed for IMAGE_FSTYPES
-inherit image_types
+inherit image_types nopackages
 
 UNINATIVE_BUILD_ARCHES ?= "x86_64 i686"
 MELDIR ?= "${COREBASE}/.."
@@ -469,12 +469,6 @@ do_configure[noexec] = "1"
 do_compile[noexec] = "1"
 do_install[noexec] = "1"
 do_populate_sysroot[noexec] = "1"
-do_package[noexec] = "1"
-do_packagedata[noexec] = "1"
-do_package_write[noexec] = "1"
-do_package_write_ipk[noexec] = "1"
-do_package_write_deb[noexec] = "1"
-do_package_write_rpm[noexec] = "1"
 
 python () {
     if not bb.utils.contains('RELEASE_ARTIFACTS', 'sstate', True, False, d):
