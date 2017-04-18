@@ -433,13 +433,17 @@ do_prepare_release () {
     fi
 
     echo ${DISTRO_VERSION} >deploy/distro-version
-
-    mv deploy/* ${DEPLOY_DIR_RELEASE}/
 }
-addtask prepare_release before do_build after do_patch
 
-do_prepare_release[dirs] =+ "${DEPLOY_DIR_RELEASE} ${MELDIR} ${S}"
+do_prepare_release[dirs] = "${S}/deploy ${S}"
 do_prepare_release[cleandirs] = "${S}"
+do_prepare_release[umask] = "022"
+SSTATETASKS += "do_prepare_release"
+SSTATE_SKIP_CREATION_task-prepare-release = "1"
+do_prepare_release[sstate-inputdirs] = "${S}/deploy"
+do_prepare_release[sstate-outputdirs] = "${DEPLOY_DIR_RELEASE}"
+do_prepare_release[stamp-extra-info] = "${MACHINE}"
+addtask do_prepare_release before do_build after do_patch
 
 # Ensure that all our dependencies are entirely built
 do_prepare_release[depends] += "${@bb.utils.contains('RELEASE_ARTIFACTS', 'images', '${RELEASE_IMAGE}:do_${BB_DEFAULT_TASK}', '', d) if '${RELEASE_IMAGE}' else ''}"
