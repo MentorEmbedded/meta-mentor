@@ -1,7 +1,5 @@
 DESCRIPTION = "Archive the artifacts for a ${DISTRO_NAME} release"
 LICENSE = "MIT"
-LIC_FILES_CHKSUM = "file://${COREBASE}/LICENSE;md5=4d92cd373abda3937c2bc47fbc49d690 \
-                    file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
 INHIBIT_DEFAULT_DEPS = "1"
 PROVIDES += "mel-release"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
@@ -455,3 +453,7 @@ do_configure[noexec] = "1"
 do_compile[noexec] = "1"
 do_install[noexec] = "1"
 do_populate_sysroot[noexec] = "1"
+
+# This recipe emits no packages, and archives existing buildsystem content and
+# output whose licenses are outside our control
+deltask populate_lic
