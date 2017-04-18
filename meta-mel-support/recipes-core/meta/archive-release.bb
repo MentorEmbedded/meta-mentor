@@ -14,8 +14,7 @@ inherit image_types nopackages
 UNINATIVE_BUILD_ARCHES ?= "x86_64 i686"
 MELDIR ?= "${COREBASE}/.."
 TEMPLATECONF ?= "${FILE_DIRNAME}/../../../conf"
-
-PROBECONFIGS ?= "${@bb.utils.which('${BBPATH}', 'conf/probe-configs/${MACHINE}')}" 
+PROBECONFIGS ?= "${@bb.utils.which('${BBPATH}', 'conf/probe-configs/${MACHINE}')}"
 
 BSPFILES_INSTALL_PATH ?= "${MACHINE}"
 BINARY_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/binary"
@@ -108,6 +107,15 @@ python () {
 
     # Make sure MELDIR is absolute, as we use it in transforms
     d.setVar('MELDIR', os.path.abspath(d.getVar('MELDIR', True)))
+
+    for component in d.getVar('RELEASE_ARTIFACTS').split():
+        ctask = 'do_archive_%s' % component
+        if ctask in d:
+            bb.build.addtask(ctask, 'do_prepare_release', 'do_prepare_recipe_sysroot', d)
+            if not d.getVarFlag(ctask, 'dirs'):
+                d.setVarFlag(ctask, 'dirs', '${S}/deploy ${S}')
+        else:
+            bb.fatal('do_archive_release: no such task "%s" for component "%s" listed in RELEASE_ARTIFACTS' % (ctask, component))
 }
 
 def uninative_urls(d):
@@ -119,21 +127,8 @@ def uninative_urls(d):
             srcuri = l.expand("${UNINATIVE_URL}${UNINATIVE_TARBALL};sha256sum=%s;unpack=no;subdir=uninative/%s" % (chksum, chksum))
             yield srcuri
 
-
 release_tar () {
-    if [ -z ${BINARY_ARTIFACTS_COMPRESSION} ]; then
-        COMPRESSION=""
-    elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".bz2" ]; then
-        COMPRESSION="-j"
-    elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".xz" ]; then
-        COMPRESSION="-J"
-    elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".gz" ]; then
-        COMPRESSION="-z"
-    else
-        bbfatal "Invalid binary artifacts compression type ${BINARY_ARTIFACTS_COMPRESSION}"
-    fi
-
-    tar --absolute-names $COMPRESSION "$@" --exclude=.svn \
+    tar --absolute-names "$@" --exclude=.svn \
         --exclude=.git --exclude=\*.pyc --exclude=\*.pyo --exclude=.gitignore \
         -v --show-stored-names
 }
@@ -151,7 +146,7 @@ git_tar () {
         else
             version="$(git --git-dir="$path/.git" rev-list HEAD | wc -l)"
         fi
-        git --git-dir=$path/.git archive --format=tar --prefix="${rel:-.}/" HEAD | bzip2 >deploy/${name}_${version}.tar.bz2
+        git --git-dir=$path/.git archive --format=tar --prefix="${rel:-.}/" HEAD | bzip2 >${name}_${version}.tar.bz2
     else
         if repo_root "$path" | grep -q '^${MELDIR}/'; then
             if [ "${@oe.data.typed_value('RELEASE_USE_TAGS', d)}" = "True" ]; then
@@ -159,9 +154,9 @@ git_tar () {
             else
                 version=$(cd "$path" && git rev-list HEAD . | wc -l)
             fi
-            release_tar $path "$@" -cjf deploy/${name}_${version}.tar.bz2
+            release_tar $path "$@" -cjf ${name}_${version}.tar.bz2
         else
-            release_tar $path "$@" -cjf deploy/$name.tar.bz2
+            release_tar $path "$@" -cjf $name.tar.bz2
         fi
     fi
 }
@@ -243,195 +238,198 @@ prepare_templates () {
     echo '"' >>bblayers.conf.sample
 }
 
-do_prepare_release () {
-    mkdir -p deploy
+do_archive_layers () {
+    >${MACHINE}-layers.txt
+    bb_layers | while read path relpath name; do
+        echo "$relpath" >>${MACHINE}-layers.txt
+    done
 
-    if echo "${RELEASE_ARTIFACTS}" | grep -qw layers; then
-        >deploy/${MACHINE}-layers.txt
-        bb_layers | while read path relpath name; do
-            echo "$relpath" >>deploy/${MACHINE}-layers.txt
-        done
-
-        bb_layers | sort -k1,1 -u | while read path relpath name; do
-            if [ -z "$name" ]; then
-                name="${path##*/}"
-            fi
-
-            if echo "${SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL}" | grep -qw "$path"; then
-                # Grab the entire toplevel dir for non-individually-archived
-                # sub-layers
-                git_tar "$path" "$name" "--transform=s,^$path,$name,"
-            else
-                git_tar "$path" "$name" "--transform=s,^$path,$relpath,"
-            fi
-        done
-    fi
-
-    if echo "${RELEASE_ARTIFACTS}" | grep -qw bitbake; then
-        bitbake_dir="$(which bitbake)"
-        found_bitbake=0
-        bb_layers >bblayers_for_bitbake
-        while read path _ _; do
-            case "$bitbake_dir" in
-                $path/*)
-                    found_bitbake=1
-                    break
-                    ;;
-            esac
-        done <bblayers_for_bitbake
-        rm bblayers_for_bitbake
-
-        if [ $found_bitbake -eq 0 ]; then
-            # Likely using separate bitbake rather than poky
-            bitbake_path="$(repo_root $(dirname $(which bitbake))/..)"
-            git_tar "$bitbake_path" bitbake "--transform=s,^$bitbake_path,${bitbake_path##*/},"
-        fi
-    fi
-
-    if echo "${RELEASE_ARTIFACTS}" | grep -qw downloads; then
-        rm -f deploy/*-downloads.tar
-
-        for layer in ${BBLAYERS}; do
-            ${@bb.utils.which('${BBPATH}', '../scripts/bb-print-layer-data')} "$layer/conf/layer.conf"
-        done 2>/dev/null | sed -n 's/^\([^:]*\):[^|]*|\([^|]*\)|.*/\1|\2/p' >layermap.txt
-
-        mkdir -p downloads
-        if [ -e ${WORKDIR}/uninative ]; then
-            cp -a ${WORKDIR}/uninative downloads/
-            # We symlink to the root of downloads so the downloads dir can be
-            # used either as a mirror or directly as the DL_DIR
-            (cd downloads && find uninative -type f -print0 | xargs -0 -I"{}" sh -c 'touch "{}.done"; ln -s "{}" .; ln -s "{}.done" .')
+    bb_layers | sort -k1,1 -u | while read path relpath name; do
+        if [ -z "$name" ]; then
+            name="${path##*/}"
         fi
 
-        if [ "${ARCHIVE_RELEASE_DL_TOPDIR}" != "${ARCHIVE_RELEASE_DL_DIR}" ]; then
-            for dir in ${ARCHIVE_RELEASE_DL_TOPDIR}/*; do
-                name=$(basename $dir)
-                mkdir -p downloads/$name
-                find -L $dir -type f -maxdepth 2 | while read source; do
-                    source_name="$(basename "$source")"
-                    if [ -e "${DL_DIR}/$source_name" ]; then
-                        ln -sf "${DL_DIR}/$source_name" "downloads/$name/$source_name"
-                        touch "downloads/$name/$source_name.done"
-                    fi
-                done
-                cd downloads/$name
-                for file in ${RELEASE_EXCLUDED_SOURCES}; do
-                    rm -f "$file"
-                done
-                cd - >/dev/null
-                layerpath="$(sed -n "s/^$name|//p" layermap.txt)" || exit 1
-                layerroot="$(repo_root "$layerpath")"
-                layerbase="${layerroot##*/}"
-                if echo "${LAYERS_OWN_DOWNLOADS}" | grep -Eq "\<$name\>"; then
-                    layer_relpath="${layerpath#${layerroot}/}"
-                    if [ "$layer_relpath" = "$layerroot" ]; then
-                        layer_relpath=$layerbase
-                    else
-                        layer_relpath=$layerbase/$layer_relpath
-                    fi
-                    release_tar "--transform=s,^downloads/$name,$layer_relpath/downloads," -chf \
-                            deploy/$name-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/$name
-                else
-                    release_tar "--transform=s,^downloads/$name,downloads," -rhf \
-                            deploy/$layerbase-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/$name
-                fi
-            done
-            if [ -n "${UNINATIVE_TARBALL}" ]; then
-                release_tar -chf deploy/${MACHINE}-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/uninative $(find downloads/uninative -type f | sed 's,^.*/,downloads/,')
-            fi
+        if echo "${SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL}" | grep -qw "$path"; then
+            # Grab the entire toplevel dir for non-individually-archived
+            # sub-layers
+            git_tar "$path" "$name" "--transform=s,^$path,$name,"
         else
-            mkdir -p downloads
-            find -L ${ARCHIVE_RELEASE_DL_DIR} -type f -maxdepth 2 | while read source; do
+            git_tar "$path" "$name" "--transform=s,^$path,$relpath,"
+        fi
+    done
+}
+do_archive_layers[dirs] = "${S}/deploy"
+
+do_archive_downloads () {
+    for layer in ${BBLAYERS}; do
+        ${@bb.utils.which('${BBPATH}', '../scripts/bb-print-layer-data')} "$layer/conf/layer.conf"
+    done 2>/dev/null | sed -n 's/^\([^:]*\):[^|]*|\([^|]*\)|.*/\1|\2/p' >layermap.txt
+
+    mkdir -p downloads
+    if [ -e ${WORKDIR}/uninative ]; then
+        cp -a ${WORKDIR}/uninative downloads/
+        # We symlink to the root of downloads so the downloads dir can be
+        # used either as a mirror or directly as the DL_DIR
+        (cd downloads && find uninative -type f -print0 | xargs -0 -I"{}" sh -c 'touch "{}.done"; ln -sf "{}" .; ln -sf "{}.done" .')
+    fi
+
+    if [ "${ARCHIVE_RELEASE_DL_TOPDIR}" != "${ARCHIVE_RELEASE_DL_DIR}" ]; then
+        for dir in ${ARCHIVE_RELEASE_DL_TOPDIR}/*; do
+            name=$(basename $dir)
+            mkdir -p downloads/$name
+            find -L $dir -type f -maxdepth 2 | while read source; do
                 source_name="$(basename "$source")"
                 if [ -e "${DL_DIR}/$source_name" ]; then
-                    ln -sf "${DL_DIR}/$source_name" "downloads/$source_name"
-                    touch "downloads/$source_name.done"
+                    ln -sf "${DL_DIR}/$source_name" "downloads/$name/$source_name"
+                    touch "downloads/$name/$source_name.done"
                 fi
             done
-            cd downloads
+            cd downloads/$name
             for file in ${RELEASE_EXCLUDED_SOURCES}; do
                 rm -f "$file"
             done
             cd - >/dev/null
-            release_tar -chf deploy/${MACHINE}-downloads.tar${BINARY_ARTIFACTS_COMPRESSION} downloads/
+            layerpath="$(sed -n "s/^$name|//p" layermap.txt)" || exit 1
+            layerroot="$(repo_root "$layerpath")"
+            layerbase="${layerroot##*/}"
+            if echo "${LAYERS_OWN_DOWNLOADS}" | grep -Eq "\<$name\>"; then
+                layer_relpath="${layerpath#${layerroot}/}"
+                if [ "$layer_relpath" = "$layerroot" ]; then
+                    layer_relpath=$layerbase
+                else
+                    layer_relpath=$layerbase/$layer_relpath
+                fi
+                release_tar "--transform=s,^downloads/$name,$layer_relpath/downloads," -chf \
+                        deploy/$name-downloads.tar downloads/$name
+            else
+                release_tar "--transform=s,^downloads/$name,downloads," -rhf \
+                        deploy/$layerbase-downloads.tar downloads/$name
+            fi
+        done
+        if [ -n "${UNINATIVE_TARBALL}" ]; then
+            release_tar -chf deploy/${MACHINE}-downloads.tar downloads/uninative $(find downloads/uninative -type f | sed 's,^.*/,downloads/,')
         fi
+    else
+        mkdir -p downloads
+        find -L ${ARCHIVE_RELEASE_DL_DIR} -type f -maxdepth 2 | while read source; do
+            source_name="$(basename "$source")"
+            if [ -e "${DL_DIR}/$source_name" ]; then
+                ln -sf "${DL_DIR}/$source_name" "downloads/$source_name"
+                touch "downloads/$source_name.done"
+            fi
+        done
+        cd downloads
+        for file in ${RELEASE_EXCLUDED_SOURCES}; do
+            rm -f "$file"
+        done
+        cd - >/dev/null
+        release_tar -chf deploy/${MACHINE}-downloads.tar downloads/
+    fi
+}
+# Workaround shell function dependency issue
+do_archive_downloads[vardeps] += "repo_root"
+addtask archive_downloads after do_fetch
+
+do_archive_bitbake () {
+    bitbake_dir="$(which bitbake)"
+    bitbake_via_layers=0
+    bb_layers >bblayers_for_bitbake
+    while read path _ _; do
+        case "$bitbake_dir" in
+            $path/*)
+                bitbake_via_layers=1
+                break
+                ;;
+        esac
+    done <bblayers_for_bitbake
+    rm bblayers_for_bitbake
+    if [ $bitbake_via_layers -eq 1 ]; then
+        return
     fi
 
+    bitbake_path="$(repo_root $(dirname $(which bitbake))/..)"
+    git_tar "$bitbake_path" bitbake "--transform=s,^$bitbake_path,${bitbake_path##*/},"
+}
+
+do_archive_images () {
+    rm -f include
+    if [ -e "${BUILDHISTORY_DIR}" ]; then
+        echo "--transform=s,${BUILDHISTORY_DIR},${BINARY_INSTALL_PATH}/buildhistory," >include
+        echo ${BUILDHISTORY_DIR} >>include
+    fi
+
+    echo "--transform=s,-${MACHINE},,i" >>include
+    echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
+
+    find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 \( -type f -o -type l \) | \
+        grep -Ev '^${DEPLOY_DIR_IMAGE}/${DEPLOY_IMAGES_EXCLUDE_PATTERN}' >>include
+
+    # Lock down any autorevs
+    buildhistory-collect-srcrevs -p "${BUILDHISTORY_DIR}" >"${WORKDIR}/autorevs.conf"
+    if [ -s "${WORKDIR}/autorevs.conf" ]; then
+        echo "--transform=s,${WORKDIR}/autorevs.conf,${CONF_INSTALL_PATH}/autorevs.conf," >>include
+        echo "${WORKDIR}/autorevs.conf" >>include
+    fi
+
+    release_tar --files-from=include -cf deploy/${MACHINE}.tar
+
+    echo "--transform=s,-${MACHINE},,i" >include
+    echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
+    {
+        ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1  -iname "%s" || true' % pattern for pattern in DEPLOY_IMAGES.split())}
+    } >>include
+
+    if echo "${OVERRIDES}" | tr ':' '\n' | grep -qx 'qemuall'; then
+        ext="$(echo "${IMAGE_EXTENSIONS}" | tr ' ' '\n' | grep -v '^tar' | head -n 1)"
+        if [ ! -e "${DEPLOY_DIR_IMAGE}/${RELEASE_IMAGE}-${MACHINE}.$ext" ]; then
+            bbfatal "Unable to find image for extension $ext, aborting"
+        fi
+        if [ -e "${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${MACHINE}.bin" ] || [ -e "${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}.bin" ]; then
+            kernel="${KERNEL_IMAGETYPE}.bin"
+        else
+            kernel="${KERNEL_IMAGETYPE}"
+        fi
+        sed -e "s/##ROOTFS##/${RELEASE_IMAGE}.$ext/; s/##KERNEL##/$kernel/" ${WORKDIR}/runqemu.in >runqemu
+        chmod +x runqemu
+        echo ./runqemu >>include
+        echo "--transform=s,./runqemu$,${BINARY_INSTALL_PATH}/runqemu," >>include
+    fi
     if echo "${RELEASE_ARTIFACTS}" | grep -qw templates; then
         prepare_templates
-        cp bblayers.conf.sample local.conf.sample conf-notes.txt deploy/
+        echo "--transform=s,$PWD/,${CONF_INSTALL_PATH}/," >>include
+        echo "$PWD/local.conf.sample" >>include
+        echo "$PWD/bblayers.conf.sample" >>include
     fi
+    release_tar --files-from=include -rhf deploy/${MACHINE}.tar
+}
 
-    if echo "${RELEASE_ARTIFACTS}" | grep -qw images; then
-        if [ -e "${BUILDHISTORY_DIR}" ]; then
-            echo "--transform=s,${BUILDHISTORY_DIR},${BINARY_INSTALL_PATH}/buildhistory," >include
-            echo ${BUILDHISTORY_DIR} >>include
-        fi
+do_archive_templates () {
+    prepare_templates
+    cp -f local.conf.sample deploy/
+    cp -f bblayers.conf.sample deploy/
+}
 
-        if echo "${RELEASE_ARTIFACTS}" | grep -qw templates; then
-            echo "--transform=s,${S}/,${CONF_INSTALL_PATH}/," >>include
-            echo "${S}/local.conf.sample" >>include
-            echo "${S}/bblayers.conf.sample" >>include
-        fi
-
-        echo "--transform=s,-${MACHINE},,i" >>include
-        echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
-
-        find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 \( -type f -o -type l \) | \
-            grep -Ev '^${DEPLOY_DIR_IMAGE}/${DEPLOY_IMAGES_EXCLUDE_PATTERN}' >>include
-
-        # Lock down any autorevs
-        buildhistory-collect-srcrevs -p "${BUILDHISTORY_DIR}" >"${WORKDIR}/autorevs.conf"
-        if [ -s "${WORKDIR}/autorevs.conf" ]; then
-            echo "--transform=s,${WORKDIR}/autorevs.conf,${CONF_INSTALL_PATH}/autorevs.conf," >>include
-            echo "${WORKDIR}/autorevs.conf" >>include
-        fi
-
-        release_tar --files-from=include -cf deploy/${MACHINE}.tar
-
-        echo "--transform=s,-${MACHINE},,i" >include
-        echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
-        {
-            ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1  -iname "%s" || true' % pattern for pattern in DEPLOY_IMAGES.split())}
-        } >>include
-
-        if echo "${OVERRIDES}" | tr ':' '\n' | grep -qx 'qemuall'; then
-            ext="$(echo "${IMAGE_EXTENSIONS}" | tr ' ' '\n' | grep -v '^tar' | head -n 1)"
-            if [ ! -e "${DEPLOY_DIR_IMAGE}/${RELEASE_IMAGE}-${MACHINE}.$ext" ]; then
-                bbfatal "Unable to find image for extension $ext, aborting"
-            fi
-            if [ -e "${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}-${MACHINE}.bin" ] || [ -e "${DEPLOY_DIR_IMAGE}/${KERNEL_IMAGETYPE}.bin" ]; then
-                kernel="${KERNEL_IMAGETYPE}.bin"
-            else
-                kernel="${KERNEL_IMAGETYPE}"
-            fi
-            sed -e "s/##ROOTFS##/${RELEASE_IMAGE}.$ext/; s/##KERNEL##/$kernel/" ${WORKDIR}/runqemu.in >runqemu
-            chmod +x runqemu
-            echo ./runqemu >>include
-            echo "--transform=s,./runqemu$,${BINARY_INSTALL_PATH}/runqemu," >>include
-        fi
-        release_tar --files-from=include -rhf deploy/${MACHINE}.tar
-
-        if [ ${BINARY_ARTIFACTS_COMPRESSION} = ".bz2" ]
-        then
-            bzip2 deploy/${MACHINE}.tar
-        elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".gz" ]
-        then
-            gzip deploy/${MACHINE}.tar
-        fi
+do_archive_probeconfigs () {
+    if [ -d "${PROBECONFIGS}" ]; then
+        release_tar "--transform=s,${PROBECONFIGS},${PROBECONFIGS_INSTALL_PATH}," -rf deploy/${MACHINE}.tar "${PROBECONFIGS}"
     fi
+}
 
-    if echo "${RELEASE_ARTIFACTS}" | grep -qw probeconfigs; then
-        if [ -d "${PROBECONFIGS}" ]; then
-            release_tar "--transform=s,${PROBECONFIGS},${PROBECONFIGS_INSTALL_PATH}," -rf deploy/${MACHINE}.tar "${PROBECONFIGS}"
-        fi
-    fi
-
+do_prepare_release () {
     echo ${DISTRO_VERSION} >deploy/distro-version
+
+    for fn in deploy/${MACHINE}*.tar; do
+        if [ -e "$fn" ]; then
+            if [ ${BINARY_ARTIFACTS_COMPRESSION} = ".bz2" ]; then
+                bzip2 "$fn"
+            elif [ ${BINARY_ARTIFACTS_COMPRESSION} = ".gz" ]; then
+                gzip "$fn"
+            fi
+        fi
+    done
 }
 
 do_prepare_release[dirs] = "${S}/deploy ${S}"
-do_prepare_release[cleandirs] = "${S}"
 do_prepare_release[umask] = "022"
 SSTATETASKS += "do_prepare_release"
 SSTATE_SKIP_CREATION_task-prepare-release = "1"
@@ -441,16 +439,16 @@ do_prepare_release[stamp-extra-info] = "${MACHINE}"
 addtask do_prepare_release before do_build after do_patch
 
 # Ensure that all our dependencies are entirely built
-do_prepare_release[depends] += "${@bb.utils.contains('RELEASE_ARTIFACTS', 'images', '${RELEASE_IMAGE}:do_${BB_DEFAULT_TASK}', '', d) if '${RELEASE_IMAGE}' else ''}"
+do_archive_images[depends] += "${@'${RELEASE_IMAGE}:do_${BB_DEFAULT_TASK}' if '${RELEASE_IMAGE}' else ''}"
 
 # When archiving downloads, make sure they're fetched
 FETCHALL_TASK = "${@'do_archive_release_downloads_all' if oe.utils.inherits(d, 'archive-release-downloads') else 'do_fetchall'}"
-do_prepare_release[depends] += "${@bb.utils.contains('RELEASE_ARTIFACTS', 'downloads', '${RELEASE_IMAGE}:${FETCHALL_TASK}', '', d) if '${RELEASE_IMAGE}' else ''}"
+do_archive_downloads[depends] += "${@'${RELEASE_IMAGE}:${FETCHALL_TASK}' if '${RELEASE_IMAGE}' else ''}"
 
 do_configure[noexec] = "1"
 do_compile[noexec] = "1"
 do_install[noexec] = "1"
-do_populate_sysroot[noexec] = "1"
+deltask do_populate_sysroot
 
 # This recipe emits no packages, and archives existing buildsystem content and
 # output whose licenses are outside our control
