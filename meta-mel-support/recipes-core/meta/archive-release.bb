@@ -1,7 +1,6 @@
 DESCRIPTION = "Archive the artifacts for a ${DISTRO_NAME} release"
 LICENSE = "MIT"
 INHIBIT_DEFAULT_DEPS = "1"
-PROVIDES += "mel-release"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 PACKAGES = ""
 EXCLUDE_FROM_WORLD = "1"
