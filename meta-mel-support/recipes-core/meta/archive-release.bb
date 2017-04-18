@@ -169,6 +169,8 @@ git_tar () {
         fi
     fi
 }
+# Workaround shell function dependency issue
+git_tar[vardeps] += "repo_root"
 
 repo_root () {
     git_root=$(cd $1 && git rev-parse --show-toplevel 2>/dev/null)
@@ -193,11 +195,6 @@ repo_root () {
 repo_root[vardepsexclude] += "1#${MELDIR}/ rel%%/*"
 
 bb_layers () {
-    # Workaround shell function dependency issue
-    if false; then
-        repo_root
-    fi
-
     for layer in ${BBLAYERS}; do
         layer="${layer%/}"
 
@@ -220,6 +217,8 @@ bb_layers () {
         fi
     done
 }
+# Workaround shell function dependency issue
+bb_layers[vardeps] += "repo_root"
 bb_layers[vardepsexclude] += "layer%/ topdir##*/ layer#${topdir}/"
 
 prepare_templates () {
