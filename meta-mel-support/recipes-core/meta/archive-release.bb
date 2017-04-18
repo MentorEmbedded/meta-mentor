@@ -2,7 +2,6 @@ DESCRIPTION = "Archive the artifacts for a ${DISTRO_NAME} release"
 LICENSE = "MIT"
 INHIBIT_DEFAULT_DEPS = "1"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
-PACKAGES = ""
 EXCLUDE_FROM_WORLD = "1"
 
 SRC_URI += "${@' '.join(uninative_urls(d)) if 'downloads' in '${RELEASE_ARTIFACTS}'.split() else ''}"
