@@ -261,7 +261,7 @@ setup_builddir () {
                     fi
                     echo "$machine"
                 done | prompt_choice $non_interactive "Select BSP to use" >$tmpfile || {
-                echo >&2 "Error: unable to prompt for an installed MEL BSP, please specify"
+                echo >&2 "Error: unable to prompt for an installed MEL BSP, please specify MACHINE"
                 return 1
             }
             MACHINE="$(cat "$tmpfile")"
