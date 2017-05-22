@@ -1,0 +1,150 @@
+if [ -z "$ZSH_NAME" ] && [ "x$0" = "x./setup-environment" ]; then
+    echo >&2 "Error: This script needs to be sourced. Please run as '. ./setup-environment'"
+else
+    if [ -n "$BASH_SOURCE" ]; then
+        scriptdir="`dirname $BASH_SOURCE`"
+    elif [ -n "$ZSH_NAME" ]; then
+        scriptdir="`dirname $0`"
+    else
+        scriptdir="`pwd`"
+    fi
+    scriptdir=`readlink -f "$scriptdir"`
+
+    mel_quote(){
+        sed -e "s,','\\\\'',g; 1s,^,',; \$s,\$,',;" << EOF
+    $1
+EOF
+    }
+
+    mel_save () {
+        case "$1" in
+        # when a string contains a "'" we have to escape it
+        *\'*)
+            mel_saved="$mel_saved $(mel_quote "$1")"
+            ;;
+        # otherwise just quote the variable
+        *)
+            mel_saved="$mel_saved '$1'"
+            ;;
+        esac
+    }
+
+    mel_abspath () {
+        _path="$1"
+        if [ -n "${_path##/*}" ]; then
+            _path="$PWD/$1"
+        fi
+        echo "$_path"
+    }
+
+    if [ -f conf/local.conf -o -f conf/bblayers.conf ]; then
+        # Assuming we're already in the build dir
+        BUILDDIR=$PWD
+    else
+        BUILDDIR=$PWD/build
+    fi
+
+    mel_saved=
+    mel_manifest=
+    mel_extra_disabled=0
+    mel_extra_manifests=
+    mel_fail=0
+    mel_argnum=1
+    while [ $mel_argnum -le $# ]; do
+        mel_arg="$(eval printf "%s" "\$$mel_argnum")"
+        mel_argnum="$(expr $mel_argnum + 1)"
+        case "$mel_arg" in
+            -b)
+                BUILDDIR="$(eval printf "%s" "\$$mel_argnum")"
+                if [ -z "$BUILDDIR" ]; then
+                    echo >&2 "-b requires an argument"
+                    mel_fail=1
+                else
+                    BUILDDIR="$(mel_abspath "$BUILDDIR")"
+                fi
+                ;;
+            -m)
+                mel_manifest="$(eval printf "%s" "\$$mel_argnum")"
+                if [ -z "$mel_manifest" ]; then
+                    echo >&2 "-m requires an argument"
+                    mel_fail=1
+                else
+                    mel_argnum="$(expr $mel_argnum + 1)"
+                    if [ ! -e "$mel_manifest" ]; then
+                        echo >&2 "Error: manifest path $mel_manifest does not exist"
+                        mel_fail=1
+                    else
+                        mel_manifest="$(mel_abspath "$mel_manifest")"
+                    fi
+                fi
+                continue
+                ;;
+            -X)
+                if [ -n "$mel_extra_manifest" ]; then
+                    echo >&2 "Error: -x and -X are mutually exclusive"
+                    mel_fail=1
+                fi
+                mel_extra_disabled=1
+                ;;
+            -x)
+                if [ "$mel_extra_disabled" -eq 1 ]; then
+                    echo >&2 "Error: -x and -X are mutually exclusive"
+                    mel_fail=1
+                fi
+
+                mel_extra_manifest="$(eval printf "%s" "\$$mel_argnum")"
+                if [ $mel_argnum -gt $# ]; then
+                    echo >&2 "-x requires an argument"
+                    mel_fail=1
+                else
+                    mel_argnum="$(expr $mel_argnum + 1)"
+                    if [ ! -e "$mel_extra_manifest" ]; then
+                        echo >&2 "Error: extra_manifest path $mel_extra_manifest does not exist"
+                        mel_fail=1
+                    else
+                        mel_extra_manifests="$mel_extra_manifests $(mel_abspath "$mel_extra_manifest")"
+                    fi
+                fi
+                continue
+                ;;
+            -h|-\?)
+                echo >&2 "Usage: . setup-environment [options]"
+                echo >&2
+                echo >&2 "Options:"
+                echo >&2 "  -b BUILDDIR  Specify the build directory to create (default: 'build'))"
+                echo >&2 "  -m MANIFEST  Specify a manifest, rather than interactive selection"
+                echo >&2 "  -x EXTRA_MANIFEST Specify an extra manifest. To specify"
+                echo >&2 "                    multiple, use multiple -x arguments."
+                echo >&2 "  -X           Explicitly disable extra manifests"
+                echo >&2 "  -h           Show this usage information"
+                echo >&2
+                echo >&2 "All other options are passed directly to the meta-mentor setup scripts"
+                if [ -e "$BUILDDIR/meta-mentor/setup-environment" ]; then
+                    echo >&2
+                    echo >&2 "Usage for the underlying meta-mentor setup script:"
+                    echo >&2
+                    . "$BUILDDIR/meta-mentor/setup-environment" -h 2>&1 | \
+                        sed -ne '/^Options:/{n; n; :s; p; n; b s;}'
+                fi
+                mel_fail=1
+                continue
+                ;;
+        esac
+        mel_save "$mel_arg"
+    done
+    eval set -- "$mel_saved"
+    unset mel_saved mel_argnum mel_arg mel_extra_manifest
+    unset mel_save mel_quote mel_abspath
+
+    if [ $mel_fail -eq 0 ]; then
+        if [ $mel_extra_disabled -eq 1 ]; then
+            "$scriptdir/scripts/mel-checkout" -X "$BUILDDIR" "$mel_manifest"
+        else
+            "$scriptdir/scripts/mel-checkout" "$BUILDDIR" "$mel_manifest" $mel_extra_manifests
+        fi && cd "$BUILDDIR" && . ./meta-mentor/setup-environment "$@" -b .
+        mel_fail=$?
+    fi
+    unset mel_manifest mel_extra_manifests mel_extra_disabled scriptdir
+    test $mel_fail -eq 0
+fi
+# vim: set ft=sh :
