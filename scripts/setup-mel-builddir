@@ -54,8 +54,19 @@ END
 }
 
 prompt_choice () {
+    non_interactive=0
+    unset OPTIND OPTARG
+    while getopts n opt; do
+        case "$opt" in
+            n)
+                non_interactive=1
+                ;;
+        esac
+    done
+    shift $(expr $OPTIND - 1)
+
     prompt_message="$1"
-    prompt_default="$2"
+    prompt_default="${2:-}"
 
     prompt_options="$(mktemp prompt-choice.XXXXXX)"
     cat >>"$prompt_options"
@@ -75,9 +86,9 @@ prompt_choice () {
             ;;
     esac
 
-    if [ ! -t 0 ] || [ ! -t 2 ]; then
-        # We only prompt when running on a tty
-        return 2
+    if [ $non_interactive -eq 1 ]; then
+        printf >&2 'Error: unable to prompt for `%s` interactively\n' "$prompt_message"
+        return 1
     fi
 
     while [ -z "$prompt_value" ]; do
@@ -159,6 +170,7 @@ process_arguments () {
     force_overwrite=0
     toasterconfig=0
     verbose=0
+    unset OPTIND OPTARG
     while getopts b:o:l:tfvh opt; do
         case "$opt" in
             b)
@@ -236,6 +248,11 @@ setup_builddir () {
         fi
 
         if [ ! -e $BUILDDIR/conf/local.conf -o ! -e $BUILDDIR/conf/bblayers.conf ] || [ -z "$MACHINE" ]; then
+            if ! [ -t 1 ] || ! [ -t 0 ]; then
+                non_interactive=-n
+            else
+                non_interactive=
+            fi
             tmpfile="$(mktemp -t "${0##*/}.XXXXX")"
             ls -1d $MELDIR/*/binary 2>/dev/null | sed "s,^$MELDIR/,,; s,/binary$,," | \
                 while read machine; do
@@ -243,11 +260,14 @@ setup_builddir () {
                         continue
                     fi
                     echo "$machine"
-                done | prompt_choice "Select BSP to use" >$tmpfile
+                done | prompt_choice $non_interactive "Select BSP to use" >$tmpfile || {
+                echo >&2 "Error: unable to prompt for an installed MEL BSP, please specify"
+                return 1
+            }
             MACHINE="$(cat "$tmpfile")"
             rm -f "$tmpfile"
             if [ -z "$MACHINE" ]; then
-                echo >&2 "Error: no installed MEL BSP, please specify MACHINE"
+                echo >&2 "Error: unable to locate installed MEL BSP, please specify MACHINE"
                 return 1
             else
                 TEMPLATECONF=$MELDIR/$MACHINE/conf
