@@ -395,6 +395,10 @@ do_archive_images () {
         echo "$PWD/local.conf.sample" >>include
         echo "$PWD/bblayers.conf.sample" >>include
     fi
+    if echo "${RELEASE_ARTIFACTS}" | grep -qw probeconfigs; then
+        echo "${PROBECONFIGS}" >>include
+        echo "--transform=s,${PROBECONFIGS},${PROBECONFIGS_INSTALL_PATH}," >>include
+    fi
     release_tar --files-from=include -rhf deploy/${MACHINE}.tar
 }
 
@@ -405,9 +409,7 @@ do_archive_templates () {
 }
 
 do_archive_probeconfigs () {
-    if [ -d "${PROBECONFIGS}" ]; then
-        release_tar "--transform=s,${PROBECONFIGS},${PROBECONFIGS_INSTALL_PATH}," -rf deploy/${MACHINE}.tar "${PROBECONFIGS}"
-    fi
+    :
 }
 
 do_prepare_release () {
