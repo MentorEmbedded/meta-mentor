@@ -110,12 +110,13 @@ python () {
 
     for component in d.getVar('RELEASE_ARTIFACTS').split():
         ctask = 'do_archive_%s' % component
-        if ctask in d:
-            bb.build.addtask(ctask, 'do_prepare_release', 'do_prepare_recipe_sysroot', d)
-            if not d.getVarFlag(ctask, 'dirs'):
-                d.setVarFlag(ctask, 'dirs', '${S}/deploy ${S}')
-        else:
+        if ctask not in d:
             bb.fatal('do_archive_release: no such task "%s" for component "%s" listed in RELEASE_ARTIFACTS' % (ctask, component))
+
+        bb.build.addtask(ctask, 'do_prepare_release', 'do_prepare_recipe_sysroot', d)
+        if not d.getVarFlag(ctask, 'dirs'):
+            d.setVarFlag(ctask, 'dirs', '${S}/deploy ${S}')
+        d.appendVarFlag(ctask, 'postfuncs', ' compress_binary_artifacts')
 }
 
 def uninative_urls(d):
@@ -411,8 +412,10 @@ do_archive_probeconfigs () {
 
 do_prepare_release () {
     echo ${DISTRO_VERSION} >deploy/distro-version
+}
 
-    for fn in deploy/${MACHINE}*.tar; do
+compress_binary_artifacts () {
+    for fn in ${MACHINE}*.tar; do
         if [ -e "$fn" ]; then
             if [ ${BINARY_ARTIFACTS_COMPRESSION} = ".bz2" ]; then
                 bzip2 "$fn"
