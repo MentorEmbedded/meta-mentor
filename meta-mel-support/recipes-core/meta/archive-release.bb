@@ -333,19 +333,13 @@ addtask archive_downloads after do_fetch
 do_archive_bitbake () {
     bitbake_dir="$(which bitbake)"
     bitbake_via_layers=0
-    bb_layers >bblayers_for_bitbake
-    while read path _ _; do
+    bb_layers | while read -r path _; do
         case "$bitbake_dir" in
             $path/*)
-                bitbake_via_layers=1
-                break
+                return
                 ;;
         esac
-    done <bblayers_for_bitbake
-    rm bblayers_for_bitbake
-    if [ $bitbake_via_layers -eq 1 ]; then
-        return
-    fi
+    done
 
     bitbake_path="$(repo_root $(dirname $(which bitbake))/..)"
     git_tar "$bitbake_path" bitbake "--transform=s,^$bitbake_path,${bitbake_path##*/},"
