@@ -1,0 +1,244 @@
+#!/bin/sh
+
+set -eu
+
+usage () {
+    cat >&2 <<END
+usage: ${0##*/} [options] BUILD_DIR [MANIFEST_FILE [EXTRA_MANIFEST_FILES..]]
+
+Create the BUILD_DIR, populate it with bitbake, layers, etc, from this MEL
+installation, and configure it via the usual setup-environment script from
+meta-mentor.
+
+If no manifest file is specified, and -n is not specified, a prompt will be
+shown to interactively select one of the manifests in the same mel
+installation as this script. If no extra manifest files are specified, and
+neither -n nor -X are specified, a prompt will be shown for each type.
+
+Options:
+  -n      Non-interactive mode. Do not prompt
+  -X      Disable inclusion of extra manifests
+END
+    exit 1
+}
+
+evalf () {
+    fmt="$1"
+    shift
+    # printf >&2 "evalf: $fmt\n" "$@"
+    # eval echo >&2 "evalf: $(printf "$fmt" "$@")"
+    eval "$(printf "$fmt" "$@")"
+}
+
+prompt_choice () {
+    choice_non_interactive=0
+    unset OPTIND OPTARG
+    while getopts n opt; do
+        case "$opt" in
+            n)
+                choice_non_interactive=1
+                ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+
+    prompt_message="$1"
+    prompt_default="${2:-}"
+
+    prompt_options="$(mktemp prompt-choice.XXXXXX)"
+    cat >>"$prompt_options"
+
+    prompt_count="$(wc -l <"$prompt_options")"
+    case $prompt_count in
+        0)
+            # No choices provided
+            rm -f "$prompt_options"
+            return 1
+            ;;
+        1)
+            # Only one choice
+            cat "$prompt_options"
+            rm -f "$prompt_options"
+            return 0
+            ;;
+    esac
+
+    if [ $choice_non_interactive -eq 1 ]; then
+        printf >&2 'Error: unable to prompt for `%s` interactively\n' "$prompt_message"
+        return 1
+    fi
+
+    if [ -n "$prompt_default" ] && \
+            ! echo "$prompt_default" | grep -q '^[0-9]*'; then
+        printf >&2 'Error: prompt_default value '%s' is invalid, default must be a selection number.\n' "$prompt_default"
+        prompt_default=
+    fi
+
+    while [ -z "$prompt_value" ]; do
+        prompt_num=0
+        while read choice; do
+            prompt_num=$((prompt_num + 1))
+            evalf 'prompt_value_%s="%s"' "$prompt_num" "$choice"
+            printf >&2 "%s) %s\n" "$prompt_num" "$choice"
+        done <"$prompt_options"
+
+        if [ -n "$prompt_default" ]; then
+            printf >&2 "%s [%s]: " "$prompt_message" "$prompt_default"
+        else
+            printf >&2 "%s: " "$prompt_message"
+        fi
+        read selection </dev/tty
+        if [ -n "$prompt_default" ] && [ -z "$selection" ]; then
+            selection="$prompt_default"
+        fi
+        prompt_value="$(evalf 'echo "${prompt_value_%s}"' "$selection")"
+    done
+    printf "%s\n" "$prompt_value"
+    rm -f "$prompt_options"
+}
+
+prompt_manifest () {
+    find "$1" -maxdepth 1 -type f -name \*.manifest | \
+        sed 's,^.*/,,' | sort -rn | \
+        ( set +u; prompt_choice $prompt_non_interactive "$2" 1; ) | sed "s,^,$1/,"
+}
+
+process_arguments () {
+    no_extra_manifests=0
+    non_interactive=0
+    unset OPTIND OPTARG
+    while getopts Xnh opt; do
+        case "$opt" in
+            X)
+                no_extra_manifests=1
+                ;;
+            n)
+                non_interactive=1
+                ;;
+            \?|h)
+                usage
+                return 1
+                ;;
+        esac
+    done
+
+    if ! [ -t 1 ] || ! [ -t 0 ]; then
+        non_interactive=1
+    fi
+
+    if [ $non_interactive -eq 1 ]; then
+        prompt_non_interactive=-n
+    else
+        prompt_non_interactive=
+    fi
+}
+
+process_arguments "$@" || exit $?
+shift $((OPTIND - 1))
+
+if [ $# -eq 0 ]; then
+    usage
+fi
+
+installdir="$(cd "$(dirname "$0")" && pwd -P)/.."
+project="$1"
+shift
+
+mkdir -p "$project"
+cd "$project"
+
+manifest="$1"
+if [ -z "$1" ]; then
+    if ! [ -e "$project/.manifest" ]; then
+        prompt_manifest "$installdir/manifests" "Select manifest" >"$project/.manifest"
+        if ! [ -s "$project/.manifest" ]; then
+            echo >&2 "Error: no manifest found, please specify"
+            rm -f "$project/.manifest"
+            exit 1
+        fi
+    fi
+    set -- $(cat "$project/.manifest")
+    manifest="$1"
+else
+    echo "$manifest" >"$project/.manifest"
+fi
+
+if [ $no_extra_manifests -eq 1 ]; then
+    set -- "$1"
+elif [ $# -lt 2 ]; then
+    extra_base="$installdir/manifests/extra"
+    for extra_dir in "$extra_base"/*/; do
+        if [ -d "$extra_dir" ]; then
+            extra_dir="${extra_dir%/}"
+            name="${extra_dir#$extra_base/}"
+            extra_manifest="$(prompt_manifest "$extra_dir" "Select manifest for $name")"
+            if [ -z "$extra_manifest" ]; then
+                echo >&2 "Error: no extra manifest for $name?"
+                exit 1
+            else
+                set -- "$@" "$extra_manifest"
+                echo "$extra_manifest" >>"$project/.manifest"
+            fi
+        fi
+    done
+fi
+
+infofn="${manifest%.manifest}.info"
+if [ -e "$infofn" ]; then
+    bspfiles_path="$(sed -n -e 's/^bspfiles_path = //p' "$infofn")"
+    if [ -n "$bspfiles_path" ] && [ -e "$installdir/$bspfiles_path" ]; then
+        rm -f "${bspfiles_path%/*}"
+        ln -s "$installdir/$bspfiles_path" "${bspfiles_path%/*}"
+    fi
+fi
+
+for dir in downloads cached-binaries; do
+    if [ -e "$installdir/$dir" ]; then
+        ln -sf "$installdir/$dir" . || :
+    fi
+done
+
+for manifest; do
+    cat "$manifest" | while read -r checkout_path commit remotes; do
+        if [ ! -d "$checkout_path/.git" ]; then
+            git init "$checkout_path"
+        fi
+
+        cd "$checkout_path"
+        echo "$installdir/objects" >.git/objects/info/alternates
+        echo "$commit" >.git/shallow
+
+        echo "$remotes" | tr '\t' '\n' | while IFS== read -r name url; do
+            if [ -n "$name" ]; then
+                if git remote | grep -qxF "$name"; then
+                    git remote set-url "$name" "$url"
+                else
+                    git remote add "$name" "$url"
+                fi
+            fi
+        done
+
+        # Create branches for all manifests, for reference
+        manifestdir="$(dirname "$manifest")"
+        for otherfn in "$manifestdir/"*.manifest; do
+            while read -r other_checkout_path other_commit _; do
+                if [ "$other_checkout_path" = "$checkout_path" ]; then
+                    branch="$(basename "${otherfn%.manifest}")"
+                    if ! git rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
+                        git update-ref "refs/heads/$branch" "$other_commit"
+                    fi
+                    echo "$other_commit" >>.git/shallow
+                fi
+            done <"$otherfn"
+        done
+        branch="$(basename "${manifest%.manifest}")"
+        if ! git rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
+            git update-ref "refs/heads/$branch" "$commit"
+        fi
+        if [ "$(git rev-parse -q --verify --symbolic-full-name HEAD 2>/dev/null)" != "refs/heads/$branch" ]; then
+            git checkout "$branch"
+        fi
+
+        cd - >/dev/null
+    done
+done

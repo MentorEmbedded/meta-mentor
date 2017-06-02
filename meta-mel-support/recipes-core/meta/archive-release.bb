@@ -13,7 +13,7 @@ inherit image_types nopackages
 
 UNINATIVE_BUILD_ARCHES ?= "x86_64 i686"
 MELDIR ?= "${COREBASE}/.."
-TEMPLATECONF ?= "${FILE_DIRNAME}/../../../conf"
+TEMPLATECONF ?= "${@(oe.utils.read_file('${TOPDIR}/conf/templateconf.cfg') or '${FILE_DIRNAME}/../../../conf').rstrip()}"
 PROBECONFIGS ?= "${@bb.utils.which('${BBPATH}', 'conf/probe-configs/${MACHINE}')}"
 
 BSPFILES_INSTALL_PATH ?= "${MACHINE}"
@@ -29,7 +29,7 @@ ARCHIVE_RELEASE_DL_TOPDIR ?= "${DL_DIR}"
 def configured_update_layers(d):
     """Return the configured layers whose basenames are update-*"""
     update_layers = set()
-    for layer in d.getVar('BBLAYERS', True).split():
+    for layer in d.getVar('BBLAYERS').split():
         basename = os.path.basename(layer)
         if basename.startswith('update-'):
             update_layers.add(layer)
@@ -38,7 +38,7 @@ def configured_update_layers(d):
 def configured_mx6_layers(d):
     """Return the mx6 layers to be archived as individual tarballs"""
     mx6_layers = set()
-    for layer in d.getVar('BBLAYERS', True).split():
+    for layer in d.getVar('BBLAYERS').split():
         basename = os.path.basename(layer)
         if 'mx6' in basename:
             mx6_layers.add(layer)
@@ -48,7 +48,7 @@ def configured_mx6_layers(d):
 # repository they're in
 def layers_by_name(d, *layers):
     for l in layers:
-        v = d.getVar('LAYERDIR_%s' % l, True)
+        v = d.getVar('LAYERDIR_%s' % l)
         if v:
             yield v
 
@@ -96,32 +96,38 @@ ARCHIVE_RELEASE_IMAGE_FSTYPES_EXCLUDE ?= ""
 
 python () {
     extensions = set()
-    fstypes = d.getVar('IMAGE_FSTYPES', True).split()
-    fstypes_exclude = d.getVar('ARCHIVE_RELEASE_IMAGE_FSTYPES_EXCLUDE', True).split()
+    fstypes = d.getVar('IMAGE_FSTYPES').split()
+    fstypes_exclude = d.getVar('ARCHIVE_RELEASE_IMAGE_FSTYPES_EXCLUDE').split()
     for type in fstypes:
         if type in fstypes_exclude:
             continue
-        extension = d.getVar('IMAGE_EXTENSION_%s' % type, True) or type
+        extension = d.getVar('IMAGE_EXTENSION_%s' % type) or type
         extensions.add(extension)
     d.setVar('IMAGE_EXTENSIONS', ' '.join(sorted(extensions)))
 
     # Make sure MELDIR is absolute, as we use it in transforms
-    d.setVar('MELDIR', os.path.abspath(d.getVar('MELDIR', True)))
+    d.setVar('MELDIR', os.path.abspath(d.getVar('MELDIR')))
 
     for component in d.getVar('RELEASE_ARTIFACTS').split():
         ctask = 'do_archive_%s' % component
-        if ctask in d:
-            bb.build.addtask(ctask, 'do_prepare_release', 'do_prepare_recipe_sysroot', d)
-            if not d.getVarFlag(ctask, 'dirs'):
-                d.setVarFlag(ctask, 'dirs', '${S}/deploy ${S}')
-        else:
+        if ctask not in d:
             bb.fatal('do_archive_release: no such task "%s" for component "%s" listed in RELEASE_ARTIFACTS' % (ctask, component))
+
+        bb.build.addtask(ctask, 'do_prepare_release', 'do_prepare_recipe_sysroot', d)
+        d.setVar('SSTATE_SKIP_CREATION_task-archive-%s' % component.replace('_', '-'), '1')
+        d.setVarFlag(ctask, 'umask', '022')
+        d.setVarFlag(ctask, 'dirs', '${S}/%s' % ctask)
+        d.setVarFlag(ctask, 'cleandirs', '${S}/%s' % ctask)
+        d.setVarFlag(ctask, 'sstate-inputdirs', '${S}/%s' % ctask)
+        d.setVarFlag(ctask, 'sstate-outputdirs', '${DEPLOY_DIR_RELEASE}')
+        d.setVarFlag(ctask, 'stamp-extra-info', '${MACHINE}')
+        d.appendVarFlag(ctask, 'postfuncs', ' compress_binary_artifacts')
 }
 
 def uninative_urls(d):
     l = d.createCopy()
-    for arch in d.getVar('UNINATIVE_BUILD_ARCHES', True).split():
-        chksum = d.getVarFlag("UNINATIVE_CHECKSUM", arch, True)
+    for arch in d.getVar('UNINATIVE_BUILD_ARCHES').split():
+        chksum = d.getVarFlag("UNINATIVE_CHECKSUM", arch)
         if chksum:
             l.setVar('BUILD_ARCH', arch)
             srcuri = l.expand("${UNINATIVE_URL}${UNINATIVE_TARBALL};sha256sum=%s;unpack=no;subdir=uninative/%s" % (chksum, chksum))
@@ -258,7 +264,6 @@ do_archive_layers () {
         fi
     done
 }
-do_archive_layers[dirs] = "${S}/deploy"
 
 do_archive_downloads () {
     for layer in ${BBLAYERS}; do
@@ -300,14 +305,14 @@ do_archive_downloads () {
                     layer_relpath=$layerbase/$layer_relpath
                 fi
                 release_tar "--transform=s,^downloads/$name,$layer_relpath/downloads," -chf \
-                        deploy/$name-downloads.tar downloads/$name
+                        $name-downloads.tar downloads/$name
             else
                 release_tar "--transform=s,^downloads/$name,downloads," -rhf \
-                        deploy/$layerbase-downloads.tar downloads/$name
+                        $layerbase-downloads.tar downloads/$name
             fi
         done
         if [ -n "${UNINATIVE_TARBALL}" ]; then
-            release_tar -chf deploy/${MACHINE}-downloads.tar downloads/uninative $(find downloads/uninative -type f | sed 's,^.*/,downloads/,')
+            release_tar -chf ${MACHINE}-downloads.tar downloads/uninative $(find downloads/uninative -type f | sed 's,^.*/,downloads/,')
         fi
     else
         mkdir -p downloads
@@ -323,8 +328,9 @@ do_archive_downloads () {
             rm -f "$file"
         done
         cd - >/dev/null
-        release_tar -chf deploy/${MACHINE}-downloads.tar downloads/
+        release_tar -chf ${MACHINE}-downloads.tar downloads/
     fi
+    rm -rf downloads layermap.txt
 }
 # Workaround shell function dependency issue
 do_archive_downloads[vardeps] += "repo_root"
@@ -333,32 +339,20 @@ addtask archive_downloads after do_fetch
 do_archive_bitbake () {
     bitbake_dir="$(which bitbake)"
     bitbake_via_layers=0
-    bb_layers >bblayers_for_bitbake
-    while read path _ _; do
+    bb_layers | while read -r path _; do
         case "$bitbake_dir" in
             $path/*)
-                bitbake_via_layers=1
-                break
+                return
                 ;;
         esac
-    done <bblayers_for_bitbake
-    rm bblayers_for_bitbake
-    if [ $bitbake_via_layers -eq 1 ]; then
-        return
-    fi
+    done
 
     bitbake_path="$(repo_root $(dirname $(which bitbake))/..)"
     git_tar "$bitbake_path" bitbake "--transform=s,^$bitbake_path,${bitbake_path##*/},"
 }
 
 do_archive_images () {
-    rm -f include
-    if [ -e "${BUILDHISTORY_DIR}" ]; then
-        echo "--transform=s,${BUILDHISTORY_DIR},${BINARY_INSTALL_PATH}/buildhistory," >include
-        echo ${BUILDHISTORY_DIR} >>include
-    fi
-
-    echo "--transform=s,-${MACHINE},,i" >>include
+    echo "--transform=s,-${MACHINE},,i" >include
     echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
 
     find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 \( -type f -o -type l \) | \
@@ -371,7 +365,12 @@ do_archive_images () {
         echo "${WORKDIR}/autorevs.conf" >>include
     fi
 
-    release_tar --files-from=include -cf deploy/${MACHINE}.tar
+    if [ -e "${BUILDHISTORY_DIR}" ]; then
+        echo "--transform=s,${BUILDHISTORY_DIR},${BINARY_INSTALL_PATH}/buildhistory," >>include
+        echo ${BUILDHISTORY_DIR} >>include
+    fi
+
+    release_tar --files-from=include -cf ${MACHINE}.tar
 
     echo "--transform=s,-${MACHINE},,i" >include
     echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
@@ -400,25 +399,29 @@ do_archive_images () {
         echo "$PWD/local.conf.sample" >>include
         echo "$PWD/bblayers.conf.sample" >>include
     fi
-    release_tar --files-from=include -rhf deploy/${MACHINE}.tar
+    if echo "${RELEASE_ARTIFACTS}" | grep -qw probeconfigs && \
+       [ -d "${PROBECONFIGS}" ]; then
+        echo "${PROBECONFIGS}" >>include
+        echo "--transform=s,${PROBECONFIGS},${PROBECONFIGS_INSTALL_PATH}," >>include
+    fi
+    release_tar --files-from=include -rhf ${MACHINE}.tar
+    rm -rf runqemu conf-notes.txt local.conf.sample bblayers.conf.sample include
 }
 
 do_archive_templates () {
     prepare_templates
-    cp -f local.conf.sample deploy/
-    cp -f bblayers.conf.sample deploy/
 }
 
 do_archive_probeconfigs () {
-    if [ -d "${PROBECONFIGS}" ]; then
-        release_tar "--transform=s,${PROBECONFIGS},${PROBECONFIGS_INSTALL_PATH}," -rf deploy/${MACHINE}.tar "${PROBECONFIGS}"
-    fi
+    :
 }
 
 do_prepare_release () {
-    echo ${DISTRO_VERSION} >deploy/distro-version
+    echo ${DISTRO_VERSION} >distro-version
+}
 
-    for fn in deploy/${MACHINE}*.tar; do
+compress_binary_artifacts () {
+    for fn in ${MACHINE}*.tar; do
         if [ -e "$fn" ]; then
             if [ ${BINARY_ARTIFACTS_COMPRESSION} = ".bz2" ]; then
                 bzip2 "$fn"
@@ -429,9 +432,10 @@ do_prepare_release () {
     done
 }
 
-do_prepare_release[dirs] = "${S}/deploy ${S}"
+SSTATETASKS += "do_prepare_release ${@' '.join('do_archive_%s' % i for i in "${RELEASE_ARTIFACTS}".split())}"
+
+do_prepare_release[dirs] = "${S}/deploy"
 do_prepare_release[umask] = "022"
-SSTATETASKS += "do_prepare_release"
 SSTATE_SKIP_CREATION_task-prepare-release = "1"
 do_prepare_release[sstate-inputdirs] = "${S}/deploy"
 do_prepare_release[sstate-outputdirs] = "${DEPLOY_DIR_RELEASE}"
