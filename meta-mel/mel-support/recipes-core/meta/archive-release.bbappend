@@ -183,6 +183,13 @@ def git_archive(subdir, outdir, message=None):
 
     if os.path.exists(os.path.join(subdir, '.git')):
         parent = subdir
+        # Handle .git as a file i.e. submodules
+        parent_git = bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip()
+        # Handle git worktrees
+        _commondir = os.path.join(parent_git, 'commondir')
+        if os.path.exists(_commondir):
+            with open(_commondir, 'r') as f:
+                parent_git = os.path.join(parent_git, f.read().rstrip())
     else:
         parent = None
 
@@ -191,7 +198,7 @@ def git_archive(subdir, outdir, message=None):
         bb.process.run(gitcmd + ['init'])
         if parent:
             with open(os.path.join(tmpdir, 'objects', 'info', 'alternates'), 'w') as f:
-                f.write(os.path.join(parent, '.git', 'objects') + '\n')
+                f.write(os.path.join(parent_git, 'objects') + '\n')
             parent_head = bb.process.run(['git', 'rev-parse', 'HEAD'], cwd=subdir)[0].rstrip()
             bb.process.run(gitcmd + ['read-tree', parent_head])
 
