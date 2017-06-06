@@ -114,7 +114,7 @@ python () {
         if ctask not in d:
             bb.fatal('do_archive_release: no such task "%s" for component "%s" listed in RELEASE_ARTIFACTS' % (ctask, component))
 
-        bb.build.addtask(ctask, 'do_prepare_release', 'do_prepare_recipe_sysroot', d)
+        bb.build.addtask(ctask, 'do_prepare_release', 'do_patch do_prepare_recipe_sysroot', d)
         d.setVar('SSTATE_SKIP_CREATION_task-archive-%s' % component.replace('_', '-'), '1')
         d.setVarFlag(ctask, 'umask', '022')
         d.setVarFlag(ctask, 'dirs', '${S}/%s' % ctask)
