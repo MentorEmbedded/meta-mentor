@@ -13,7 +13,8 @@ inherit image_types nopackages
 
 UNINATIVE_BUILD_ARCHES ?= "x86_64 i686"
 MELDIR ?= "${COREBASE}/.."
-TEMPLATECONF ?= "${@(oe.utils.read_file('${TOPDIR}/conf/templateconf.cfg') or '${FILE_DIRNAME}/../../../conf').rstrip()}"
+TEMPLATECONF_STR ?= "${@(oe.utils.read_file('${TOPDIR}/conf/templateconf.cfg') or '${FILE_DIRNAME}/../../../conf').rstrip()}"
+TEMPLATECONF = "${@os.path.join('${COREBASE}', '${TEMPLATECONF_STR}')}"
 PROBECONFIGS ?= "${@bb.utils.which('${BBPATH}', 'conf/probe-configs/${MACHINE}')}"
 
 BSPFILES_INSTALL_PATH ?= "${MACHINE}"
