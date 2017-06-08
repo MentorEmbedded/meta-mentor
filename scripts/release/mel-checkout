@@ -192,11 +192,7 @@ if [ -e "$infofn" ]; then
     fi
 fi
 
-for dir in downloads cached-binaries; do
-    if [ -e "$installdir/$dir" ]; then
-        ln -sf "$installdir/$dir" . || :
-    fi
-done
+mkdir -p downloads
 
 for manifest;  do
     printf '%s\t%s\n' "${manifest##*/}" "$manifest"
@@ -248,4 +244,16 @@ done | (
 
             cd - >/dev/null
         done
+
+        downloads="${manifest%.manifest}.downloads"
+        if [ -e "$downloads" ]; then
+            cat "$downloads" | while read -r path checksum; do
+                destdir="$(dirname "$path")"
+                if [ -n "$destdir" ]; then
+                    mkdir -p "downloads/$destdir"
+                fi
+                ln -sf "$installdir/downloads/$checksum" "downloads/$path"
+                touch "downloads/${path}.done"
+            done
+        fi
     done
