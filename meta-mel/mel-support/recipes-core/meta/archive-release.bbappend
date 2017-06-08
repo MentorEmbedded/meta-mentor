@@ -61,6 +61,9 @@ python do_archive_mel_layers () {
     import configparser
     import fnmatch
 
+    if 'layerdirs' not in d.getVar('INHERIT').split():
+        save_layerdirs(d)
+
     directories = d.getVar('BBLAYERS').split()
     bitbake_path = bb.utils.which(d.getVar('PATH'), 'bitbake')
     bitbake_bindir = os.path.dirname(bitbake_path)
