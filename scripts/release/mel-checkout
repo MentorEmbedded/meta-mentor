@@ -32,7 +32,6 @@ evalf () {
 
 prompt_choice () {
     choice_non_interactive=0
-    unset OPTIND OPTARG
     while getopts n opt; do
         case "$opt" in
             n)
@@ -106,7 +105,6 @@ prompt_manifest () {
 process_arguments () {
     no_extra_manifests=0
     non_interactive=0
-    unset OPTIND OPTARG
     while getopts Xnh opt; do
         case "$opt" in
             X)

@@ -55,7 +55,6 @@ END
 
 prompt_choice () {
     non_interactive=0
-    unset OPTIND OPTARG
     while getopts n opt; do
         case "$opt" in
             n)
@@ -170,7 +169,6 @@ process_arguments () {
     force_overwrite=0
     toasterconfig=0
     verbose=0
-    unset OPTIND OPTARG
     while getopts b:o:l:tfvh opt; do
         case "$opt" in
             b)
