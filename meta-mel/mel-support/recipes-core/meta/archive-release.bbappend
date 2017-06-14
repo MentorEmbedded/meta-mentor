@@ -187,7 +187,7 @@ def git_archive(subdir, outdir, message=None):
     if os.path.exists(os.path.join(subdir, '.git')):
         parent = subdir
         # Handle .git as a file i.e. submodules
-        parent_git = bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip()
+        parent_git = os.path.join(parent, bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip())
         # Handle git worktrees
         _commondir = os.path.join(parent_git, 'commondir')
         if os.path.exists(_commondir):
