@@ -1,4 +1,4 @@
-python save_layerdirs() {
+def save_layerdirs(d):
     for layerpath in d.getVar('BBLAYERS', True).split():
         layerconf = os.path.join(layerpath, 'conf', 'layer.conf')
 
@@ -9,6 +9,9 @@ python save_layerdirs() {
 
         for layername in (l.getVar('BBFILE_COLLECTIONS', True) or '').split():
             d.setVar('LAYERDIR_%s' % layername, layerpath)
+
+python cfg_save_layerdirs () {
+    save_layerdirs(d)
 }
-save_layerdirs[eventmask] = "bb.event.ConfigParsed"
-addhandler save_layerdirs
+cfg_save_layerdirs[eventmask] = "bb.event.ConfigParsed"
+addhandler cfg_save_layerdirs
