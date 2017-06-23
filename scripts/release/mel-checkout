@@ -138,7 +138,9 @@ if [ $# -eq 0 ]; then
     usage
 fi
 
-installdir="$(cd "$(dirname "$0")" && pwd -P)/.."
+scriptdir="$(cd "$(dirname "$0")" && pwd -P)"
+installdir="$(dirname "$scriptdir")"
+
 project="$1"
 shift
 
@@ -190,53 +192,68 @@ if [ -e "$infofn" ]; then
     fi
 fi
 
-for dir in downloads cached-binaries; do
-    if [ -e "$installdir/$dir" ]; then
-        ln -sf "$installdir/$dir" . || :
-    fi
-done
+mkdir -p downloads
 
-for manifest; do
-    cat "$manifest" | while read -r checkout_path commit remotes; do
-        if [ ! -d "$checkout_path/.git" ]; then
-            git init "$checkout_path"
-        fi
-
-        cd "$checkout_path"
-        echo "$installdir/objects" >.git/objects/info/alternates
-        echo "$commit" >.git/shallow
-
-        echo "$remotes" | tr '\t' '\n' | while IFS== read -r name url; do
-            if [ -n "$name" ]; then
-                if git remote | grep -qxF "$name"; then
-                    git remote set-url "$name" "$url"
-                else
-                    git remote add "$name" "$url"
-                fi
+for manifest;  do
+    printf '%s\t%s\n' "${manifest##*/}" "$manifest"
+done | (
+    read -r base_manifest
+    printf '%s\n' "$base_manifest"
+    "$scriptdir/version-sort"
+) | cut -d"$(printf '\t')" -f2 | \
+    while read -r manifest; do
+        cat "$manifest" | while read -r checkout_path commit remotes; do
+            if [ ! -d "$checkout_path/.git" ]; then
+                git init "$checkout_path"
             fi
-        done
 
-        # Create branches for all manifests, for reference
-        manifestdir="$(dirname "$manifest")"
-        for otherfn in "$manifestdir/"*.manifest; do
-            while read -r other_checkout_path other_commit _; do
-                if [ "$other_checkout_path" = "$checkout_path" ]; then
-                    branch="$(basename "${otherfn%.manifest}")"
-                    if ! git rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
-                        git update-ref "refs/heads/$branch" "$other_commit"
+            cd "$checkout_path"
+            echo "$installdir/objects" >.git/objects/info/alternates
+            echo "$commit" >.git/shallow
+
+            echo "$remotes" | tr '\t' '\n' | while IFS== read -r name url; do
+                if [ -n "$name" ]; then
+                    if git remote | grep -qxF "$name"; then
+                        git remote set-url "$name" "$url"
+                    else
+                        git remote add "$name" "$url"
                     fi
-                    echo "$other_commit" >>.git/shallow
                 fi
-            done <"$otherfn"
-        done
-        branch="$(basename "${manifest%.manifest}")"
-        if ! git rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
-            git update-ref "refs/heads/$branch" "$commit"
-        fi
-        if [ "$(git rev-parse -q --verify --symbolic-full-name HEAD 2>/dev/null)" != "refs/heads/$branch" ]; then
-            git checkout "$branch"
-        fi
+            done
 
-        cd - >/dev/null
+            # Create branches for all manifests, for reference
+            manifestdir="$(dirname "$manifest")"
+            for otherfn in "$manifestdir/"*.manifest; do
+                while read -r other_checkout_path other_commit _; do
+                    if [ "$other_checkout_path" = "$checkout_path" ]; then
+                        branch="$(basename "${otherfn%.manifest}")"
+                        if ! git rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
+                            git update-ref "refs/heads/$branch" "$other_commit"
+                        fi
+                        echo "$other_commit" >>.git/shallow
+                    fi
+                done <"$otherfn"
+            done
+            branch="$(basename "${manifest%.manifest}")"
+            if ! git rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
+                git update-ref "refs/heads/$branch" "$commit"
+            fi
+            if [ "$(git rev-parse -q --verify --symbolic-full-name HEAD 2>/dev/null)" != "refs/heads/$branch" ]; then
+                git checkout "$branch"
+            fi
+
+            cd - >/dev/null
+        done
+
+        downloads="${manifest%.manifest}.downloads"
+        if [ -e "$downloads" ]; then
+            cat "$downloads" | while read -r path checksum; do
+                destdir="$(dirname "$path")"
+                if [ -n "$destdir" ]; then
+                    mkdir -p "downloads/$destdir"
+                fi
+                ln -sf "$installdir/downloads/$checksum" "downloads/$path"
+                touch "downloads/${path}.done"
+            done
+        fi
     done
-done

@@ -131,7 +131,7 @@ def uninative_urls(d):
         chksum = d.getVarFlag("UNINATIVE_CHECKSUM", arch)
         if chksum:
             l.setVar('BUILD_ARCH', arch)
-            srcuri = l.expand("${UNINATIVE_URL}${UNINATIVE_TARBALL};sha256sum=%s;unpack=no;subdir=uninative/%s" % (chksum, chksum))
+            srcuri = l.expand("${UNINATIVE_URL}${UNINATIVE_TARBALL};sha256sum=%s;unpack=no;subdir=uninative/%s;downloadfilename=uninative/%s/${UNINATIVE_TARBALL}" % (chksum, chksum, chksum))
             yield srcuri
 
 release_tar () {

@@ -76,6 +76,9 @@ python do_archive_release_downloads () {
                 bb.warn('No mirror tarball found for %s, using %s' % (p, local))
 
         oe.path.symlink(local, os.path.join(sources_dir, os.path.basename(local)), force=True)
+        donestamp = local + '.done'
+        if os.path.exists(donestamp):
+            oe.path.symlink(donestamp, os.path.join(sources_dir, os.path.basename(donestamp)), force=True)
 }
 
 do_archive_release_downloads[dirs] = "${WORKDIR}"

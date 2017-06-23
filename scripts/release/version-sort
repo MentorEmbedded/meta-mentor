@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+
+import sys
+from distutils.version import LooseVersion as Version
+
+lines = sys.stdin.readlines()
+sorted_lines = sorted(lines, key=lambda l: Version(l))
+sys.stdout.write(''.join(sorted_lines))

@@ -1,7 +1,10 @@
 FILESEXTRAPATHS_append = ":${@':'.join('%s/../scripts/release' % l for l in '${BBPATH}'.split(':'))}"
 SRC_URI += "\
     file://mel-checkout \
+    file://version-sort \
     file://setup-environment \
+    \
+    ${@' '.join(uninative_urls(d)) if 'mel_downloads' in '${RELEASE_ARTIFACTS}'.split() else ''} \
 "
 
 inherit layerdirs
@@ -18,6 +21,9 @@ GET_REMOTES_HOOK ?= ""
 INDIVIDUAL_MANIFEST_LAYERS ?= ""
 FORKED_REPOS ?= ""
 PUBLIC_REPOS ?= "${FORKED_REPOS}"
+
+ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
+ARCHIVE_RELEASE_DL_BY_LAYER_PATH = '${TMPDIR}/downloads-by-layer.txt'
 
 def mel_get_remotes(subdir, d):
     """Any non-public github repo or url including a mentor domain
@@ -55,11 +61,42 @@ def mel_get_remotes(subdir, d):
 
 GET_REMOTES_HOOK_mel ?= "mel_get_remotes"
 
+def get_release_info(layerdir, layername, topdir, oedir, indiv_only=None, indiv_only_toplevel=None, indiv_manifests=None):
+    import fnmatch
+
+    if indiv_only is None:
+        indiv_only = set()
+    if indiv_only_toplevel is None:
+        indiv_only_toplevel = set()
+    if indiv_manifests is None:
+        indiv_manifests = []
+
+    parent = os.path.dirname(layerdir)
+    relpath = None
+    if (layerdir not in indiv_only and
+            not os.path.exists(os.path.join(layerdir, '.git')) and
+            parent not in (oedir, topdir) and
+            os.path.exists(os.path.join(parent, '.git'))):
+        ls = bb.process.run(['git', 'ls-tree', '-d', 'HEAD', layerdir], cwd=parent)
+        if ls:
+            return parent, os.path.basename(parent), False
+
+    if layername and any(fnmatch.fnmatchcase(layername, pat) for pat in indiv_manifests):
+        indiv_layer = True
+    else:
+        indiv_layer = False
+
+    if (layerdir not in indiv_only_toplevel and
+            not layerdir.startswith(topdir + os.sep) and
+            layerdir.startswith(oedir + os.sep)):
+        return layerdir, os.path.relpath(layerdir, oedir), indiv_layer
+    else:
+        return layerdir, os.path.basename(layerdir), indiv_layer
+
 python do_archive_mel_layers () {
     """Archive the layers used to build, as git pack files, with a manifest."""
     import collections
     import configparser
-    import fnmatch
 
     if 'layerdirs' not in d.getVar('INHERIT').split():
         save_layerdirs(d)
@@ -93,26 +130,10 @@ python do_archive_mel_layers () {
     path = d.getVar('PATH') + ':' + ':'.join(os.path.join(l, '..', 'scripts') for l in directories)
     for subdir in directories:
         subdir = os.path.realpath(subdir)
-        parent = os.path.dirname(subdir)
-        relpath = None
-        if (subdir not in indiv_only and
-                not os.path.exists(os.path.join(subdir, '.git')) and
-                parent not in (oedir, topdir) and
-                os.path.exists(os.path.join(parent, '.git'))):
-            ls = bb.process.run(['git', 'ls-tree', '-d', 'HEAD', subdir], cwd=parent)
-            if ls:
-                to_archive.add((parent, os.path.basename(parent)))
-                continue
-
-        if (subdir not in indiv_only_toplevel and
-                not subdir.startswith(topdir + os.sep) and
-                subdir.startswith(oedir + os.sep)):
-            to_archive.add((subdir, os.path.relpath(subdir, oedir)))
-        else:
-            to_archive.add((subdir, os.path.basename(subdir)))
-
         layername = layernames.get(subdir)
-        if layername and any(fnmatch.fnmatchcase(layername, pat) for pat in indiv_manifests):
+        archive_path, dest_path, is_indiv = get_release_info(subdir, layername, topdir, oedir, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
+        to_archive.add((archive_path, dest_path))
+        if is_indiv:
             indiv_manifest_dirs.add(subdir)
 
     outdir = d.expand('${S}/do_archive_mel_layers')
@@ -159,10 +180,8 @@ python do_archive_mel_layers () {
                 files.append(os.path.relpath(infofn, outdir))
         bb.process.run(['tar', '-cf', os.path.basename(fn) + '.tar'] + files, cwd=outdir)
 
-    envpath = './setup-mel'
-    checkoutpath = './scripts/mel-checkout'
     bb.process.run(['rm', '-r', 'objects'], cwd=outdir)
-    bb.process.run(['tar', '--transform=s,mel-checkout,%s,' % checkoutpath, '--transform=s,setup-environment,%s,' % envpath, '-cf', d.expand('%s/${DISTRO}-scripts.tar' % outdir), 'mel-checkout', 'setup-environment'], cwd=d.getVar('WORKDIR'))
+    bb.process.run(['tar', '--transform=s,^,scripts/,', '--transform=s,scripts/setup-environment,setup-mel,', '-cvf', d.expand('%s/${DISTRO}-scripts.tar' % outdir), 'mel-checkout', 'version-sort', 'setup-environment'], cwd=d.getVar('WORKDIR'))
 }
 do_archive_mel_layers[dirs] = "${S}/do_archive_mel_layers ${S}"
 do_archive_mel_layers[vardeps] += "${GET_REMOTES_HOOK}"
@@ -248,3 +267,122 @@ def git_archive(subdir, outdir, message=None):
         bb.process.run(['cp', '-f'] + packfiles + [outdir])
         return base, head
 
+def checksummed_downloads(dl_by_layer_fn, dl_by_layer_dl_dir, dl_dir):
+    with open(dl_by_layer_fn, 'r') as f:
+        lines = f.readlines()
+
+    for layer_name, dl_path in (l.rstrip('\n').split('\t', 1) for l in lines):
+        rel_path = os.path.relpath(dl_path, dl_by_layer_dl_dir)
+        if rel_path.startswith('..'):
+            bb.fatal('Download %s (in %s) is not relative to DL_DIR' % (dl_path, dl_by_layer_fn))
+
+        dl_path = os.path.join(dl_dir, rel_path)
+        if not os.path.exists(dl_path):
+            # download is missing, probably excluded for license reasons
+            bb.warn('Download %s does not exist, excluding' % dl_path)
+            continue
+
+        checksum = chksum_dl(dl_path)
+        yield layer_name, dl_path, rel_path, checksum
+
+def uninative_downloads(workdir, dldir):
+    for path in oe.path.find(os.path.join(workdir, 'uninative')):
+        relpath = os.path.relpath(path, workdir)
+        dlpath = os.path.join(dldir, relpath)
+        checksum = chksum_dl(path, dlpath)
+        yield None, path, relpath, checksum
+
+def chksum_dl(path, dlpath=None):
+    import pickle
+
+    if dlpath is None:
+        dlpath = path
+
+    donefile = dlpath + '.done'
+    checksum = None
+    if os.path.exists(donefile):
+        with open(donefile, 'rb') as cachefile:
+            try:
+                checksums = pickle.load(cachefile)
+            except EOFError:
+                pass
+            else:
+                checksum = checksums['sha256']
+
+    if not checksum:
+        checksum = bb.utils.sha256_file(path)
+
+    return checksum
+
+python do_archive_mel_downloads () {
+    import collections
+    import pickle
+    import oe.path
+
+    dl_dir = d.getVar('DL_DIR')
+    archive_dl_dir = d.getVar('ARCHIVE_RELEASE_DL_DIR') or dl_dir
+    dl_by_layer_fn = d.getVar('ARCHIVE_RELEASE_DL_BY_LAYER_PATH')
+    if not os.path.exists(dl_by_layer_fn):
+        bb.fatal('%s does not exist, but mel_downloads requires it. Please run `bitbake-layers dump-downloads` with appropriate arguments.' % dl_by_layer_fn)
+
+    downloads = list(checksummed_downloads(dl_by_layer_fn, dl_dir, archive_dl_dir))
+    downloads.extend(uninative_downloads(d.getVar('WORKDIR'), d.getVar('DL_DIR')))
+    outdir = d.expand('${S}/do_archive_mel_downloads')
+    mandir = os.path.join(outdir, 'manifests')
+    dldir = os.path.join(outdir, 'downloads')
+    bb.utils.mkdirhier(mandir)
+    bb.utils.mkdirhier(os.path.join(mandir, 'extra'))
+    bb.utils.mkdirhier(dldir)
+
+    layer_manifests = {}
+    corebase = os.path.realpath(d.getVar('COREBASE'))
+    oedir = os.path.dirname(corebase)
+    topdir = os.path.realpath(d.getVar('TOPDIR'))
+    indiv_only_toplevel = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL').split()
+    indiv_only = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY').split() + indiv_only_toplevel
+    indiv_manifests = d.getVar('INDIVIDUAL_MANIFEST_LAYERS').split()
+
+    layers = set(i[0] for i in downloads)
+    for layername in layers:
+        if not layername:
+            continue
+
+        layerdir = d.getVar('LAYERDIR_%s' % layername)
+        archive_path, dest_path, is_indiv = get_release_info(layerdir, layername, topdir, oedir, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
+        if is_indiv:
+            extra_name = dest_path.replace('/', '_')
+            bb.utils.mkdirhier(os.path.join(mandir, 'extra', extra_name))
+            manifestfn = d.expand('%s/extra/%s/${EXTRA_MANIFEST_NAME}-%s.downloads' % (mandir, extra_name, extra_name))
+            layer_manifests[layername] = manifestfn
+
+    main_manifest = d.expand('%s/${MANIFEST_NAME}.downloads' % mandir)
+    manifests = collections.defaultdict(set)
+    for layername, path, dest_path, checksum in downloads:
+        manifestfn = layer_manifests.get(layername) or main_manifest
+        manifests[manifestfn].add((layername, path, dest_path, checksum))
+
+    for manifest, manifest_downloads in manifests.items():
+        with open(manifest, 'w') as f:
+            for _, _, download_path, checksum in manifest_downloads:
+                f.write('%s\t%s\n' % (download_path, checksum))
+
+        bb.process.run(['tar', '-cf', os.path.basename(manifest) + '.tar', os.path.relpath(manifest, outdir)], cwd=outdir)
+
+        for name, path, dest_path, checksum in manifest_downloads:
+            dest = os.path.join(dldir, checksum)
+            oe.path.symlink(path, dest, force=True)
+            bb.process.run(['tar', '-chf', '%s/download-%s.tar' % (dldir, checksum), os.path.relpath(dest, outdir)], cwd=outdir)
+            os.unlink(dest)
+}
+do_archive_mel_downloads[depends] += "${@'${RELEASE_IMAGE}:${FETCHALL_TASK}' if '${RELEASE_IMAGE}' else ''}"
+
+archive_uninative_downloads () {
+    # Ensure that uninative downloads are in ARCHIVE_RELEASE_DL_DIR, since
+    # they're listed in the manifest
+    find uninative -type f | while read -r fn; do
+        mkdir -p "${ARCHIVE_RELEASE_DL_DIR}/$(dirname "$fn")"
+        ln -sf "${DL_DIR}/$fn" "${ARCHIVE_RELEASE_DL_DIR}/$fn"
+    done
+}
+archive_uninative_downloads[dirs] = "${WORKDIR}"
+do_archive_mel_downloads[prefuncs] += "archive_uninative_downloads"
