@@ -1,5 +1,5 @@
 PACKAGE_INSTALL = "initramfs-boot iperf iptables busybox udev base-passwd dosfstools ${ROOTFS_BOOTSTRAP_INSTALL} ${FEATURE_INSTALL}"
-IMAGE_FEATURES = " codebench-debug"
+IMAGE_FEATURES = " codebench-debug ssh-server-openssh"
 
 COMPATIBLE_HOST = "(arm|aarch64|i.86|x86_64).*-linux"
 
