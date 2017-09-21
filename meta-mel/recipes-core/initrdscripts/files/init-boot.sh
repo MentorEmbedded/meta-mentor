@@ -2,8 +2,8 @@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
-mkdir /proc
-mkdir /sys
+mkdir -p /proc
+mkdir -p /sys
 mount -t proc proc /proc
 mount -t sysfs sysfs /sys
 
