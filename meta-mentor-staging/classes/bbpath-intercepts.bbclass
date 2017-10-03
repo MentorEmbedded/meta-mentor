@@ -6,11 +6,23 @@ POSTINST_INTERCEPTS = "${@find_intercepts(d)}"
 
 def find_intercepts(d):
     intercepts = {}
-    for p in d.getVar('POSTINST_INTERCEPTS_PATHS', True).split(':'):
-        if os.path.isdir(p):
-            for s in os.listdir(p):
-                if s not in intercepts:
-                    intercepts[s] = os.path.join(p, s)
+    search_paths = []
+    paths = d.getVar('POSTINST_INTERCEPTS_PATHS').split(':')
+    overrides = (':' + d.getVar('FILESOVERRIDES')).split(':')
+    for p in paths:
+        if not os.path.isdir(p):
+            continue
+        for o in overrides:
+            op = os.path.join(p, o)
+            if os.path.isdir(op):
+                search_paths.append(op)
+
+    for p in search_paths:
+        for s in os.listdir(p):
+            if s not in intercepts:
+                f = os.path.join(p, s)
+                if os.path.isfile(f):
+                    intercepts[s] = f
     return ' '.join(intercepts.values())
 
 python assemble_intercepts () {

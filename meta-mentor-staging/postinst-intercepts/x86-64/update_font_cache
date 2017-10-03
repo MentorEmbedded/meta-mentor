@@ -1,0 +1,5 @@
+#!/bin/sh
+# qemu user emulation for x86_64 sees a hang/freeze when trying to run
+# fc-cache, when using the sourcery toolchain, but it runs fine in system
+# emulation, so exit 1 and let it run on first boot instead
+exit 1
