@@ -150,7 +150,7 @@ configure_for_machine () {
         echo >&2 "Error in execution of bb-determine-layers, aborting"
         exit 1
     fi
-    sed 's,^,    ,; s,$, \\,' <$layersfile >>$BUILDDIR/conf/bblayers.conf
+    sed -e "s#^$BUILDDIR/#\${TOPDIR}/#g;" -e 's,^,    ,; s,$, \\,' <$layersfile >>$BUILDDIR/conf/bblayers.conf
     rm -f $layersfile
     echo '"' >> $BUILDDIR/conf/bblayers.conf
     unset layersfile
