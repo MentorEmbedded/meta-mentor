@@ -15,7 +15,8 @@ DEFAULT_PREFERENCE = "-1"
 # The sysroot branch is 1.3.59 + some git commits from master + --sysroot
 # support for alternatives.
 SRC_URI = "git://github.com/kergoth/chkconfig;branch=sysroot \
-           file://libs.patch"
+           file://libs.patch \
+           file://0001-alternatives.c-obey-sysroot-for-facility-in-removeLi.patch"
 S = "${WORKDIR}/git"
 
 SRCREV = "cd437ecbd8986c894442f8fce1e0061e20f04dee"

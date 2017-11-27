@@ -1,0 +1,54 @@
+From 73e4f2b6049ddef8e152a431e2bd7a680f3ed4d3 Mon Sep 17 00:00:00 2001
+From: Shrikant Bobade <shrikant_bobade@mentor.com>
+Date: Thu, 12 Oct 2017 21:49:40 +0530
+Subject: [PATCH] 96boards-tools: resize-helper.service: fix for auto-resizing
+ sd card
+
+JIRA: SB-10112
+
+Upstream-Status: pending
+
+we need PART_ENTRY_NUMBER filled with correct values to fix the resizing
+error: partition dosen't exist,
+
+this job will be done by udevadm, so to get expected inputs from it require
+systemd-udev-settle.service
+
+error log ref:
+resize-helper.service - Resize root filesystem to fit available disk space
+   Loaded: loaded (/lib/systemd/system/resize-helper.service; disabled;
+		vendor preset: enabled)
+   Active: inactive (dead)
+
+mx7d resize-helper[]: Error: Partition doesn't exist.
+mx7d resize-helper[]: [104B blob data]
+mx7d resize-helper[]: The filesystem is already 516504 (1k) blocks long.
+Nothing to do!
+mx7d systemctl[]: Removed /etc/systemd/system/basic.target.wants/
+resize-helper.service.
+
+This error is so far observed only on below set of sd cards:
+i. 8 gb+ class 10 sd cards
+ii. 8 gb+ micro sd cards with sd card holder
+
+Signed-off-by: Shrikant Bobade <shrikant_bobade@mentor.com>
+Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+---
+ resize-helper.service | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/resize-helper.service b/resize-helper.service
+index c1354a6..ce65f09 100644
+--- a/resize-helper.service
++++ b/resize-helper.service
+@@ -1,6 +1,7 @@
+ [Unit]
+ Description=Resize root filesystem to fit available disk space
+ After=systemd-remount-fs.service
++Requires=systemd-udev-settle.service
+ 
+ [Service]
+ Type=oneshot
+-- 
+2.7.4
+
