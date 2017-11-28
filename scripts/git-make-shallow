@@ -37,9 +37,10 @@ def main():
 
     make_shallow(shallow_file, args.revisions, args.refs)
 
-    ref_revs = check_output(['git', 'rev-list'] + args.refs).splitlines()
     filter_refs(args.refs)
-    shrink_repo(git_dir)
+
+    if args.shrink:
+        shrink_repo(git_dir)
 
 
 def process_args():
@@ -47,6 +48,7 @@ def process_args():
     # can't be easily restored with a git fetch.
     parser = argparse.ArgumentParser(description='Remove the history of the specified revisions, then optionally filter the available refs to those specified.')
     parser.add_argument('--ref', '-r', metavar='REF', action='append', dest='refs', help='remove all but the specified refs (cumulative)')
+    parser.add_argument('--shrink', '-s', action='store_true', help='shrink the git repository by repacking and pruning')
     parser.add_argument('revisions', metavar='REVISION', nargs='+', help='a git revision/commit')
     if len(sys.argv) < 2:
         parser.print_help()
