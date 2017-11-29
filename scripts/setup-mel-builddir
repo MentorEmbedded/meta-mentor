@@ -9,7 +9,7 @@
 MEL_DISTRO="${MEL_DISTRO:-mel}"
 CORELAYERS="${CORELAYERS:-core mel-support mentor-staging}"
 if [ "${MEL_DISTRO}" != "mel-lite" ]; then
-    OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
+    OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
 fi
 EXTRAMELLAYERS="${EXTRAMELLAYERS:-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery gplv2}"
 layer_priority_overrides="openembedded-layer=1"
