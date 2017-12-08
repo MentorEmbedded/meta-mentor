@@ -128,7 +128,6 @@ configure_for_machine () {
     echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
     layersfile=$(mktemp setup-mel-builddir.XXXXXX)
 
-    layerpaths="*:*/*:meta*/*/*:$MELDIR/*:$MELDIR/*/*:$MELDIR/meta*/*/*${extrasearchpaths:+:}$extrasearchpaths"
     # Convert layer paths to layer names for bb-determine-layers
     extralayernames=
     for layer in $extralayers; do
@@ -224,22 +223,18 @@ process_arguments () {
             updatelayers="$updatelayers $updatelayer"
         fi
     done
+
+    layerpaths="*:*/*:meta*/*/*:$MELDIR/*:$MELDIR/*/*:$MELDIR/meta*/*/*${extrasearchpaths:+:}$extrasearchpaths"
 }
 
 setup_builddir () {
     process_arguments "$@" || return $?
     shift $(expr $OPTIND - 1)
 
-    if [ -e "$MELDIR/poky" ]; then
-        OEROOT="$MELDIR/poky"
-    elif [ -e "$MELDIR/oe-core" ]; then
-        OEROOT="$MELDIR/oe-core"
-    elif [ -e "$MELDIR/openembedded-core" ]; then
-        OEROOT="$MELDIR/openembedded-core"
-    else
-        echo >&2 "Unable to locate poky or oe-core in $MELDIR, aborting"
+    OEROOT="$($layerdir/scripts/bb-determine-layers -g "$layerpaths" -l core)/.." || {
+        echo >&2 "Error: unable to locate core layer (oe-core or poky) in $MELDIR, aborting"
         return 3
-    fi
+    }
 
     TEMPLATECONF=
     MACHINE=$1
