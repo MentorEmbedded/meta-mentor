@@ -236,7 +236,6 @@ setup_builddir () {
         return 3
     }
 
-    TEMPLATECONF=
     MACHINE=$1
     if [ -n "$MACHINE" ]; then
         if [ -e $MELDIR/$MACHINE/binary ]; then
