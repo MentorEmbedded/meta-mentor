@@ -9,7 +9,7 @@
 MEL_DISTRO="${MEL_DISTRO:-mel}"
 CORELAYERS="${CORELAYERS:-core mel-support mentor-staging}"
 if [ "${MEL_DISTRO}" != "mel-lite" ]; then
-    OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
+    OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
 fi
 EXTRAMELLAYERS="${EXTRAMELLAYERS:-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery gplv2}"
 layer_priority_overrides="openembedded-layer=1"
@@ -41,6 +41,10 @@ Options:
   -b BUILDDIR  Specify the build directory to create (default: 'build')
   -o MELDIR    Specify the root of the MEL install, where you can find bitbake
                and the layers
+  -p PATHS     Specify colon separated list of paths, where you can find layers
+               in addition to the root of the MEL install (default: empty).
+               If any path in this list contains wildcards, the list must be quoted
+               to avoid wildcard substitution by the shell
   -l LAYERS    Space-separated list of layer names for additional layers you
                want to be included in the configuration
   -t           Create toaster configuration file in the build directory with layers
@@ -124,7 +128,7 @@ configure_for_machine () {
     echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
     layersfile=$(mktemp setup-mel-builddir.XXXXXX)
 
-    layerpaths="*:*/*:meta*/*/*:$MELDIR/*:$MELDIR/*/*:$MELDIR/meta*/*/*"
+    layerpaths="*:*/*:meta*/*/*:$MELDIR/*:$MELDIR/*/*:$MELDIR/meta*/*/*${extrasearchpaths:+:}$extrasearchpaths"
     # Convert layer paths to layer names for bb-determine-layers
     extralayernames=
     for layer in $extralayers; do
@@ -165,17 +169,21 @@ process_arguments () {
     BUILDDIR=
     MELDIR=
     OEROOT=
+    extrasearchpaths=
     extralayers=
     force_overwrite=0
     toasterconfig=0
     verbose=0
-    while getopts b:o:l:tfvh opt; do
+    while getopts b:o:p:l:tfvh opt; do
         case "$opt" in
             b)
                 BUILDDIR="$(abspath $OPTARG)"
                 ;;
             o)
                 MELDIR="$(abspath $OPTARG)"
+                ;;
+            p)
+                extrasearchpaths="$OPTARG"
                 ;;
             l)
                 extralayers="$OPTARG"
