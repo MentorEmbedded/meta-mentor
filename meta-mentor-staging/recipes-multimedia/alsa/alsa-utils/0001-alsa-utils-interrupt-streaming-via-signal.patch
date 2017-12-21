@@ -16,11 +16,11 @@ Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
  aplay/aplay.c | 20 ++++++++++++++------
  1 file changed, 14 insertions(+), 6 deletions(-)
 
-diff --git a/aplay/aplay.c b/aplay/aplay.c
-index 2da7dda..6095bb6 100644
---- a/aplay/aplay.c
-+++ b/aplay/aplay.c
-@@ -392,14 +392,22 @@ static void signal_handler(int sig)
+Index: alsa-utils-1.1.5/aplay/aplay.c
+===================================================================
+--- alsa-utils-1.1.5.orig/aplay/aplay.c	2017-12-22 00:15:51.570478262 +0500
++++ alsa-utils-1.1.5/aplay/aplay.c	2017-12-22 00:15:51.566478262 +0500
+@@ -396,14 +396,22 @@
  		putchar('\n');
  	if (!quiet_mode)
  		fprintf(stderr, _("Aborted by signal %s...\n"), strsignal(sig));
@@ -48,15 +48,3 @@ index 2da7dda..6095bb6 100644
  }
  
  /* call on SIGUSR1 signal. */
-@@ -2161,7 +2169,7 @@ static ssize_t voc_pcm_write(u_char *data, size_t count)
- 	ssize_t result = count, r;
- 	size_t size;
- 
--	while (count > 0) {
-+	while (count > 0 && !in_aborting) {
- 		size = count;
- 		if (size > chunk_bytes - buffer_pos)
- 			size = chunk_bytes - buffer_pos;
--- 
-2.7.4
-
