@@ -7,3 +7,9 @@
 # build gets its own identifier, so is self-contained already.
 # Default: ${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}
 #ADE_IDENTIFIER ?= "${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}.customized"
+
+# Uncomment The following flag to enable certain changes required for Linux 
+# Kernel debugging through JTAG interface. 
+# Note: This flag may not be implemented for some BSPs and will have no affect
+# in those cases.
+# MEL_ENABLE_JTAG_SUPPORT = "1"
