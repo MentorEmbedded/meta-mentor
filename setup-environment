@@ -106,6 +106,10 @@ else
             ) >>conf/local.conf
         }
 
+        if [ -e $layerdir/post-setup-environment ]; then
+            . $layerdir/post-setup-environment
+        fi
+
         sed -i -n -e ":out; /^## Begin /{ :loop; /^## End /{ d; b out; }; n; b loop; }; p;" conf/local.conf
         SETUP_ENV_MACHINE="$(sed -n -e 's/^MACHINE *?*= *"\(.*\)"/\1/p' "$BUILDDIR/conf/local.conf")"
         configured_layers | while read layer; do
