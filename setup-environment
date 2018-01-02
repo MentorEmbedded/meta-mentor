@@ -29,6 +29,15 @@ else
         esac
     done
 
+    for _layercheck in $layerdir . $layerdir/..; do
+        if [ -e "$_layercheck/setup-environment.conf" ]; then
+            . "$_layercheck/setup-environment.conf"
+        fi
+        if [ -e "$_layercheck/.setup-environment.conf" ]; then
+            . "$_layercheck/.setup-environment.conf"
+        fi
+    done
+
     if [ "${MEL_DISTRO}" = "mel-lite" ]; then
         OPTIONALLAYERS="${OPTIONALLAYERS-tracing-layer}"
     else
