@@ -345,9 +345,15 @@ else
     BUILDDIR="\$(pwd)"
 fi
 export TEMPLATECONF="$TEMPLATECONF"
-. $OEROOT/oe-init-build-env "\$BUILDDIR" "$BITBAKEDIR"
+for i in $OEROOT/*-init-build-env; do
+    if [ -e "\$i" ]; then
+        . \$i "\$BUILDDIR" "$BITBAKEDIR"
+        break
+    fi
+done
 export BB_ENV_EXTRAWHITE="\$BB_ENV_EXTRAWHITE GIT_SSL_CAINFO MGLS_LICENSE_FILE LM_LICENSE_FILE"
 unset TEMPLATECONF
+cd "\$BUILDDIR"
 END
 }
 
