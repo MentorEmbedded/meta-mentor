@@ -236,7 +236,10 @@ setup_builddir () {
         return 3
     }
 
-    MACHINE=$1
+    if [ $# -gt 0 ]; then
+        MACHINE="$1"
+    fi
+
     if [ -n "$MACHINE" ]; then
         if [ -e $MELDIR/$MACHINE/binary ]; then
             # User specified machine and we have the binary content for this BSP
