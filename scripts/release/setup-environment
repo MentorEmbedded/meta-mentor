@@ -109,7 +109,7 @@ EOF
                 fi
                 continue
                 ;;
-            -h|-\?)
+            -h|--help|-\?)
                 echo >&2 "Usage: . setup-environment [options]"
                 echo >&2
                 echo >&2 "Options:"
