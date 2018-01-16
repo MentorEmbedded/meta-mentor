@@ -9,9 +9,16 @@ usage () {
     echo >&2 "  -x EXTRA_MANIFEST Specify an extra manifest. To specify"
     echo >&2 "                    multiple, use multiple -x arguments."
     echo >&2 "  -X           Explicitly disable extra manifests"
+    echo >&2 "  -b BUILDDIR  Specify the build directory to create (default: 'build')"
+    echo >&2 "  -l LAYERS    Space-separated list of layer names for additional layers you"
+    echo >&2 "  -p PATHS     Specify colon separated list of paths, where you can find layers"
+    echo >&2 "               in addition to the root of the MEL install (default: empty)."
+    echo >&2 "               If any path in this list contains wildcards, the list must be quoted"
+    echo >&2 "               to avoid wildcard substitution by the shell"
+    echo >&2 "               want to be included in the configuration"
     echo >&2 "  -h           Show this usage information"
     echo >&2
-    echo >&2 "All other options are passed directly to the meta-mentor setup scripts"
+    echo >&2 "All other options are passed directly to the meta-mentor setup-environment script."
     if [ -e "$BUILDDIR/meta-mentor/setup-environment" ]; then
         echo >&2
         echo >&2 "Usage for the underlying meta-mentor setup script:"
