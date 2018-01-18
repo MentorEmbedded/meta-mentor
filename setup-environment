@@ -29,7 +29,16 @@ else
         esac
     done
 
-    if [ "${MEL_DISTRO}" = "mel-lite" ]; then
+    for _layercheck in $layerdir . $layerdir/..; do
+        if [ -e "$_layercheck/setup-environment.conf" ]; then
+            . "$_layercheck/setup-environment.conf"
+        fi
+        if [ -e "$_layercheck/.setup-environment.conf" ]; then
+            . "$_layercheck/.setup-environment.conf"
+        fi
+    done
+
+    if [ "${DISTRO}" = "mel-lite" ]; then
         OPTIONALLAYERS="${OPTIONALLAYERS-tracing-layer}"
     else
         OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private tracing-layer}"
@@ -97,8 +106,15 @@ else
             ) >>conf/local.conf
         }
 
+        if [ -e $layerdir/post-setup-environment ]; then
+            . $layerdir/post-setup-environment
+        fi
+
         sed -i -n -e ":out; /^## Begin /{ :loop; /^## End /{ d; b out; }; n; b loop; }; p;" conf/local.conf
         SETUP_ENV_MACHINE="$(sed -n -e 's/^MACHINE *?*= *"\(.*\)"/\1/p' "$BUILDDIR/conf/local.conf")"
+
+        load_lconf_snippet "$layerdir" "conf/local.conf.append"
+        load_lconf_snippet "$layerdir" "conf/local.conf.append.$SETUP_ENV_MACHINE"
         configured_layers | while read layer; do
             if [ -e $layer/post-setup-environment ]; then
               . $layer/post-setup-environment
@@ -106,7 +122,9 @@ else
             load_lconf_snippet "$layer" "conf/local.conf.append"
             load_lconf_snippet "$layer" "conf/local.conf.append.$SETUP_ENV_MACHINE"
         done
+
         . $BUILDDIR/setup-environment
+
         unset SETUP_ENV_MACHINE
         unset load_lconf_snippet
         unset configured_layers

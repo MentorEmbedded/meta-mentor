@@ -6,12 +6,12 @@
 # version 2.  This program  is licensed "as is" without any warranty of any
 # kind, whether express or implied.
 
-MEL_DISTRO="${MEL_DISTRO:-mel}"
+DISTRO="${DISTRO:-mel}"
 CORELAYERS="${CORELAYERS:-core mel-support mentor-staging}"
-if [ "${MEL_DISTRO}" != "mel-lite" ]; then
+if [ "${DISTRO}" != "mel-lite" ]; then
     OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
 fi
-EXTRAMELLAYERS="${EXTRAMELLAYERS:-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery gplv2}"
+EXTRAMELLAYERS="${EXTRAMELLAYERS-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery gplv2}"
 layer_priority_overrides="openembedded-layer=1"
 
 
@@ -128,7 +128,6 @@ configure_for_machine () {
     echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
     layersfile=$(mktemp setup-mel-builddir.XXXXXX)
 
-    layerpaths="*:*/*:meta*/*/*:$MELDIR/*:$MELDIR/*/*:$MELDIR/meta*/*/*${extrasearchpaths:+:}$extrasearchpaths"
     # Convert layer paths to layer names for bb-determine-layers
     extralayernames=
     for layer in $extralayers; do
@@ -148,7 +147,7 @@ configure_for_machine () {
         updatelayernames="$updatelayernames $layer"
     done
 
-    $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "$CORELAYERS $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" -O "$layer_priority_overrides" -m "$MACHINE" -d "$MEL_DISTRO" "$@" >$layersfile
+    $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "$CORELAYERS $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" -O "$layer_priority_overrides" -m "$MACHINE" -d "$DISTRO" "$@" >$layersfile
     if [ $? -ne 0 ]; then
         rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
@@ -161,7 +160,7 @@ configure_for_machine () {
 
     echo "$layer_priority_overrides" | tr " " "\n" | \
         while IFS== read -r layer priority; do
-            printf 'BBFILE_PRIORITY_%s_%s = "%d"\n' "$layer" "$MEL_DISTRO" "$priority" >> $BUILDDIR/conf/bblayers.conf
+            printf 'BBFILE_PRIORITY_%s_%s = "%d"\n' "$layer" "$DISTRO" "$priority" >> $BUILDDIR/conf/bblayers.conf
         done
 }
 
@@ -224,25 +223,23 @@ process_arguments () {
             updatelayers="$updatelayers $updatelayer"
         fi
     done
+
+    layerpaths="*:*/*:meta*/*/*:$MELDIR/*:$MELDIR/*/*:$MELDIR/meta*/*/*${extrasearchpaths:+:}$extrasearchpaths"
 }
 
 setup_builddir () {
     process_arguments "$@" || return $?
     shift $(expr $OPTIND - 1)
 
-    if [ -e "$MELDIR/poky" ]; then
-        OEROOT="$MELDIR/poky"
-    elif [ -e "$MELDIR/oe-core" ]; then
-        OEROOT="$MELDIR/oe-core"
-    elif [ -e "$MELDIR/openembedded-core" ]; then
-        OEROOT="$MELDIR/openembedded-core"
-    else
-        echo >&2 "Unable to locate poky or oe-core in $MELDIR, aborting"
+    OEROOT="$($layerdir/scripts/bb-determine-layers -g "$layerpaths" -l core)/.." || {
+        echo >&2 "Error: unable to locate core layer (oe-core or poky) in $MELDIR, aborting"
         return 3
+    }
+
+    if [ $# -gt 0 ]; then
+        MACHINE="$1"
     fi
 
-    TEMPLATECONF=
-    MACHINE=$1
     if [ -n "$MACHINE" ]; then
         if [ -e $MELDIR/$MACHINE/binary ]; then
             # User specified machine and we have the binary content for this BSP
@@ -351,9 +348,15 @@ else
     BUILDDIR="\$(pwd)"
 fi
 export TEMPLATECONF="$TEMPLATECONF"
-. $OEROOT/oe-init-build-env "\$BUILDDIR" "$BITBAKEDIR"
+for i in $OEROOT/*-init-build-env; do
+    if [ -e "\$i" ]; then
+        . \$i "\$BUILDDIR" "$BITBAKEDIR"
+        break
+    fi
+done
 export BB_ENV_EXTRAWHITE="\$BB_ENV_EXTRAWHITE GIT_SSL_CAINFO MGLS_LICENSE_FILE LM_LICENSE_FILE"
 unset TEMPLATECONF
+cd "\$BUILDDIR"
 END
 }
 
@@ -362,12 +365,12 @@ scriptsdir="$(abspath $scriptsdir)"
 layerdir="${scriptsdir%/*}"
 
 if [ -e $layerdir/../.mel-lite ]; then
-    MEL_DISTRO="mel-lite"
+    DISTRO="mel-lite"
 fi
 
 setup_builddir "$@" || exit $?
 if [ -e $BUILDDIR/conf/local.conf ]; then
-    sed -i -e "s/^DISTRO.*/DISTRO = \'$MEL_DISTRO\'/" $BUILDDIR/conf/local.conf
+    sed -i -e "s/^DISTRO.*/DISTRO = \'$DISTRO\'/" $BUILDDIR/conf/local.conf
     if [ -d "$MELDIR/../../codebench-lite" ]; then
         sed -i -e 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "${MELDIR}/../../codebench-lite",' "$BUILDDIR/conf/local.conf"
     fi
