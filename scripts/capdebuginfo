@@ -211,15 +211,21 @@ get_melbuildinfo () {
 #
 #set -x
 
+# Check if the build environment is set or not.
+if [ ! -d "${BUILDDIR}" ]; then
+    echo "Please setup the build environment first, and run the script again."
+    exit 1
+else
 # Check 1st cmdline argument
 if [[ ${1} == -* ]]; then
    # Process script input arguments 
    process_cmdline_args "${@}"
+   
    if [ ! -d "${BUILDERR}" ]; then
-      echo -en "\nERROR:  One or more input arguments were invalid!!!\n\n"
+      echo -en "\nERROR:  Input argument was invalid!!!\n\n"
    fi
 elif [ -z "${@}" ]; then
-   echo -en "\nWARNING:  No input arguments were given on command line.\n\n"
+   echo -en "\nWARNING:  No input argument was given on command line.\n\n"
 fi
 
 # Check for valid BUILDERR
@@ -233,7 +239,17 @@ while [ ! -d "${BUILDERR}" ]; do
    fi
 done
 
-MELDIR="${BUILDDIR%%/build}"
+for i in $(echo $PATH | tr ":" "\n")
+do
+    a="$(echo $i | grep "/bitbake/bin")"
+    if [ -n "$a" ]
+    then
+      break
+    fi
+done
+
+MELDIR="${a%%/bitbake/bin}"
+
 
 
 # Clean up artifacts from previous run of the script
@@ -274,4 +290,5 @@ else
    fi
    echo "Done!!!"
    echo -en "\nPlease attach ${OUTPUTDIRNAME}.tar.bz2 to your Support Request ticket.\n\n"
+fi
 fi
