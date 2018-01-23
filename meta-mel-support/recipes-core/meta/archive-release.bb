@@ -5,6 +5,9 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 EXCLUDE_FROM_WORLD = "1"
 
 SRC_URI += "${@' '.join(uninative_urls(d)) if 'downloads' in '${RELEASE_ARTIFACTS}'.split() else ''}"
+SRC_URI += "https://github.com/01org/bmap-tools/releases/download/v3.4/bmaptool;name=bmaptool"
+SRC_URI[bmaptool.md5sum] = "7bc226c2b15aff58af31e421fa381d34"
+SRC_URI[bmaptool.sha256sum] = "8cedbb7a525dd4026b6cafe11f496de11dbda0f0e76a5b4938d2687df67bab7f"
 SRC_URI_append_qemuall = " file://runqemu.in"
 
 # We're using image fstypes data, inherit the class in case variables from it
@@ -405,6 +408,9 @@ do_archive_images () {
         echo "${PROBECONFIGS}" >>include
         echo "--transform=s,${PROBECONFIGS},${PROBECONFIGS_INSTALL_PATH}," >>include
     fi
+    chmod +x "${WORKDIR}/bmaptool"
+    echo "--transform=s,${WORKDIR}/bmaptool,${BINARY_INSTALL_PATH}/bmaptool," >>include
+    echo "${WORKDIR}/bmaptool" >>include
     release_tar --files-from=include -rhf ${MACHINE}.tar
     rm -rf runqemu conf-notes.txt local.conf.sample bblayers.conf.sample include
 }
