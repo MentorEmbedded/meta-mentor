@@ -2,7 +2,8 @@ FILESEXTRAPATHS_append = ":${@':'.join('%s/../scripts/release' % l for l in '${B
 SRC_URI += "\
     file://mel-checkout \
     file://version-sort \
-    file://setup-environment \
+    file://setup-mel \
+    file://setup-builddir \
     \
     ${@' '.join(uninative_urls(d)) if 'mel_downloads' in '${RELEASE_ARTIFACTS}'.split() else ''} \
 "
@@ -181,7 +182,7 @@ python do_archive_mel_layers () {
         bb.process.run(['tar', '-cf', os.path.basename(fn) + '.tar'] + files, cwd=outdir)
 
     bb.process.run(['rm', '-r', 'objects'], cwd=outdir)
-    bb.process.run(['tar', '--transform=s,^,scripts/,', '--transform=s,scripts/setup-environment,setup-mel,', '-cvf', d.expand('%s/${DISTRO}-scripts.tar' % outdir), 'mel-checkout', 'version-sort', 'setup-environment'], cwd=d.getVar('WORKDIR'))
+    bb.process.run(['tar', '--transform=s,^,scripts/,', '-cvf', d.expand('%s/${DISTRO}-scripts.tar' % outdir), 'mel-checkout', 'version-sort', 'setup-mel', 'setup-builddir'], cwd=d.getVar('WORKDIR'))
 }
 do_archive_mel_layers[dirs] = "${S}/do_archive_mel_layers ${S}"
 do_archive_mel_layers[vardeps] += "${GET_REMOTES_HOOK}"

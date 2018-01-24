@@ -1,0 +1,143 @@
+#!/bin/sh
+
+usage () {
+    echo >&2 "Usage: ${0##*/} [options]"
+    echo >&2
+    echo >&2 "Options:"
+    echo >&2 "  -b BUILDDIR  Specify the build directory to create (default: 'build'))"
+    echo >&2 "  -m MANIFEST  Specify a manifest, rather than interactive selection"
+    echo >&2 "  -x EXTRA_MANIFEST Specify an extra manifest. To specify"
+    echo >&2 "                    multiple, use multiple -x arguments."
+    echo >&2 "  -X           Explicitly disable extra manifests"
+    echo >&2 "  -b BUILDDIR  Specify the build directory to create (default: 'build')"
+    echo >&2 "  -l LAYERS    Space-separated list of layer names for additional layers you"
+    echo >&2 "  -p PATHS     Specify colon separated list of paths, where you can find layers"
+    echo >&2 "               in addition to the root of the MEL install (default: empty)."
+    echo >&2 "               If any path in this list contains wildcards, the list must be quoted"
+    echo >&2 "               to avoid wildcard substitution by the shell"
+    echo >&2 "               want to be included in the configuration"
+    echo >&2 "  -h           Show this usage information"
+    echo >&2
+    echo >&2 "All other options are passed directly to the meta-mentor setup-environment script."
+    if [ -e "$BUILDDIR/meta-mentor/setup-environment" ]; then
+        echo >&2
+        echo >&2 "Usage for the underlying meta-mentor setup script:"
+        echo >&2
+        . "$BUILDDIR/meta-mentor/setup-environment" -h 2>&1 | \
+            sed -ne '/^Options:/{n; n; :s; p; n; b s;}'
+    fi
+}
+
+quote () {
+    sed -e "s,','\\\\'',g; 1s,^,',; \$s,\$,',;" << EOF
+$1
+EOF
+}
+
+save () {
+    case "$1" in
+    # when a string contains a "'" we have to escape it
+    *\'*)
+        saved="$saved $(quote "$1")"
+        ;;
+    # otherwise just quote the variable
+    *)
+        saved="$saved '$1'"
+        ;;
+    esac
+}
+
+abspath () {
+    _path="$1"
+    if [ -n "${_path##/*}" ]; then
+        _path="$PWD/$1"
+    fi
+    echo "$_path"
+}
+
+if [ -f conf/local.conf -o -f conf/bblayers.conf ]; then
+    # Assuming we're already in the build dir
+    BUILDDIR=$PWD
+else
+    BUILDDIR=$PWD/build
+fi
+
+saved=
+manifest=
+extra_disabled=0
+extra_manifests=
+argnum=1
+while [ $argnum -le $# ]; do
+    arg="$(eval printf "%s" "\$$argnum")"
+    argnum="$(expr $argnum + 1)"
+    case "$arg" in
+        -b)
+            BUILDDIR="$(eval printf "%s" "\$$argnum")"
+            if [ -z "$BUILDDIR" ]; then
+                echo >&2 "-b requires an argument"
+                exit 1
+            else
+                argnum="$(expr $argnum + 1)"
+                BUILDDIR="$(abspath "$BUILDDIR")"
+            fi
+            continue
+            ;;
+        -m)
+            manifest="$(eval printf "%s" "\$$argnum")"
+            if [ -z "$manifest" ]; then
+                echo >&2 "-m requires an argument"
+                exit 1
+            else
+                argnum="$(expr $argnum + 1)"
+                if [ ! -e "$manifest" ]; then
+                    echo >&2 "Error: manifest path $manifest does not exist"
+                    exit 1
+                else
+                    manifest="$(abspath "$manifest")"
+                fi
+            fi
+            continue
+            ;;
+        -X)
+            if [ -n "$extra_manifest" ]; then
+                echo >&2 "Error: -x and -X are mutually exclusive"
+                exit 1
+            fi
+            extra_disabled=1
+            ;;
+        -x)
+            if [ "$extra_disabled" -eq 1 ]; then
+                echo >&2 "Error: -x and -X are mutually exclusive"
+                exit 1
+            fi
+
+            extra_manifest="$(eval printf "%s" "\$$argnum")"
+            if [ $argnum -gt $# ]; then
+                echo >&2 "-x requires an argument"
+                exit 1
+            else
+                argnum="$(expr $argnum + 1)"
+                if [ ! -e "$extra_manifest" ]; then
+                    echo >&2 "Error: extra_manifest path $extra_manifest does not exist"
+                    exit 1
+                else
+                    extra_manifests="$extra_manifests $(abspath "$extra_manifest")"
+                fi
+            fi
+            continue
+            ;;
+        -h|--help|-\?)
+            usage
+            exit 1
+            ;;
+    esac
+    save "$arg"
+done
+eval set -- "$saved"
+
+scriptdir="$(dirname "$0")"
+if [ $extra_disabled -eq 1 ]; then
+    "$scriptdir/scripts/mel-checkout" -X "$BUILDDIR" "$manifest"
+else
+    "$scriptdir/scripts/mel-checkout" "$BUILDDIR" "$manifest" $extra_manifests
+fi && cd "$BUILDDIR" && . ./meta-mentor/setup-environment -b . "$@"
