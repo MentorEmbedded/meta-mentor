@@ -1,4 +1,4 @@
-inherit packagegroup
+inherit packagegroup incompatible-recipe-check
 
 DESCRIPTION = "Package group for benchmarking the target"
 PR = "r0"
