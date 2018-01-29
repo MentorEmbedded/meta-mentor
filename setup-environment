@@ -39,9 +39,9 @@ else
     done
 
     if [ "${DISTRO}" = "mel-lite" ]; then
-        OPTIONALLAYERS="${OPTIONALLAYERS-tracing-layer}"
+        OPTIONALLAYERS="${OPTIONALLAYERS:-tracing-layer}"
     else
-        OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private tracing-layer}"
+        OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private tracing-layer}"
     fi
     EXCLUDEDLAYERS="$EXCLUDEDLAYERS"
     # Customer directory layers handling (e.g. <customername>-custom)
