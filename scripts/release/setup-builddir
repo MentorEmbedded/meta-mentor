@@ -137,7 +137,7 @@ eval set -- "$saved"
 
 scriptdir="$(dirname "$0")"
 if [ $extra_disabled -eq 1 ]; then
-    "$scriptdir/scripts/mel-checkout" -X "$BUILDDIR" "$manifest"
+    "$scriptdir/mel-checkout" -X "$BUILDDIR" "$manifest"
 else
-    "$scriptdir/scripts/mel-checkout" "$BUILDDIR" "$manifest" $extra_manifests
+    "$scriptdir/mel-checkout" "$BUILDDIR" "$manifest" $extra_manifests
 fi && cd "$BUILDDIR" && . ./meta-mentor/setup-environment -b . "$@"
