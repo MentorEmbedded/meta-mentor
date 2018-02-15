@@ -19,9 +19,16 @@ done
 
 automount() {	
 	name="`basename "$DEVNAME"`"
-        if [ -z ${ID_FS_LABEL} ]; then
-		#Lets use UUID as the LABEL, as it will be unique for the $DEVNAME
-		ID_FS_LABEL=`/sbin/blkid | grep $DEVNAME | awk {'print $2'} | tr '=|"' ' ' | awk {'print $2'}`
+
+	# Get the LABEL or PARTLABEL
+        LABEL=`/sbin/blkid | grep "$DEVNAME" | grep -o 'LABEL=".*"' | cut -d '"' -f2`
+        # If the $DEVNAME does not have a LABEL or a PARTLABEL
+        if [ -z "$LABEL" ]; then
+                # Set the mount location dir name to $name e.g. sda (that would keep it unique)
+                ID_FS_LABEL="${name}"
+        else
+                # Set the mount location dir name to LABEL appended with $name e.g. sda
+                ID_FS_LABEL="${LABEL}-${name}"
         fi
 
 	! test -d "/run/media/${ID_FS_LABEL}" && mkdir -p "/run/media/${ID_FS_LABEL}"
