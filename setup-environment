@@ -18,8 +18,8 @@ else
     fi
 
     for i in $(seq $#); do
-        arg="$(eval printf "%s" "\$$i")"
-        case "$arg" in
+        setup_mel_arg="$(eval printf "%s" "\$$i")"
+        case "$setup_mel_arg" in
             -b)
                 BUILDDIR="$(eval printf "%s" "\$$(expr $i + 1)")"
                 if [ -z "$BUILDDIR" ]; then
@@ -29,61 +29,57 @@ else
         esac
     done
 
-    for _layercheck in $layerdir . $layerdir/..; do
-        if [ -e "$_layercheck/setup-environment.conf" ]; then
-            . "$_layercheck/setup-environment.conf"
-        fi
-        if [ -e "$_layercheck/.setup-environment.conf" ]; then
-            . "$_layercheck/.setup-environment.conf"
-        fi
-    done
+    (
+        for layercheck in $layerdir . $layerdir/..; do
+            if [ -e "$layercheck/setup-environment.conf" ]; then
+                . "$layercheck/setup-environment.conf"
+            fi
+            if [ -e "$layercheck/.setup-environment.conf" ]; then
+                . "$layercheck/.setup-environment.conf"
+            fi
+        done
 
-    if [ "${DISTRO}" = "mel-lite" ]; then
-        OPTIONALLAYERS="${OPTIONALLAYERS:-tracing-layer}"
-    else
-        OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private tracing-layer}"
-    fi
-    EXCLUDEDLAYERS="$EXCLUDEDLAYERS"
-    # Customer directory layers handling (e.g. <customername>-custom)
-    for _layercheck in . $layerdir/..; do
-        if [ -e "$_layercheck/customer.conf" ]; then
-            while read -r _customer; do
-                for _layercheck2 in . $layerdir/..; do
-                    if [ -d "$_layercheck2/$_customer-custom" ]; then
-                        if [ -e "$_layercheck2/$_customer-custom/custom.conf" ] ; then
-                            CUSTOMERLAYERS=`cat $_layercheck2/$_customer-custom/custom.conf | sed -e '/^[ 	]*#/d'`
-                            CUSTOMERLAYERS=`echo $CUSTOMERLAYERS | sed -e 's/\n//g'`
-                            OPTIONALLAYERS="$OPTIONALLAYERS $CUSTOMERLAYERS"
-                            unset CUSTOMERLAYERS
+        if [ "${DISTRO}" = "mel-lite" ]; then
+            OPTIONALLAYERS="${OPTIONALLAYERS-tracing-layer}"
+        else
+            OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private tracing-layer}"
+        fi
+        EXCLUDEDLAYERS="$EXCLUDEDLAYERS"
+        # Customer directory layers handling (e.g. <customername>-custom)
+        for layercheck in . $layerdir/..; do
+            if [ -e "$layercheck/customer.conf" ]; then
+                while read -r _customer; do
+                    for layercheck2 in . $layerdir/..; do
+                        if [ -d "$layercheck2/$_customer-custom" ]; then
+                            if [ -e "$layercheck2/$_customer-custom/custom.conf" ] ; then
+                                CUSTOMERLAYERS=`cat $layercheck2/$_customer-custom/custom.conf | sed -e '/^[ 	]*#/d'`
+                                CUSTOMERLAYERS=`echo $CUSTOMERLAYERS | sed -e 's/\n//g'`
+                                OPTIONALLAYERS="$OPTIONALLAYERS $CUSTOMERLAYERS"
+                            fi
+                            break
                         fi
-                        break
-                    fi
-                done
-                unset _layercheck2
-            done <"$_layercheck/customer.conf"
-            unset _customer
-            break
+                    done
+                done <"$layercheck/customer.conf"
+                break
+            fi
+        done
+
+        # Hotfix layers handling
+        if [ -e "$layerdir/../hotfixes/hotfix.conf" ] ; then
+            HOTFIXES=`cat $layerdir/../hotfixes/hotfix.conf | sed -e '/^[ 	]*#/d'`
+            HOTFIXES=`echo $HOTFIXES | sed -e 's/\n//g'`
+            OPTIONALLAYERS="$OPTIONALLAYERS $HOTFIXES"
         fi
-    done
-    unset _layercheck
 
-    # Hotfix layers handling
-    if [ -e "$layerdir/../hotfixes/hotfix.conf" ] ; then
-        HOTFIXES=`cat $layerdir/../hotfixes/hotfix.conf | sed -e '/^[ 	]*#/d'`
-        HOTFIXES=`echo $HOTFIXES | sed -e 's/\n//g'`
-        OPTIONALLAYERS="$OPTIONALLAYERS $HOTFIXES"
-        unset HOTFIXES
-    fi
+        # Extra layers handling
+        if [ -e "$layerdir/../xlayers.conf" ] ; then
+            EXTRALAYERS=`cat $layerdir/../xlayers.conf | sed -e '/^[ 	]*#/d'`
+            EXTRALAYERS=`echo $EXTRALAYERS | sed -e 's/\n//g'`
+            OPTIONALLAYERS="$OPTIONALLAYERS $EXTRALAYERS"
+        fi
 
-    # Extra layers handling
-    if [ -e "$layerdir/../xlayers.conf" ] ; then
-        EXTRALAYERS=`cat $layerdir/../xlayers.conf | sed -e '/^[ 	]*#/d'`
-        EXTRALAYERS=`echo $EXTRALAYERS | sed -e 's/\n//g'`
-        OPTIONALLAYERS="$OPTIONALLAYERS $EXTRALAYERS"
-        unset EXTRALAYERS
-    fi
-
-    OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" EXCLUDEDLAYERS="$EXCLUDEDLAYERS" $layerdir/scripts/setup-mel-builddir "$@"
+        OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" EXCLUDEDLAYERS="$EXCLUDEDLAYERS" $layerdir/scripts/setup-mel-builddir "$@"
+    )
     mel_setup_ret=$?
     if [ $mel_setup_ret -eq 0 ] && [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ]; then
         . $BUILDDIR/setup-environment >/dev/null 2>&1
@@ -99,10 +95,10 @@ else
                 return
             fi
             (
-                lheadername="${1##*/}/$2"
-                printf '\n## Begin %s\n\n' "$lheadername"
-                cat "$1/$2"
-                printf '\n## End %s\n' "$lheadername"
+            lheadername="${1##*/}/$2"
+            printf '\n## Begin %s\n\n' "$lheadername"
+            cat "$1/$2"
+            printf '\n## End %s\n' "$lheadername"
             ) >>conf/local.conf
         }
 
@@ -117,7 +113,7 @@ else
         load_lconf_snippet "$layerdir" "conf/local.conf.append.$SETUP_ENV_MACHINE"
         configured_layers | while read layer; do
             if [ -e $layer/post-setup-environment ]; then
-              . $layer/post-setup-environment
+                . $layer/post-setup-environment
             fi
             load_lconf_snippet "$layer" "conf/local.conf.append"
             load_lconf_snippet "$layer" "conf/local.conf.append.$SETUP_ENV_MACHINE"
@@ -129,9 +125,6 @@ else
         unset load_lconf_snippet
         unset configured_layers
     fi
-    unset EXTRAMELLAYERS
-    unset OPTIONALLAYERS
-    unset EXCLUDEDLAYERS
-    unset layerdir
+    unset layerdir setup_mel_arg
     test $mel_setup_ret -eq 0
 fi
