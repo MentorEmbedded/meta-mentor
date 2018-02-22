@@ -283,9 +283,27 @@ setup_builddir () {
         rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
     fi
 
-    : ${TEMPLATECONF:=$layerdir/conf}
-
     mkdir -p $BUILDDIR/conf
+
+    if [ -z "$TEMPLATECONF" ]; then
+        if [ -f "$BUILDDIR/conf/templateconf.cfg" ]; then
+            TEMPLATECONF="$(cat "$BUILDDIR/conf/templateconf.cfg")"
+        elif [ -e "$layerdir/conf/local.conf.sample" ]; then
+            TEMPLATECONF="$layerdir/conf"
+        elif [ -e "$OEROOT/.templateconf" ]; then
+            . "$OEROOT/.templateconf"
+            # Convert to absolute path
+            TEMPLATECONF="$(cd "$(dirname "$TEMPLATECONF")" && pwd -P)/$(basename "$TEMPLATECONF")"
+        else
+            echo >&2 "Unable to determine TEMPLATECONF"
+            exit 1
+        fi
+    fi
+
+    if [ ! -f "$BUILDDIR/conf/templateconf.cfg" ]; then
+        echo "$TEMPLATECONF" >"$BUILDDIR/conf/templateconf.cfg"
+    fi
+
     if [ ! -e $BUILDDIR/conf/local.conf ]; then
         cp $TEMPLATECONF/local.conf.sample $BUILDDIR/conf/local.conf
         echo "You had no local.conf file. This configuration file has therefore been"
