@@ -154,13 +154,18 @@ configure_for_machine () {
         exit 1
     fi
     sed -e "s#^$BUILDDIR/#\${TOPDIR}/#g;" -e 's,^,    ,; s,$, \\,' <$layersfile >>$BUILDDIR/conf/bblayers.conf
-    rm -f $layersfile
     echo '"' >> $BUILDDIR/conf/bblayers.conf
+    configured_layers="$(PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" $(dirname "$0")/bb-print-layer-data $(cat $layersfile) 2>/dev/null | cut -d: -f1 | xargs)"
+    rm -f $layersfile
     unset layersfile
 
     echo "$layer_priority_overrides" | tr " " "\n" | \
         while IFS== read -r layer priority; do
-            printf 'BBFILE_PRIORITY_%s_%s = "%d"\n' "$layer" "$DISTRO" "$priority" >> $BUILDDIR/conf/bblayers.conf
+            case " $configured_layers " in
+                *\ $layer\ *)
+                    printf 'BBFILE_PRIORITY_%s_%s = "%d"\n' "$layer" "$DISTRO" "$priority" >> $BUILDDIR/conf/bblayers.conf
+                    ;;
+            esac
         done
 }
 
