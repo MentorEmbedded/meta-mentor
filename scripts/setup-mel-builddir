@@ -9,9 +9,9 @@
 DISTRO="${DISTRO:-mel}"
 CORELAYERS="${CORELAYERS:-core mel-support mentor-staging}"
 if [ "${DISTRO}" != "mel-lite" ]; then
-    OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
+    OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
 fi
-EXTRAMELLAYERS="${EXTRAMELLAYERS:-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery gplv2}"
+EXTRAMELLAYERS="${EXTRAMELLAYERS-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery gplv2}"
 layer_priority_overrides="openembedded-layer=1"
 
 
