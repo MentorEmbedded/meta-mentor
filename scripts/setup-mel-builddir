@@ -9,9 +9,9 @@
 DISTRO="${DISTRO:-mel}"
 CORELAYERS="${CORELAYERS:-core mel-support mentor-staging}"
 if [ "${DISTRO}" != "mel-lite" ]; then
-    OPTIONALLAYERS="${OPTIONALLAYERS:-mentor-private}"
+    OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
 fi
-EXTRAMELLAYERS="${EXTRAMELLAYERS:-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery gplv2}"
+EXTRAMELLAYERS="${EXTRAMELLAYERS-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery gplv2}"
 layer_priority_overrides="openembedded-layer=1"
 
 
@@ -154,13 +154,18 @@ configure_for_machine () {
         exit 1
     fi
     sed -e "s#^$BUILDDIR/#\${TOPDIR}/#g;" -e 's,^,    ,; s,$, \\,' <$layersfile >>$BUILDDIR/conf/bblayers.conf
-    rm -f $layersfile
     echo '"' >> $BUILDDIR/conf/bblayers.conf
+    configured_layers="$(PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" $(dirname "$0")/bb-print-layer-data $(cat $layersfile) 2>/dev/null | cut -d: -f1 | xargs)"
+    rm -f $layersfile
     unset layersfile
 
     echo "$layer_priority_overrides" | tr " " "\n" | \
         while IFS== read -r layer priority; do
-            printf 'BBFILE_PRIORITY_%s_%s = "%d"\n' "$layer" "$DISTRO" "$priority" >> $BUILDDIR/conf/bblayers.conf
+            case " $configured_layers " in
+                *\ $layer\ *)
+                    printf 'BBFILE_PRIORITY_%s_%s = "%d"\n' "$layer" "$DISTRO" "$priority" >> $BUILDDIR/conf/bblayers.conf
+                    ;;
+            esac
         done
 }
 
@@ -283,9 +288,27 @@ setup_builddir () {
         rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
     fi
 
-    : ${TEMPLATECONF:=$layerdir/conf}
-
     mkdir -p $BUILDDIR/conf
+
+    if [ -z "$TEMPLATECONF" ]; then
+        if [ -f "$BUILDDIR/conf/templateconf.cfg" ]; then
+            TEMPLATECONF="$(cat "$BUILDDIR/conf/templateconf.cfg")"
+        elif [ -e "$layerdir/conf/local.conf.sample" ]; then
+            TEMPLATECONF="$layerdir/conf"
+        elif [ -e "$OEROOT/.templateconf" ]; then
+            . "$OEROOT/.templateconf"
+            # Convert to absolute path
+            TEMPLATECONF="$(cd "$(dirname "$TEMPLATECONF")" && pwd -P)/$(basename "$TEMPLATECONF")"
+        else
+            echo >&2 "Unable to determine TEMPLATECONF"
+            exit 1
+        fi
+    fi
+
+    if [ ! -f "$BUILDDIR/conf/templateconf.cfg" ]; then
+        echo "$TEMPLATECONF" >"$BUILDDIR/conf/templateconf.cfg"
+    fi
+
     if [ ! -e $BUILDDIR/conf/local.conf ]; then
         cp $TEMPLATECONF/local.conf.sample $BUILDDIR/conf/local.conf
         echo "You had no local.conf file. This configuration file has therefore been"
