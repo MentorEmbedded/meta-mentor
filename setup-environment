@@ -44,7 +44,6 @@ else
         else
             OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private tracing-layer}"
         fi
-        EXCLUDEDLAYERS="$EXCLUDEDLAYERS"
         # Customer directory layers handling (e.g. <customername>-custom)
         for layercheck in . $layerdir/..; do
             if [ -e "$layercheck/customer.conf" ]; then
@@ -78,7 +77,8 @@ else
             OPTIONALLAYERS="$OPTIONALLAYERS $EXTRALAYERS"
         fi
 
-        OPTIONALLAYERS="$OPTIONALLAYERS" EXTRAMELLAYERS="$EXTRAMELLAYERS" EXCLUDEDLAYERS="$EXCLUDEDLAYERS" $layerdir/scripts/setup-mel-builddir "$@"
+        export OPTIONALLAYERS EXTRAMELLAYERS EXCLUDEDLAYERS
+        $layerdir/scripts/setup-mel-builddir "$@"
     )
     mel_setup_ret=$?
     if [ $mel_setup_ret -eq 0 ] && [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ]; then
