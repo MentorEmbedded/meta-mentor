@@ -16,7 +16,10 @@ SRCREV_mel = "5b3c1cc28f5abdc2c33830150b48b278cc4f7bca"
 
 SPLASH_IMAGES_mel = "file://mel.png;outsuffix=default"
 
-inherit systemd
+SYSTEMD_INHERIT = ""
+SYSTEMD_INHERIT_mel = "systemd"
+inherit ${SYSTEMD_INHERIT}
+
 SYSTEMD_SERVICE_${PN}_mel = "psplash-start.service psplash-quit.service psplash-final.service"
 SYSTEMD_AUTO_ENABLE ?= "enable"
 
