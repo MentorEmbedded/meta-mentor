@@ -1,2 +1,4 @@
-# Align TARGET_SYS and TARGET_PREFIX to avoid binary links which include both.
-TARGET_SYS := "${@TARGET_PREFIX[:-1]}"
+do_install_append() {
+    # we end up with some weird pollution from cross-toolchain, remove them
+    rm -f ${D}${bindir}/${TARGET_SYS}-${TARGET_PREFIX}*
+}
