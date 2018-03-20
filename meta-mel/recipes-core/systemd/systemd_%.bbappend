@@ -1,4 +1,6 @@
-PACKAGECONFIG[no-sysvcompat] = "--with-sysvinit-path= --with-sysvrcnd-path=,--with-sysvinit-path=${sysconfdir}/init.d --with-sysvrcnd-path=${sysconfdir},,"
+PACKAGECONFIG_SYSVCOMPAT = ""
+PACKAGECONFIG_SYSVCOMPAT_mel = "--with-sysvinit-path= --with-sysvrcnd-path=,--with-sysvinit-path=${sysconfdir}/init.d --with-sysvrcnd-path=${sysconfdir},,"
+PACKAGECONFIG[no-sysvcompat] = "${PACKAGECONFIG_SYSVCOMPAT}"
 
 SYSTEMD_LOGLEVEL ?= "info"
 SYSTEMD_LOGLEVEL_mel ?= "emerg"
