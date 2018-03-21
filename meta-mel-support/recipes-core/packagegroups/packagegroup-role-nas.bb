@@ -6,7 +6,7 @@ PR = "r0"
 VIRTUAL-RUNTIME_swan ?= "strongswan"
 
 RDEPENDS_${PN} += "\
-    ipsec-tools iproute2 iptables tcp-wrappers rng-tools \
-    ppp rp-pppoe \
-    ${VIRTUAL-RUNTIME_swan} \
+    ${@bb.utils.contains('BBFILE_COLLECTIONS', 'networking-layer', 'ipsec-tools rp-pppoe ${VIRTUAL-RUNTIME_swan}', '', d)} \
+    iproute2 iptables tcp-wrappers rng-tools \
+    ppp \
 "
