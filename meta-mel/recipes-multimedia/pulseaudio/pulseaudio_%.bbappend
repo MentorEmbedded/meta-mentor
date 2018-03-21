@@ -4,7 +4,7 @@ do_compile_append_mel () {
     set_cfg_value src/daemon.conf resample-method speex-fixed-3
 }
 
-RDEPENDS_pulseaudio-server += "\
+RDEPENDS_pulseaudio-server_append_mel = "\
     pulseaudio-module-switch-on-port-available \
     pulseaudio-module-cli \
     pulseaudio-module-esound-protocol-unix \
