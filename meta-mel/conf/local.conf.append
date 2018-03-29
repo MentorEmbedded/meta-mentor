@@ -1,3 +1,10 @@
+# Image features for development-image
+IMAGE_FEATURES_DEVELOPMENT ?= "debug-tweaks codebench-debug ssh-server-openssh tools-profile"
+
+# Image features for production-image
+IMAGE_FEATURES_PRODUCTION ?= ""
+IMAGE_FEATURES_DISABLED_PRODUCTION ?= "${IMAGE_FEATURES_DEVELOPMENT} ssh-server-dropbear"
+
 # Uncomment to set a site name (shown in CodeBench) for the ADE
 # Default: ADE for ${ADE_IDENTIFIER}
 #ADE_SITENAME ?= "My Company's ADE for ${ADE_IDENTIFIER}"
