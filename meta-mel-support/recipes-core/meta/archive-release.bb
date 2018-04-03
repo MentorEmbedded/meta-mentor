@@ -283,7 +283,8 @@ do_archive_downloads () {
     fi
 
     if [ "${ARCHIVE_RELEASE_DL_TOPDIR}" != "${ARCHIVE_RELEASE_DL_DIR}" ]; then
-        for dir in ${ARCHIVE_RELEASE_DL_TOPDIR}/*; do
+        for dir in ${ARCHIVE_RELEASE_DL_TOPDIR}/*/; do
+            dir="${dir%/}"
             name=$(basename $dir)
             mkdir -p downloads/$name
             find -L $dir -type f -maxdepth 2 | while read source; do
