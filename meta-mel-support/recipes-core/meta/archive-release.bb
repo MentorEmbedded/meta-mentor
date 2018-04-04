@@ -27,7 +27,7 @@ PROBECONFIGS_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/probe-configs"
 
 # Add a default in case the user doesn't inherit copyleft_compliance
 ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
-ARCHIVE_RELEASE_DL_TOPDIR ?= "${DL_DIR}"
+ARCHIVE_RELEASE_DL_TOPDIR ?= "${ARCHIVE_RELEASE_DL_DIR}"
 
 # Default to shipping update-* as individual artifacts
 def configured_update_layers(d):
@@ -283,7 +283,8 @@ do_archive_downloads () {
     fi
 
     if [ "${ARCHIVE_RELEASE_DL_TOPDIR}" != "${ARCHIVE_RELEASE_DL_DIR}" ]; then
-        for dir in ${ARCHIVE_RELEASE_DL_TOPDIR}/*; do
+        for dir in ${ARCHIVE_RELEASE_DL_TOPDIR}/*/; do
+            dir="${dir%/}"
             name=$(basename $dir)
             mkdir -p downloads/$name
             find -L $dir -type f -maxdepth 2 | while read source; do
