@@ -1,8 +1,8 @@
 Common targets are:
 
-    core-image-minimal
-    core-image-sato
-    console-image
+    core-image-base
+    development-image
+    production-image
 
 For qemu machines, you can also run the generated qemu images with a command
 like 'runqemu qemux86'.
