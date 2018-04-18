@@ -1,0 +1,82 @@
+#!/bin/sh
+
+usage () {
+    echo >&2 "Usage: ${0##*/} [-r EXISTING_MANIFEST_DIR] MANIFEST_DIR"
+    echo >&2
+    echo >&2 "Remove all entries from all manifests in MANIFEST_DIR which"
+    echo >&2 "were included in any manifests in EXISTING_MANIFEST_DIR"
+    echo >&2
+    echo >&2 "This is specifically intended for use in creation of MEL product updates"
+}
+
+process_arguments () {
+    existing_manifest_dir=
+    manifest_dir=
+
+    while getopts r:h opt; do
+        case "$opt" in
+            r)
+                existing_manifest_dir=$OPTARG
+                ;;
+            h)
+                usage
+                exit 0
+                ;;
+            \?)
+                usage
+                exit 1
+                ;;
+       esac
+    done
+    shift $((OPTIND - 1))
+    if [ $# -ne 1 ]; then
+        usage
+        exit 1
+    fi
+
+    if [ ! -d "$existing_manifest_dir" ]; then
+        echo >&2 "Error: EXISTING_MANIFEST_DIR must be an existing directory"
+        exit 1
+    fi
+
+    manifest_dir="$1"
+    if [ ! -d "$manifest_dir" ]; then
+        echo >&2 "Error: MANIFEST_DIR must be an existing directory"
+        exit 1
+    fi
+
+    if [ "$(echo "$existing_manifest_dir/"*)" = "$existing_manifest_dir/*" ]; then
+        echo >&2 "Error: no manifests in EXISTING_MANIFEST_DIR"
+        exit 1
+    fi
+
+    if [ "$(echo "$manifest_dir/"*)" = "$manifest_dir/*" ]; then
+        echo >&2 "Error: no manifests in MANIFEST_DIR"
+        exit 1
+    fi
+}
+
+process_arguments "$@"
+tempdir="$(mktemp -d -t "${0##*/}.XXXXXX")" || exit 1
+trap 'rm -rf "$tempdir"' EXIT INT TERM
+
+for extension in manifest downloads; do
+    cat "$existing_manifest_dir/"*.$extension 2>/dev/null | sort -u >"$tempdir/existing.$extension"
+    for manifest in "$manifest_dir/"*.$extension; do
+        if [ ! -e "$manifest" ]; then
+            continue
+        fi
+        manifestname="$(basename "$manifest")"
+        sort -u "$manifest" >"$tempdir/$manifestname.sorted"
+        comm -13 "$tempdir/existing.$extension" "$tempdir/$manifestname.sorted" >"$tempdir/$manifestname"
+        diff -u "$manifest" "$tempdir/$manifestname" >"$tempdir/$manifestname.diff"
+        if [ -s "$tempdir/$manifestname.diff" ]; then
+            echo >&2 "Lines were removed from $manifest"
+            mv "$tempdir/$manifestname" "$manifest"
+            if ! [ -s "$manifest" ]; then
+                echo >&2 "Manifest $manifest was empty, removed"
+                rm -f "$manifest"
+            fi
+        fi
+    done
+done
