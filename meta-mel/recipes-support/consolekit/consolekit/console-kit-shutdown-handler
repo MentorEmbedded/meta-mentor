@@ -1,0 +1,28 @@
+#!/bin/sh
+
+last_shutdown_info_file=/var/log/ConsoleKit/last_shutdown_info
+
+/usr/bin/printf "last invokation of $0 @ %s\n" "$(date)" > ${last_shutdown_info_file}
+
+shutting_down="n"
+rebooting="n"
+halting="n"
+powering_down="n"
+kexecing="n"
+
+/bin/systemctl list-jobs | /bin/grep -E 'shutdown.target.*start' && shutting_down="y"
+/bin/systemctl list-jobs | /bin/grep -E 'reboot.target.*start'   && rebooting="y"
+/bin/systemctl list-jobs | /bin/grep -E 'halt.target.*start'     && halting="y"
+/bin/systemctl list-jobs | /bin/grep -E 'poweroff.target.*start' && powering_down="y"
+/bin/systemctl list-jobs | /bin/grep -E 'kexec.target.*start'    && kexecing="y"
+
+{ [ ${shutting_down} = y ] && echo "shutting down"    || echo "not shutting down"; }    >> ${last_shutdown_info_file}
+{ [ ${rebooting} = y ]     && echo "-> rebooting"     || echo "-> not rebooting"; }     >> ${last_shutdown_info_file}
+{ [ ${halting} = y ]       && echo "-> halting"       || echo "-> not halting"; }       >> ${last_shutdown_info_file}
+{ [ ${powering_down} = y ] && echo "-> powering down" || echo "-> not powering down"; } >> ${last_shutdown_info_file}
+{ [ ${kexecing} = y ]      && echo "-> kexecing"      || echo "-> not kexecing"; }      >> ${last_shutdown_info_file}
+
+[ ${rebooting} = y ]     && /usr/sbin/ck-log-system-restart
+[ ${kexecing} = y ]      && /usr/sbin/ck-log-system-restart
+[ ${halting} = y ]       && /usr/sbin/ck-log-system-stop
+[ ${powering_down} = y ] && /usr/sbin/ck-log-system-stop
