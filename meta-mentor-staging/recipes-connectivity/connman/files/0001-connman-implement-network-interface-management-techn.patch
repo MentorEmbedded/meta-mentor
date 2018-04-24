@@ -1,4 +1,4 @@
-From a6201d176c9ef28758d0855c48ac662e0697a8b6 Mon Sep 17 00:00:00 2001
+From b35228d25ccff0229b97ba338cd5d5c97be22bdd Mon Sep 17 00:00:00 2001
 From: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
 Date: Tue, 1 Jul 2014 23:47:15 +0530
 Subject: [PATCH] connman: implement network interface management techniques
@@ -8,15 +8,16 @@ tries to call cleanup_devices function, this will let connman
 create new routing table without bringing down the ethernet interface.
 
 Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+
 ---
  src/connman.service.in | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/src/connman.service.in b/src/connman.service.in
-index 48afb63..c41ac4f 100644
+index dab48bc..6b9f528 100644
 --- a/src/connman.service.in
 +++ b/src/connman.service.in
-@@ -7,7 +7,10 @@ Before=remote-fs.target
+@@ -12,7 +12,10 @@ Conflicts=systemd-resolved.service
  Type=dbus
  BusName=net.connman
  Restart=on-failure
@@ -26,8 +27,5 @@ index 48afb63..c41ac4f 100644
 +ExecStart=/bin/sh -c "if [ \"$NET_ADDR\" = \"off\" ] || [ \"$NET_ADDR\" = \"none\" ]; then /usr/sbin/connmand -n; else /usr/sbin/connmand -n $OPT; fi"
 +ExecStartPost=/bin/sh -c "if [ ! -z \"$OPT\" ] && [ \"$NET_ADDR\" = \"dhcp\" ]; then /sbin/udhcpc -i $OPT2; fi"
  StandardOutput=null
- 
- [Install]
--- 
-1.9.1
-
+ CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW CAP_SYS_TIME CAP_SYS_MODULE
+ ProtectHome=true
