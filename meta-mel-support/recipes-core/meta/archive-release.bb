@@ -300,20 +300,22 @@ do_archive_downloads () {
             done
             cd - >/dev/null
             layerpath="$(sed -n "s/^$name|//p" layermap.txt)" || exit 1
-            layerroot="$(repo_root "$layerpath")"
-            layerbase="${layerroot##*/}"
-            if echo "${LAYERS_OWN_DOWNLOADS}" | grep -Eq "\<$name\>"; then
-                layer_relpath="${layerpath#${layerroot}/}"
-                if [ "$layer_relpath" = "$layerroot" ]; then
-                    layer_relpath=$layerbase
+            if [ -n "$layerpath" ]; then
+                layerroot="$(repo_root "$layerpath")"
+                layerbase="${layerroot##*/}"
+                if echo "${LAYERS_OWN_DOWNLOADS}" | grep -Eq "\<$name\>"; then
+                    layer_relpath="${layerpath#${layerroot}/}"
+                    if [ "$layer_relpath" = "$layerroot" ]; then
+                        layer_relpath=$layerbase
+                    else
+                        layer_relpath=$layerbase/$layer_relpath
+                    fi
+                    release_tar "--transform=s,^downloads/$name,$layer_relpath/downloads," -chf \
+                            $name-downloads.tar downloads/$name
                 else
-                    layer_relpath=$layerbase/$layer_relpath
+                    release_tar "--transform=s,^downloads/$name,downloads," -rhf \
+                            $layerbase-downloads.tar downloads/$name
                 fi
-                release_tar "--transform=s,^downloads/$name,$layer_relpath/downloads," -chf \
-                        $name-downloads.tar downloads/$name
-            else
-                release_tar "--transform=s,^downloads/$name,downloads," -rhf \
-                        $layerbase-downloads.tar downloads/$name
             fi
         done
         if [ -n "${UNINATIVE_TARBALL}" ]; then
