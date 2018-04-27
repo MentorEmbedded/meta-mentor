@@ -1,0 +1,27 @@
+From b4b85220c32110ecf8f3ffab13ee31007cbe91e0 Mon Sep 17 00:00:00 2001
+From: Benjamin Walsh <Benjamin_Walsh@mentor.com>
+Date: Wed, 18 Apr 2018 16:27:24 -0400
+Subject: [PATCH] wait for /var/volatile mount
+
+---
+ volatile-binds.service.in | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/volatile-binds.service.in b/volatile-binds.service.in
+index b23355a..73a003a 100644
+--- a/volatile-binds.service.in
++++ b/volatile-binds.service.in
+@@ -2,8 +2,10 @@
+ Description=Bind mount volatile @where@
+ DefaultDependencies=false
+ Before=local-fs.target
++After=var-volatile.mount
+ RequiresMountsFor=@whatparent@ @whereparent@
+ ConditionPathIsReadWrite=@whatparent@
++ConditionPathIsMountPoint=@whatparent@
+ ConditionPathExists=@where@
+ ConditionPathIsReadWrite=!@where@
+ 
+-- 
+2.7.4
+
