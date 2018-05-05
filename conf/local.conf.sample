@@ -17,6 +17,9 @@ MACHINE ??= "qemux86"
 #TCMODE = "external-sourcery-rebuild-libc"
 #SOURCERY_SRC_FILE = "/path/to/sourcery/src.tar.gz"
 
+# Uncomment to use the oe/yocto-built toolchain rather than the external
+#TCMODE = "default"
+
 # Uncomment to switch the built toolchain from eglibc to uclibc
 #TCLIBC = "uclibc"
 
