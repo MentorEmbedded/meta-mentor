@@ -36,3 +36,5 @@ assemble_intercepts[cleandirs] += "${POSTINST_INTERCEPTS_DIR}"
 
 do_rootfs[prefuncs] += "assemble_intercepts"
 do_rootfs[file-checksums] += "${@' '.join('%s:True' % f for f in '${POSTINST_INTERCEPTS}'.split())}"
+do_populate_sdk[prefuncs] += "assemble_intercepts"
+do_populate_sdk[file-checksums] += "${@' '.join('%s:True' % f for f in '${POSTINST_INTERCEPTS}'.split())}"
