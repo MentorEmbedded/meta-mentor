@@ -33,6 +33,7 @@ MACHINE ??= "qemux86"
 # the generated images. Some of these options are added to certain image types
 # automatically. The variable can contain the following options:
 #
+#  "graphics"        - add a graphical environment, defaulting to wayland/weston
 #  "dbg-pkgs"        - add -dbg packages for all installed packages
 #                      (adds symbol information for debugging/profiling)
 #  "dev-pkgs"        - add -dev packages for all installed packages
