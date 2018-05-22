@@ -5,6 +5,9 @@ IMAGE_FEATURES_DEVELOPMENT ?= "debug-tweaks codebench-debug ssh-server-openssh t
 IMAGE_FEATURES_PRODUCTION ?= ""
 IMAGE_FEATURES_DISABLED_PRODUCTION ?= "${IMAGE_FEATURES_DEVELOPMENT} ssh-server-dropbear"
 
+# Use this variable to remove distro features: remove X11 from mel distro
+DISTRO_FEATURES_REMOVE ?= "x11"
+
 # Uncomment to set a site name (shown in CodeBench) for the ADE
 # Default: ADE for ${ADE_IDENTIFIER}
 #ADE_SITENAME ?= "My Company's ADE for ${ADE_IDENTIFIER}"
