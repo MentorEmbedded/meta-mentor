@@ -14,7 +14,5 @@ IMAGE_FEATURES_DISABLED_PRODUCTION ?= "${IMAGE_FEATURES_DEVELOPMENT} ssh-server-
 # build gets its own identifier, so is self-contained already.
 # Default: ${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}
 #ADE_IDENTIFIER ?= "${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}.customized"
-SYSTEMD_BINDS = "\
-/var/volatile/systemd /etc/systemd\n\
- "
-VOLATILE_BINDS_append = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'read-only-rootfs', d.getVar('SYSTEMD_BINDS', True), '', d)}"
+IMAGE_CLASSES += "remove-systemd-bind"
+ROOTFS_POSTPROCESS_COMMAND_append = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'read-only-rootfs', '','remove_systemd_bind;', d)}"
