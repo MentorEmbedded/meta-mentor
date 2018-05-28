@@ -10,6 +10,16 @@
 SDK_AUTO_RELOCATE_SOURCE ?= "1"
 SDK_AUTO_RELOCATE_HOST_DEPENDS = "nativesdk-sdk-relocate"
 
+SDK_PACKAGING_COMMAND_prepend = "only_relocate_if_lib;"
+
+python only_relocate_if_lib () {
+    from pathlib import Path
+    libdir = Path(d.expand("${SDK_OUTPUT}${SDKPATHNATIVE}${base_libdir_nativesdk}"))
+    if not libdir.exists():
+        d.setVar('SDK_RELOCATE_AFTER_INSTALL', '0')
+        d.setVar('SDK_AUTO_RELOCATE_SOURCE', '0')
+}
+
 # Ensure that the shar installer writes .installpath, so we don't relocate the
 # first time the user sources the environment setup script in that case.
 SDK_POST_INSTALL_COMMAND_append = 'echo "${env_setup_script%/*}" >"${env_setup_script%/*}/.installpath";'
@@ -18,7 +28,6 @@ sdkpath_to_bindir = "${@os.path.relpath('${SDKPATHNATIVE}${bindir_nativesdk}', '
 
 toolchain_env_script_reloc_fragment () {
     mv "$script" "$script.fragment"
-    sed -i -e "s#${SDKPATH}#\$scriptdir#g" "$script.fragment" 
     cat >"$script" <<END
 if [ -z "\$SDK_RELOCATING" ]; then
     if [ -n "\$BASH_SOURCE" ] || [ -n "\$ZSH_NAME" ]; then
@@ -28,14 +37,15 @@ if [ -z "\$SDK_RELOCATING" ]; then
             scriptdir="\$(cd "\$(dirname "\$0")" && pwd)"
         fi
 
-        if [ -e "\$scriptdir/${sdkpath_to_bindir}/sdk-auto-relocate" ]; then
-            env -i "\$scriptdir/${sdkpath_to_bindir}/sdk-auto-relocate" && SDK_RELOCATING=1 . "\$scriptdir/environment-setup-${REAL_MULTIMACH_TARGET_SYS}"
-        else
-            echo >&2 "Warning: Unable to find sdk-auto-relocate script"
+        if [ "\$scriptdir" != "${SDKPATH}" ]; then
+            if [ -e "\$scriptdir/${sdkpath_to_bindir}/sdk-auto-relocate" ]; then
+                env -i "\$scriptdir/${sdkpath_to_bindir}/sdk-auto-relocate" && SDK_RELOCATING=1 . "\$scriptdir/environment-setup-${REAL_MULTIMACH_TARGET_SYS}"
+            else
+                echo >&2 "Warning: Unable to find sdk-auto-relocate script"
+            fi
         fi
     else
         echo >&2 "Warning: Unable to determine SDK install path from environment setup script location. Please run <installdir>/${sdkpath_to_bindir}/sdk-auto-relocate manually."
-        scriptdir="${SDKPATH}"
     fi
 else
     unset SDK_RELOCATING
