@@ -7,3 +7,5 @@
 # build gets its own identifier, so is self-contained already.
 # Default: ${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}
 #ADE_IDENTIFIER ?= "${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}.customized"
+IMAGE_CLASSES += "remove-systemd-bind"
+ROOTFS_POSTPROCESS_COMMAND_append = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'read-only-rootfs', '','remove_systemd_bind;', d)}"
