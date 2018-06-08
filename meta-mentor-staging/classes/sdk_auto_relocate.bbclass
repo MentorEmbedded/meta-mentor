@@ -10,7 +10,7 @@
 SDK_AUTO_RELOCATE_SOURCE ?= "1"
 SDK_AUTO_RELOCATE_HOST_DEPENDS = "nativesdk-sdk-relocate"
 
-SDK_PACKAGING_COMMAND_prepend = "only_relocate_if_lib;"
+SDK_PACKAGING_COMMAND_prepend = "only_relocate_if_lib; auto_reloc_source;"
 
 python only_relocate_if_lib () {
     from pathlib import Path
@@ -55,7 +55,7 @@ END
     rm "$script.fragment"
 }
 
-python () {
+python auto_reloc_source () {
     if bb.utils.to_boolean(d.getVar('SDK_AUTO_RELOCATE_SOURCE', True)):
         d.appendVar('toolchain_create_sdk_env_script', '\n${toolchain_env_script_reloc_fragment}')
         d.appendVar('TOOLCHAIN_HOST_TASK', ' ${SDK_AUTO_RELOCATE_HOST_DEPENDS}')
