@@ -50,6 +50,7 @@ MACHINE ??= "qemux86"
 #  "x11-mini"        - minimal x11 setup, with window manager and terminal
 #  "splash"          - include a splashscreen (default: psplash, but the
 #                      particular package can be set with the SPLASH variable)
+#  "multimedia"      - add gstreamer support for running multimedia files
 #
 #  These are for particular roles/purposes:
 #
