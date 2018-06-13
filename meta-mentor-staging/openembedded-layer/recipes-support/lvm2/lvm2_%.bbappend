@@ -1,4 +1,4 @@
-# thin-provisioning-tools are gplv3. if that's incompatible, we don't want to
-# enable the packageconfig, otherwise the rdepend on it will fail the build
-REMOVE_THIN = "${@incompatible_license_contains('GPL-3.0', 'thin-provisioning-tools', '', d)}"
-PACKAGECONFIG_remove_mel = "${REMOVE_THIN}"
+inherit incompatible-recipe-check
+
+REMOVE_INCOMPATIBLE_THIN = "${@'thin-provisioning-tools' if is_incompatible(d, ['thin-provisioning-tools'], 'GPL-3.0') else ''}"
+PACKAGECONFIG_remove = "${REMOVE_INCOMPATIBLE_THIN}"
