@@ -38,6 +38,11 @@ cat <<EOF > "$BUILDDIR"/custom.xml
 <?xml version="1.0" encoding="utf-8"?>
 <django-objects version="1.0">
 
+  <!-- Define a Bitbake version for custom fixture conformance -->
+  <object model="orm.bitbakeversion" pk="2">
+    <field type="CharField" name="dirpath">bitbake</field>
+  </object>
+
   <!-- Reset to MEL -->
 
   <object model="orm.release" pk="2">
