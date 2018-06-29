@@ -139,8 +139,7 @@ EOF
 
 pk=1
 # Openembedded-core is poky's meta layer.
-layer=$(dirname "$BITBAKEDIR")
-layer="$layer"/meta
+layer="$MELDIR"/oe-core/meta
 cat <<EOF >> "$BUILDDIR"/custom.xml
   <object model="orm.layer" pk="$pk">
     <field type="CharField" name="name">$OE_CORE_NAME</field>
