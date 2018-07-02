@@ -218,7 +218,7 @@ if [ "\$#" -ne 1 ]; then
 else
   if [ "\$1" == "start" ]; then
     . $BUILDDIR/venv/bin/activate
-    . $BITBAKEDIR/bin/toaster start
+    . $BITBAKEDIR/bin/toaster start toasterdir="$BUILDDIR"
     xdg-open "http://localhost:8000"
   elif [ "\$1" == "stop" ]; then
     . $BITBAKEDIR/bin/toaster stop
