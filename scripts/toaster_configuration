@@ -217,6 +217,7 @@ if [ "\$#" -ne 1 ]; then
     echo >&2 "Usage: . ./toaster-setup-environment {start|stop}"
 else
   if [ "\$1" == "start" ]; then
+    export CUSTOM_XML_ONLY=1
     . $BUILDDIR/venv/bin/activate
     . $BITBAKEDIR/bin/toaster start toasterdir="$BUILDDIR"
     xdg-open "http://localhost:8000"
