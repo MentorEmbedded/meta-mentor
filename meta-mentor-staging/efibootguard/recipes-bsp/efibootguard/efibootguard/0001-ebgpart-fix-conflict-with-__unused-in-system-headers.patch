@@ -1,0 +1,39 @@
+From f580ef2dc531a08e0cc5f273af42d77dfeb54100 Mon Sep 17 00:00:00 2001
+From: Christopher Larson <chris_larson@mentor.com>
+Date: Tue, 3 Jul 2018 01:57:03 +0500
+Subject: [PATCH] ebgpart: fix conflict with __unused in system headers
+
+Signed-off-by: Christopher Larson <chris_larson@mentor.com>
+---
+ include/ebgpart.h | 4 ++--
+ tools/ebgpart.c   | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/include/ebgpart.h b/include/ebgpart.h
+index 097bf8f..7a460e3 100644
+--- a/include/ebgpart.h
++++ b/include/ebgpart.h
+@@ -32,8 +32,8 @@
+ 	if (verbosity) fprintf(o, __VA_ARGS__)
+ #endif
+ 
+-#ifndef __unused
+-#define __unused __attribute__((unused))
++#ifndef __unused_attr
++#define __unused_attr __attribute__((unused))
+ #endif
+ 
+ #include <unistd.h>
+diff --git a/tools/ebgpart.c b/tools/ebgpart.c
+index 262b1c5..d68dff0 100644
+--- a/tools/ebgpart.c
++++ b/tools/ebgpart.c
+@@ -548,7 +548,7 @@ PedDisk *ped_disk_new(const PedDevice *dev)
+ 	return &g_ped_dummy_disk;
+ }
+ 
+-PedPartition *ped_disk_next_partition(const PedDisk *__unused pd,
++PedPartition *ped_disk_next_partition(const PedDisk *__unused_attr pd,
+ 				      const PedPartition *part)
+ {
+ 	return part->next;
