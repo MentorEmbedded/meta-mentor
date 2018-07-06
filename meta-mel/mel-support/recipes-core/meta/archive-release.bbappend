@@ -327,7 +327,7 @@ python do_archive_mel_downloads () {
         bb.fatal('%s does not exist, but mel_downloads requires it. Please run `bitbake-layers dump-downloads` with appropriate arguments.' % dl_by_layer_fn)
 
     downloads = list(checksummed_downloads(dl_by_layer_fn, dl_dir, archive_dl_dir))
-    downloads.extend(uninative_downloads(d.getVar('WORKDIR'), d.getVar('DL_DIR')))
+    downloads.extend(sorted(uninative_downloads(d.getVar('WORKDIR'), d.getVar('DL_DIR'))))
     outdir = d.expand('${S}/do_archive_mel_downloads')
     mandir = os.path.join(outdir, 'manifests')
     dldir = os.path.join(outdir, 'downloads')
@@ -357,10 +357,10 @@ python do_archive_mel_downloads () {
             layer_manifests[layername] = manifestfn
 
     main_manifest = d.expand('%s/${MANIFEST_NAME}.downloads' % mandir)
-    manifests = collections.defaultdict(set)
+    manifests = collections.defaultdict(list)
     for layername, path, dest_path, checksum in downloads:
         manifestfn = layer_manifests.get(layername) or main_manifest
-        manifests[manifestfn].add((layername, path, dest_path, checksum))
+        manifests[manifestfn].append((layername, path, dest_path, checksum))
 
     for manifest, manifest_downloads in manifests.items():
         with open(manifest, 'w') as f:
