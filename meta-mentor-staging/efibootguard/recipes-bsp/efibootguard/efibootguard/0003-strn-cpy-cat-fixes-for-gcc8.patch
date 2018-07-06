@@ -1,0 +1,79 @@
+From a4034e86e89f2adc9aacca249535300701f0644c Mon Sep 17 00:00:00 2001
+From: Christopher Larson <chris_larson@mentor.com>
+Date: Thu, 5 Jul 2018 19:22:28 -0700
+Subject: [PATCH] strn{cpy,cat} fixes for gcc8
+
+Signed-off-by: Christopher Larson <chris_larson@mentor.com>
+---
+ env/env_api_fat.c     | 2 +-
+ env/env_config_file.c | 6 +++---
+ env/env_disk_utils.c  | 4 ++--
+ env/uservars.c        | 2 +-
+ 4 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/env/env_api_fat.c b/env/env_api_fat.c
+index 1705cb9..db6ca6e 100644
+--- a/env/env_api_fat.c
++++ b/env/env_api_fat.c
+@@ -262,7 +262,7 @@ static int bgenv_get_string(char *buffer, uint64_t *type, void *data,
+ 	if (!data) {
+ 		return strlen(buffer)+1;
+ 	}
+-	strncpy(data, buffer, strlen(buffer)+1);
++	memcpy(data, buffer, strlen(buffer)+1);
+ 	if (type) {
+ 		*type = USERVAR_TYPE_STRING_ASCII;
+ 	}
+diff --git a/env/env_config_file.c b/env/env_config_file.c
+index 69a707a..e9ed93c 100644
+--- a/env/env_config_file.c
++++ b/env/env_config_file.c
+@@ -28,10 +28,10 @@ FILE *open_config_file(CONFIG_PART *cfgpart, char *mode)
+ 	if (!configfilepath) {
+ 		return NULL;
+ 	}
+-	strncpy(configfilepath, cfgpart->mountpoint,
++	memcpy(configfilepath, cfgpart->mountpoint,
+ 		strlen(cfgpart->mountpoint) + 1);
+-	strncat(configfilepath, "/", 1);
+-	strncat(configfilepath, FAT_ENV_FILENAME, strlen(FAT_ENV_FILENAME));
++	strcat(configfilepath, "/");
++	strcat(configfilepath, FAT_ENV_FILENAME);
+ 	VERBOSE(stdout, "Probing config file at %s.\n", configfilepath);
+ 	FILE *config = fopen(configfilepath, mode);
+ 	free(configfilepath);
+diff --git a/env/env_disk_utils.c b/env/env_disk_utils.c
+index 0ed3762..612d193 100644
+--- a/env/env_disk_utils.c
++++ b/env/env_disk_utils.c
+@@ -37,7 +37,7 @@ char *get_mountpoint(char *devpath)
+ 			if (!mntpoint) {
+ 				break;
+ 			}
+-			strncpy(mntpoint, part->mnt_dir,
++			memcpy(mntpoint, part->mnt_dir,
+ 				strlen(part->mnt_dir) + 1);
+ 			return mntpoint;
+ 		}
+@@ -75,7 +75,7 @@ bool mount_partition(CONFIG_PART *cfgpart)
+ 		VERBOSE(stderr, "Error, out of memory.\n");
+ 		return false;
+ 	}
+-	strncpy(cfgpart->mountpoint, mountpoint, strlen(mountpoint) + 1);
++	memcpy(cfgpart->mountpoint, mountpoint, strlen(mountpoint) + 1);
+ 	return true;
+ }
+ 
+diff --git a/env/uservars.c b/env/uservars.c
+index eff1cf8..6b95b01 100644
+--- a/env/uservars.c
++++ b/env/uservars.c
+@@ -76,7 +76,7 @@ void bgenv_serialize_uservar(uint8_t *p, char *key, uint64_t type, void *data,
+ 	uint32_t payload_size, data_size;
+ 
+ 	/* store key */
+-	strncpy((char *)p, key, strlen(key) + 1);
++	memcpy((char *)p, key, strlen(key) + 1);
+ 	p += strlen(key) + 1;
+ 
+ 	/* store payload_size after key */
