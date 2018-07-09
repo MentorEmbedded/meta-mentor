@@ -204,17 +204,32 @@ def git_archive(subdir, outdir, message=None):
     if message is None:
         message = 'Release of %s' % os.path.basename(subdir)
 
+    parent = None
     if os.path.exists(os.path.join(subdir, '.git')):
         parent = subdir
-        # Handle .git as a file i.e. submodules
+    else:
+        try:
+            git_topdir = bb.process.run(['git', 'rev-parse', '--show-toplevel'], cwd=subdir)[0].rstrip()
+        except bb.process.CmdError:
+            pass
+        else:
+            if git_topdir != subdir:
+                subdir_relpath = os.path.relpath(subdir, git_topdir)
+                try:
+                    ls = bb.process.run(['git', 'ls-tree', '-d', 'HEAD', subdir_relpath], cwd=subdir)
+                except bb.process.CmdError as exc:
+                    pass
+                else:
+                    if ls:
+                        parent = git_topdir
+
+    if parent:
         parent_git = os.path.join(parent, bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip())
         # Handle git worktrees
         _commondir = os.path.join(parent_git, 'commondir')
         if os.path.exists(_commondir):
             with open(_commondir, 'r') as f:
                 parent_git = os.path.join(parent_git, f.read().rstrip())
-    else:
-        parent = None
 
     with tempfile.TemporaryDirectory() as tmpdir:
         gitcmd = ['git', '--git-dir', tmpdir, '--work-tree', subdir]
