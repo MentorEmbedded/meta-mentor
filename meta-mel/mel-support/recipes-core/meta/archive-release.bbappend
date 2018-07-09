@@ -236,14 +236,16 @@ def git_archive(subdir, outdir, message=None):
         }
         if parent:
             try:
-                cdate = bb.process.run(['git', 'log', '--pretty=%ct', '-1', '--', os.path.relpath(subdir, parent)], cwd=parent)[0].rstrip()
+                cdate, adate = bb.process.run(['git', 'log', '--pretty=%ct\t%at', '-1', '--', os.path.relpath(subdir, parent)], cwd=parent)[0].rstrip().split('\t')
             except bb.process.CmdError:
-                bb.warn('Error determining commit date for %s' % subdir)
-                cdate = None, None
+                bb.warn('Error determining commit dates for %s' % subdir)
+                cdate, adate = None, None
 
             penv = dict(env)
             if cdate:
-                penv.update(GIT_AUTHOR_DATE=cdate, GIT_COMMITTER_DATE=cdate)
+                penv.update(GIT_COMMITTER_DATE=cdate)
+            if adate:
+                penv.update(GIT_AUTHOR_DATE=adate)
 
             head = bb.process.run(gitcmd + ['commit-tree', '-m', message, '-p', parent_head, tree], env=penv)[0].rstrip()
             with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
