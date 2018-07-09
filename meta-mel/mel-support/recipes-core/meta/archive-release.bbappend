@@ -235,15 +235,11 @@ def git_archive(subdir, outdir, message=None):
             'GIT_COMMITTER_EMAIL': 'build_user@build_host',
         }
         if parent:
-            # Walk the commits until we get a date, as merges don't seem to
-            # report a commit date.
-            cdate, distance = None, 0
-            while not cdate:
-                try:
-                    cdate = bb.process.run(['git', 'diff-tree', '--pretty=format:%ct', '-s', 'HEAD~%d' % distance], cwd=subdir)[0]
-                except bb.process.CmdError:
-                    break
-                distance += 1
+            try:
+                cdate = bb.process.run(['git', 'log', '--pretty=%ct', '-1', '--', os.path.relpath(subdir, parent)], cwd=parent)[0].rstrip()
+            except bb.process.CmdError:
+                bb.warn('Error determining commit date for %s' % subdir)
+                cdate = None, None
 
             penv = dict(env)
             if cdate:
