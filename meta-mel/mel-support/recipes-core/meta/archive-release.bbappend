@@ -233,40 +233,41 @@ def git_archive(subdir, outdir, message=None):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         gitcmd = ['git', '--git-dir', tmpdir, '--work-tree', subdir]
+        commitcmd = ['commit-tree', '-m', message]
         bb.process.run(gitcmd + ['init'])
         if parent:
             with open(os.path.join(tmpdir, 'objects', 'info', 'alternates'), 'w') as f:
                 f.write(os.path.join(parent_git, 'objects') + '\n')
             parent_head = bb.process.run(['git', 'rev-parse', 'HEAD'], cwd=subdir)[0].rstrip()
             bb.process.run(gitcmd + ['read-tree', parent_head])
+            commitcmd.extend(['-p', parent_head])
 
-        bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
-        tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
-
-        env = {
-            'GIT_AUTHOR_NAME': 'Build User',
-            'GIT_AUTHOR_EMAIL': 'build_user@build_host',
-            'GIT_COMMITTER_NAME': 'Build User',
-            'GIT_COMMITTER_EMAIL': 'build_user@build_host',
-        }
-        if parent:
             try:
                 cdate, adate = bb.process.run(['git', 'log', '--pretty=%ct\t%at', '-1', '--', os.path.relpath(subdir, parent)], cwd=parent)[0].rstrip().split('\t')
             except bb.process.CmdError:
                 bb.warn('Error determining commit dates for %s' % subdir)
                 cdate, adate = None, None
 
-            penv = dict(env)
-            if cdate:
-                penv.update(GIT_COMMITTER_DATE=cdate)
-            if adate:
-                penv.update(GIT_AUTHOR_DATE=adate)
+        bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
+        tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
+        commitcmd.append(tree)
 
-            head = bb.process.run(gitcmd + ['commit-tree', '-m', message, '-p', parent_head, tree], env=penv)[0].rstrip()
-            with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
-                f.write(head + '\n')
-        else:
-            head = bb.process.run(gitcmd + ['commit-tree', '-m', message, tree], env=env)[0].rstrip()
+        if not parent or not cdate:
+            st = os.stat(os.path.join(subdir, 'conf', 'layer.conf'))
+            cdate = adate = st.st_mtime
+
+        env = {
+            'GIT_AUTHOR_NAME': 'Build User',
+            'GIT_AUTHOR_EMAIL': 'build_user@build_host',
+            'GIT_AUTHOR_DATE': str(adate),
+            'GIT_COMMITTER_NAME': 'Build User',
+            'GIT_COMMITTER_EMAIL': 'build_user@build_host',
+            'GIT_COMMITTER_DATE': str(cdate),
+        }
+
+        head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
+        with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
+            f.write(head + '\n')
 
         # We need a ref to ensure repack includes the new commit, as it
         # does not include dangling objects in the pack.
