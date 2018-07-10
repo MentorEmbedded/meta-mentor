@@ -204,56 +204,70 @@ def git_archive(subdir, outdir, message=None):
     if message is None:
         message = 'Release of %s' % os.path.basename(subdir)
 
+    parent = None
     if os.path.exists(os.path.join(subdir, '.git')):
         parent = subdir
-        # Handle .git as a file i.e. submodules
+    else:
+        try:
+            git_topdir = bb.process.run(['git', 'rev-parse', '--show-toplevel'], cwd=subdir)[0].rstrip()
+        except bb.process.CmdError:
+            pass
+        else:
+            if git_topdir != subdir:
+                subdir_relpath = os.path.relpath(subdir, git_topdir)
+                try:
+                    ls = bb.process.run(['git', 'ls-tree', '-d', 'HEAD', subdir_relpath], cwd=subdir)
+                except bb.process.CmdError as exc:
+                    pass
+                else:
+                    if ls:
+                        parent = git_topdir
+
+    if parent:
         parent_git = os.path.join(parent, bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip())
         # Handle git worktrees
         _commondir = os.path.join(parent_git, 'commondir')
         if os.path.exists(_commondir):
             with open(_commondir, 'r') as f:
                 parent_git = os.path.join(parent_git, f.read().rstrip())
-    else:
-        parent = None
 
     with tempfile.TemporaryDirectory() as tmpdir:
         gitcmd = ['git', '--git-dir', tmpdir, '--work-tree', subdir]
+        commitcmd = ['commit-tree', '-m', message]
         bb.process.run(gitcmd + ['init'])
         if parent:
             with open(os.path.join(tmpdir, 'objects', 'info', 'alternates'), 'w') as f:
                 f.write(os.path.join(parent_git, 'objects') + '\n')
             parent_head = bb.process.run(['git', 'rev-parse', 'HEAD'], cwd=subdir)[0].rstrip()
             bb.process.run(gitcmd + ['read-tree', parent_head])
+            commitcmd.extend(['-p', parent_head])
+
+            try:
+                cdate, adate = bb.process.run(['git', 'log', '--pretty=%ct\t%at', '-1', '--', os.path.relpath(subdir, parent)], cwd=parent)[0].rstrip().split('\t')
+            except bb.process.CmdError:
+                bb.warn('Error determining commit dates for %s' % subdir)
+                cdate, adate = None, None
 
         bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
         tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
+        commitcmd.append(tree)
+
+        if not parent or not cdate:
+            st = os.stat(os.path.join(subdir, 'conf', 'layer.conf'))
+            cdate = adate = st.st_mtime
 
         env = {
             'GIT_AUTHOR_NAME': 'Build User',
             'GIT_AUTHOR_EMAIL': 'build_user@build_host',
+            'GIT_AUTHOR_DATE': str(adate),
             'GIT_COMMITTER_NAME': 'Build User',
             'GIT_COMMITTER_EMAIL': 'build_user@build_host',
+            'GIT_COMMITTER_DATE': str(cdate),
         }
-        if parent:
-            # Walk the commits until we get a date, as merges don't seem to
-            # report a commit date.
-            cdate, distance = None, 0
-            while not cdate:
-                try:
-                    cdate = bb.process.run(['git', 'diff-tree', '--pretty=format:%ct', '-s', 'HEAD~%d' % distance], cwd=subdir)[0]
-                except bb.process.CmdError:
-                    break
-                distance += 1
 
-            penv = dict(env)
-            if cdate:
-                penv.update(GIT_AUTHOR_DATE=cdate, GIT_COMMITTER_DATE=cdate)
-
-            head = bb.process.run(gitcmd + ['commit-tree', '-m', message, '-p', parent_head, tree], env=penv)[0].rstrip()
-            with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
-                f.write(head + '\n')
-        else:
-            head = bb.process.run(gitcmd + ['commit-tree', '-m', message, tree], env=env)[0].rstrip()
+        head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
+        with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
+            f.write(head + '\n')
 
         # We need a ref to ensure repack includes the new commit, as it
         # does not include dangling objects in the pack.
