@@ -10,15 +10,7 @@
 SDK_AUTO_RELOCATE_SOURCE ?= "1"
 SDK_AUTO_RELOCATE_HOST_DEPENDS = "nativesdk-sdk-relocate"
 
-SDK_PACKAGING_COMMAND_prepend = "only_relocate_if_lib; auto_reloc_source;"
-
-python only_relocate_if_lib () {
-    from pathlib import Path
-    libdir = Path(d.expand("${SDK_OUTPUT}${SDKPATHNATIVE}${base_libdir_nativesdk}"))
-    if not libdir.exists():
-        d.setVar('SDK_RELOCATE_AFTER_INSTALL', '0')
-        d.setVar('SDK_AUTO_RELOCATE_SOURCE', '0')
-}
+SDK_PACKAGING_COMMAND_prepend = "auto_reloc_source;"
 
 # Ensure that the shar installer writes .installpath, so we don't relocate the
 # first time the user sources the environment setup script in that case.
