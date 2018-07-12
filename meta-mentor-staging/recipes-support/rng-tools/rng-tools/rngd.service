@@ -1,9 +1,0 @@
-[Unit]
-Description=Hardware RNG Entropy Gatherer Daemon
-Before=connman.service
-
-[Service]
-ExecStart=/usr/sbin/rngd -f
-
-[Install]
-WantedBy=multi-user.target
