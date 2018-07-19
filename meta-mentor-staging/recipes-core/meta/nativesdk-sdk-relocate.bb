@@ -4,7 +4,7 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384
 INHIBIT_DEFAULT_DEPS = "1"
 REAL_MULTIMACH_TARGET_SYS := "${MULTIMACH_TARGET_SYS}"
 
-inherit nativesdk
+inherit nativesdk toolchain_shar_relocate_bbpath
 
 SDKTARGETSYSROOT = "${SDKPATH}/sysroots/${REAL_MULTIMACH_TARGET_SYS}"
 
@@ -33,7 +33,7 @@ target_sdk_dir="\$(cd "\$scriptdir/${bindir_to_sdkpath}" && pwd -P)"
 sed -i -e "s#\$DEFAULT_INSTALL_DIR\>#\$installdir#g" "\$env_setup_script"
 ####
 END
-    cat "${COREBASE}/meta/files/toolchain-shar-relocate.sh" >>sdk-relocate
+    cat "${TOOLCHAIN_SHAR_RELOCATE}" >>sdk-relocate
     sed -i -e 's#grep -v "\$target_sdk_dir/.*"#grep -Ev "(sdk-relocate|$target_sdk_dir/(environment-setup-*|\.installpath))"#' sdk-relocate
     sed -i -e '/native_sysroot=/a native_sysroot=$($SUDO_EXEC echo $native_sysroot | sed -e "s:\\$scriptdir:$target_sdk_dir:")' sdk-relocate
     chmod +x sdk-relocate
