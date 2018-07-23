@@ -36,7 +36,7 @@ END
     cat "${TOOLCHAIN_SHAR_RELOCATE}" >>sdk-relocate
     sed -i -e 's#grep -v "\$target_sdk_dir/.*"#grep -Ev "(sdk-relocate|$target_sdk_dir/(environment-setup-*|\.installpath))"#' sdk-relocate
     sed -i -e '/native_sysroot=/a native_sysroot=$($SUDO_EXEC echo $native_sysroot | sed -e "s:\\$scriptdir:$target_sdk_dir:")' sdk-relocate
-
+    chmod +x sdk-relocate
     cat <<END >sdk-auto-relocate
 #!/bin/sh
 set -eu
@@ -54,31 +54,11 @@ fi
 sh "\$scriptdir/sdk-relocate" "\$from_path" "\$installdir"
 echo "\$installdir" >"\$installdir/.installpath"
 END
-
-    cat >sdk-relocate.sh <<END
-if [ -z "\$SDK_RELOCATING" ]; then
-    if [ -n "\$BASH_SOURCE" ] || [ -n "\$ZSH_NAME" ]; then
-        if [ -n "\$BASH_SOURCE" ]; then
-            scriptdir="\$(cd "\$(dirname "\$BASH_SOURCE")" && pwd)"
-        elif [ -n "\$ZSH_NAME" ]; then
-            scriptdir="\$(cd "\$(dirname "\$0")" && pwd)"
-        fi
-
-        env -i "\$scriptdir/${sdkpath_to_bindir}/sdk-auto-relocate" && SDK_RELOCATING=1 . "\$scriptdir/environment-setup-${REAL_MULTIMACH_TARGET_SYS}"
-    else
-        echo >&2 "Warning: Unable to determine SDK install path from environment setup script location. Please run <installdir>/${sdkpath_to_bindir}/sdk-auto-relocate manually."
-    fi
-else
-    unset SDK_RELOCATING
-fi
-END
+    chmod +x sdk-auto-relocate
 }
 
 do_install () {
-    install -d "${D}${bindir}" "${D}${SDKPATHNATIVE}/environment-setup.d"
+    install -d "${D}${bindir}"
     install -m 0755 sdk-relocate "${D}${bindir}/"
     install -m 0755 sdk-auto-relocate "${D}${bindir}/"
-    install -m 0755 sdk-relocate.sh "${D}${SDKPATHNATIVE}/environment-setup.d/"
 }
-
-FILES_${PN} += "${SDKPATHNATIVE}/environment-setup.d"
