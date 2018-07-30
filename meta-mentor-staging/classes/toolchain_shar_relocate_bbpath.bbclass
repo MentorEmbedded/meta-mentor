@@ -1,11 +1,20 @@
+TOOLCHAIN_SHAR_EXTRACT = "${@bb.utils.which(d.getVar('BBPATH'), 'files/toolchain-shar-extract.sh')}"
 TOOLCHAIN_SHAR_RELOCATE = "${@bb.utils.which(d.getVar('BBPATH'), 'files/toolchain-shar-relocate.sh')}"
+RELOCATE_SDK_SH = "${@bb.utils.which(d.getVar('BBPATH'), 'scripts/relocate_sdk.sh')}"
 
-python create_shar_relocate () {
-    creating_shar = 'create_shar' in [i.strip() for i in d.getVar('SDK_PACKAGING_FUNC').split(';')]
-    if creating_shar and d.getVar('SDK_RELOCATE_AFTER_INSTALL') == '1':
-        d.setVar('SDK_RELOCATE_AFTER_INSTALL', '0')
-        bb.utils.copyfile(d.getVar('TOOLCHAIN_SHAR_RELOCATE'), os.path.join(d.getVar('T'), 'post_install_command')) 
+create_sdk_files_append () {
+    install -m 0755 ${RELOCATE_SDK_SH} ${SDK_OUTPUT}/${SDKPATH}/relocate_sdk.sh
+    sed -i -e "s:@SDKPATH@:${SDKPATH}:g; s:##DEFAULT_INSTALL_DIR##:$escaped_sdkpath:" ${SDK_OUTPUT}/${SDKPATH}/relocate_sdk.sh
 }
 
+python () {
+    cs = d.getVar('create_shar', expand=False)
+    if cs:
+        cs = cs.replace('${COREBASE}/meta/files/toolchain-shar-extract.sh', '${TOOLCHAIN_SHAR_EXTRACT}')
+        cs = cs.replace('${COREBASE}/meta/files/toolchain-shar-relocate.sh', '${TOOLCHAIN_SHAR_RELOCATE}')
+        d.setVar('create_shar', cs)
+}
+
+do_populate_sdk[file-checksums] += "${TOOLCHAIN_SHAR_EXTRACT}:True"
 do_populate_sdk[file-checksums] += "${TOOLCHAIN_SHAR_RELOCATE}:True"
-SDK_PACKAGING_FUNC_prepend = "create_shar_relocate;"
+do_populate_sdk[file-checksums] += "${RELOCATE_SDK_SH}:True"
