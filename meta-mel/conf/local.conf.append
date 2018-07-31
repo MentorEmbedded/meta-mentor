@@ -1,3 +1,6 @@
+# Install binutils with tools-profile, as our tracing scripts need ld
+CORE_IMAGE_EXTRA_INSTALL += "${@bb.utils.contains('IMAGE_FEATURES', 'tools-profile', 'binutils', '', d)}"
+
 # Image features for development-image
 IMAGE_FEATURES_DEVELOPMENT ?= "debug-tweaks codebench-debug ssh-server-openssh tools-profile"
 
@@ -14,5 +17,6 @@ IMAGE_FEATURES_DISABLED_PRODUCTION ?= "${IMAGE_FEATURES_DEVELOPMENT} ssh-server-
 # build gets its own identifier, so is self-contained already.
 # Default: ${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}
 #ADE_IDENTIFIER ?= "${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}.customized"
+
 IMAGE_CLASSES += "remove-systemd-bind"
 ROOTFS_POSTPROCESS_COMMAND_append = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'read-only-rootfs', '','remove_systemd_bind;', d)}"
