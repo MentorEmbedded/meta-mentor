@@ -172,7 +172,8 @@ include conf/include/drop-toolchain-from-sdk.inc
 # autoconf, automake, etc. See the aforementioned warning about use of Windows
 # SDKMACHINE while setting TOOLCHAIN_HOST_TASK, if you're building a Windows
 # SDK/ADE.
-TOOLCHAIN_HOST_TASK_remove = "nativesdk-packagegroup-sdk-host"
+TOOLCHAIN_HOST_REMOVE ??= "nativesdk-packagegroup-sdk-host"
+TOOLCHAIN_HOST_TASK_remove = "${TOOLCHAIN_HOST_REMOVE}"
 
 # TOOLCHAIN_HOST_TASK is used to add host packages to the ADE/SDK, for
 # example, to add bash:
