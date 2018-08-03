@@ -52,12 +52,7 @@ MACHINE ??= "qemux86"
 #                      particular package can be set with the SPLASH variable)
 #  "multimedia"      - add gstreamer support for running multimedia files
 #
-#  These are for particular roles/purposes:
-#
-#  "nas"             - add tools for a network access storage server (samba, nfs, swat)
-#  "print-server"    - add tools for a print server (samba, swat)
-#  "router"          - add tools for a router/accesspoint (ipsec-tools, iproute2, iptables, etc)
-#  "virtualization"  - add dockers support. Including meta-virtualization and dependencies 
+#  "virtualization"  - add docker support. Including meta-virtualization and dependencies
 #                      to bblayers is COMPULSORY for having no errors.
 # There are other options that can be used here, see
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
