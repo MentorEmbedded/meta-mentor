@@ -1,6 +1,14 @@
 # Install binutils with tools-profile, as our tracing scripts need ld
 CORE_IMAGE_EXTRA_INSTALL += "${@bb.utils.contains('IMAGE_FEATURES', 'tools-profile', 'binutils', '', d)}"
 
+# The gplv2 binutils does not support aarch64, so the gplv3 version is built
+# and installed with tools-profile on that architecture by default, even in
+# a non-gplv3 build. Comment this out, comment the line which installs
+# binutils, or remove tools-profile from EXTRA_IMAGE_FEATURES to disable this
+# behavior.
+WHITELIST_BINUTILS = "${@'binutils' if d.getVar('PN') == 'binutils' or (bb.data.inherits_class('image', d) and bb.utils.filter('IMAGE_FEATURES', 'tools-profile', d) == 'tools-profile') else ''}"
+WHITELIST_GPL-3.0_append_aarch64 = " ${WHITELIST_BINUTILS}"
+
 # Image features for development-image
 IMAGE_FEATURES_DEVELOPMENT ?= "debug-tweaks codebench-debug ssh-server-openssh tools-profile"
 

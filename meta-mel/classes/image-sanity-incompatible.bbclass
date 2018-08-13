@@ -13,6 +13,10 @@
 ALLOW_ALL_INCOMPATIBLE_WHITELISTED ?= "1"
 ALLOWED_INCOMPATIBLE_WHITELISTED ?= ""
 
+IMAGE_INCOMPATIBLE_WHITELISTED_WARNING = "Whitelisted packages with incompatible licenses were \
+installed as requested: %s. See INCOMPATIBLE_LICENSE, WHITELIST_*, \
+ALLOW_ALL_INCOMPATIBLE_WHITELISTED, and ALLOWED_INCOMPATIBLE_WHITELISTED for \
+reference."
 IMAGE_INCOMPATIBLE_MESSAGE = "Packages with incompatible licenses were installed: \
 %s. See INCOMPATIBLE_LICENSE. To allow this, either set ALLOW_ALL_INCOMPATIBLE_WHITELISTED \
 to 1 or add the packages to ALLOWED_INCOMPATIBLE_WHITELISTED"
@@ -45,19 +49,13 @@ python image_check_incompatible_packages () {
     allow_all_whitelisted = bb.utils.to_boolean(d.getVar('ALLOW_ALL_INCOMPATIBLE_WHITELISTED'))
     allowed_whitelisted = d.getVar('ALLOWED_INCOMPATIBLE_WHITELISTED').split()
 
-    incompatible_packages = []
+    incompatible_packages, incompatible_but_whitelisted = [], []
     pkgdatadir = d.getVar('PKGDATA_DIR')
     for pkgname in sorted(pkgnames):
         pkginfo = os.path.join(pkgdatadir, 'runtime', pkgname)
         pkginfor = os.path.join(pkgdatadir, 'runtime-reverse', pkgname)
         pkgdata = oe.packagedata.read_pkgdatafile(pkginfor)
         pkgdata.update(oe.packagedata.read_pkgdatafile(pkginfo))
-
-        pn = pkgdata['PN']
-        if (pn in whitelist and
-                (allow_all_whitelisted or pn in allowed_whitelisted)):
-            # License is irrelevent if it'll be allowed anyway, skip
-            continue
 
         for k, v in pkgdata.items():
             if k.startswith('PKG_') and v == pkgname:
@@ -71,9 +69,19 @@ python image_check_incompatible_packages () {
         l = d.createCopy()
         l.setVar('LICENSE', license)
         if incompatible_license(l, bad_licenses):
-            incompatible_packages.append(pkgname)
+            pn = pkgdata['PN']
+            if (pn in whitelist and
+                    (allow_all_whitelisted or pn in allowed_whitelisted)):
+                incompatible_but_whitelisted.append(pkgname)
+            else:
+                incompatible_packages.append(pkgname)
 
     if incompatible_packages:
         message = d.getVar('IMAGE_INCOMPATIBLE_MESSAGE')
         raise oe.utils.ImageQAFailed(message % ' '.join(incompatible_packages), 'image_check_incompatible_packages')
+
+    if incompatible_but_whitelisted:
+        message = d.getVar('IMAGE_INCOMPATIBLE_WHITELISTED_WARNING')
+        if message:
+            bb.warn(message % ' '.join(incompatible_but_whitelisted))
 }
