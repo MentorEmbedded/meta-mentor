@@ -176,13 +176,11 @@ TOOLCHAIN_HOST_TASK_remove = "${TOOLCHAIN_HOST_REMOVE}"
 # enable extra features. Some available options which can be included in this variable
 # are:
 #   - 'buildstats' to collect build statistics (e.g. task times)
-#   - 'buildstats-summary' to show what was built from sstate vs from scratch at
-#                          the end of the build (requires buildstats)
 #   - 'image-mklibs' to reduce shared library files size for an image
 #   - 'image-prelink' in order to prelink the filesystem image
 #   - 'image-swab' to perform host system intrusion detection
 # NOTE: if listing mklibs & prelink both, then make sure mklibs is before prelink
-USER_CLASSES ?= "buildstats buildstats-summary image-mklibs"
+USER_CLASSES ?= "buildstats"
 
 # To use mklibs, it must also be explicitly enabled for a given image. Note
 # that images built with mklibs will only run the binaries installed at image
