@@ -23,6 +23,8 @@ INDIVIDUAL_MANIFEST_LAYERS ?= ""
 FORKED_REPOS ?= ""
 PUBLIC_REPOS ?= "${FORKED_REPOS}"
 
+RELEASE_EXCLUDED_LAYERNAMES ?= ""
+
 ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
 ARCHIVE_RELEASE_DL_BY_LAYER_PATH = '${TMPDIR}/downloads-by-layer.txt'
 
@@ -113,6 +115,7 @@ python do_archive_mel_layers () {
     indiv_only_toplevel = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL').split()
     indiv_only = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY').split() + indiv_only_toplevel
     indiv_manifests = d.getVar('INDIVIDUAL_MANIFEST_LAYERS').split()
+    excluded_layers = d.getVar('RELEASE_EXCLUDED_LAYERNAMES').split()
     get_remotes_hook = d.getVar('GET_REMOTES_HOOK')
     if get_remotes_hook:
         get_remotes = bb.utils.get_context().get(get_remotes_hook)
@@ -132,6 +135,8 @@ python do_archive_mel_layers () {
     for subdir in directories:
         subdir = os.path.realpath(subdir)
         layername = layernames.get(subdir)
+        if layername in excluded_layers:
+            continue
         archive_path, dest_path, is_indiv = get_release_info(subdir, layername, topdir, oedir, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
         to_archive.add((archive_path, dest_path))
         if is_indiv:
