@@ -95,10 +95,10 @@ USER_FEATURES += "~nfc"
 # Uncomment to exclude GPLv3 software from the build
 #INCOMPATIBLE_LICENSE = "GPLv3"
 
-# Uncomment to indicate your acceptance of the Freescale end user license
-# agreement. This is needed to use the proprietary components for Freescale
+# Uncomment to indicate your acceptance of the Xilinx end user license
+# agreement. This is needed to use the proprietary components for Xilinx
 # hardware.
-#ACCEPT_FSL_EULA = "1"
+#ACCEPT_XILINX_EULA = "1"
 
 # Download files from a mirror
 # Uncomment this INHERIT, and define SOURCE_MIRROR_URL
