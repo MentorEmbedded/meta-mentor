@@ -4,12 +4,12 @@ usage () {
     echo >&2 "Usage: ${0##*/} [options]"
     echo >&2
     echo >&2 "Options:"
-    echo >&2 "  -b BUILDDIR  Specify the build directory to create (default: 'build'))"
+    echo >&2 "  -w WORKSPACEDIR  Specify the workspace directory to create (default: 'workspace'))"
+    echo >&2 "  -b BUILDDIR  Specify the build directory to create (default: '<workspacedir>/build'))"
     echo >&2 "  -m MANIFEST  Specify a manifest, rather than interactive selection"
     echo >&2 "  -x EXTRA_MANIFEST Specify an extra manifest. To specify"
     echo >&2 "                    multiple, use multiple -x arguments."
     echo >&2 "  -X           Explicitly disable extra manifests"
-    echo >&2 "  -b BUILDDIR  Specify the build directory to create (default: 'build')"
     echo >&2 "  -l LAYERS    Space-separated list of layer names for additional layers you"
     echo >&2 "  -p PATHS     Specify colon separated list of paths, where you can find layers"
     echo >&2 "               in addition to the root of the MEL install (default: empty)."
@@ -50,18 +50,13 @@ save () {
 abspath () {
     _path="$1"
     if [ -n "${_path##/*}" ]; then
-        _path="$PWD/$1"
+        _path="${2:-$PWD}/$1"
     fi
     echo "$_path"
 }
 
-if [ -f conf/local.conf -o -f conf/bblayers.conf ]; then
-    # Assuming we're already in the build dir
-    BUILDDIR=$PWD
-else
-    BUILDDIR=$PWD/build
-fi
-
+BUILDDIR=
+WORKSPACEDIR=$PWD/workspace
 saved=
 manifest=
 extra_disabled=0
@@ -71,6 +66,17 @@ while [ $argnum -le $# ]; do
     arg="$(eval printf "%s" "\$$argnum")"
     argnum="$(expr $argnum + 1)"
     case "$arg" in
+        -w)
+            WORKSPACEDIR="$(eval printf "%s" "\$$argnum")"
+            if [ -z "$WORKSPACEDIR" ]; then
+                echo >&2 "-w requires an argument"
+                exit 1
+            else
+                argnum="$(expr $argnum + 1)"
+                WORKSPACEDIR="$(abspath "$WORKSPACEDIR")"
+            fi
+            continue
+            ;;
         -b)
             BUILDDIR="$(eval printf "%s" "\$$argnum")"
             if [ -z "$BUILDDIR" ]; then
@@ -135,9 +141,13 @@ while [ $argnum -le $# ]; do
 done
 eval set -- "$saved"
 
+if [ -z "$BUILDDIR" ]; then
+    BUILDDIR="$WORKSPACEDIR/build"
+fi
+
 scriptdir="$(dirname "$0")"
 if [ $extra_disabled -eq 1 ]; then
-    "$scriptdir/mel-checkout" -X "$BUILDDIR" "$manifest"
+    "$scriptdir/mel-checkout" -X "$WORKSPACEDIR" "$manifest"
 else
-    "$scriptdir/mel-checkout" "$BUILDDIR" "$manifest" $extra_manifests
-fi && cd "$BUILDDIR" && . ./meta-mentor/setup-environment -b . "$@"
+    "$scriptdir/mel-checkout" "$WORKSPACEDIR" "$manifest" $extra_manifests
+fi && cd "$WORKSPACEDIR" && . ./meta-mentor/setup-environment -b "$BUILDDIR" "$@"
