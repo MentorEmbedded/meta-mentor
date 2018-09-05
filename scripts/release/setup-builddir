@@ -145,9 +145,22 @@ if [ -z "$BUILDDIR" ]; then
     BUILDDIR="$WORKSPACEDIR/build"
 fi
 
+if [ -e "$WORKSPACEDIR" ]; then
+    existing_workspace=1
+else
+    existing_workspace=0
+fi
+
 scriptdir="$(dirname "$0")"
 if [ $extra_disabled -eq 1 ]; then
     "$scriptdir/mel-checkout" -X "$WORKSPACEDIR" "$manifest"
 else
     "$scriptdir/mel-checkout" "$WORKSPACEDIR" "$manifest" $extra_manifests
 fi && cd "$WORKSPACEDIR" && . ./meta-mentor/setup-environment -b "$BUILDDIR" "$@"
+if [ $? -ne 0 ]; then
+    if [ $existing_workspace -eq 0 ]; then
+        # New workspace, clean up on failure
+        rm -r "$WORKSPACEDIR"
+    fi
+    exit 1
+fi
