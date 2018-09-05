@@ -78,7 +78,19 @@ else
         fi
 
         export OPTIONALLAYERS EXTRAMELLAYERS EXCLUDEDLAYERS
+        if [ -e "$BUILDDIR" ]; then
+            existing_builddir=1
+        else
+            existing_builddir=0
+        fi
         $layerdir/scripts/setup-mel-builddir "$@"
+        if [ $? -ne 0 ]; then
+            if [ $existing_builddir -eq 0 ]; then
+                # New build dir, clean up on failure
+                rm -r "$BUILDDIR"
+            fi
+            exit 1
+        fi
     )
     mel_setup_ret=$?
     if [ $mel_setup_ret -eq 0 ] && [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ]; then
