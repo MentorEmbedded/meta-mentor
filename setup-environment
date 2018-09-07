@@ -10,6 +10,9 @@ else
     fi
     layerdir=`readlink -f "$layerdir"`
 
+    export PYENV_ROOT="${PYENV_ROOT:-~/.pyenv}"
+    PATH="$PYENV_ROOT/shims:$PATH"
+
     if [ -f conf/local.conf -o -f conf/bblayers.conf ]; then
         # Assuming we're already in the build dir
         BUILDDIR=$PWD
