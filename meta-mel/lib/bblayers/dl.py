@@ -151,9 +151,9 @@ class DownloadsPlugin(LayerPlugin):
 
         for task, taskdeps in tdepends.items():
             for dep in taskdeps:
-                recipe, deptask = dep.split('.', 1)
+                deprecipe, deptask = dep.rsplit('.', 1)
                 if deptask == 'do_fetch':
-                    fetch_recipes.add(recipe)
+                    fetch_recipes.add(deprecipe)
 
         self.tinfoil.run_command('enableDataTracking')
 
