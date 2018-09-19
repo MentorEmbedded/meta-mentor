@@ -151,9 +151,9 @@ class DownloadsPlugin(LayerPlugin):
 
         for task, taskdeps in tdepends.items():
             for dep in taskdeps:
-                recipe, deptask = dep.split('.', 1)
+                deprecipe, deptask = dep.rsplit('.', 1)
                 if deptask == 'do_fetch':
-                    fetch_recipes.add(recipe)
+                    fetch_recipes.add(deprecipe)
 
         self.tinfoil.run_command('enableDataTracking')
 
@@ -186,8 +186,9 @@ class DownloadsPlugin(LayerPlugin):
     def do_dump_downloads(self, args):
         """Dump downloads by layer into ${TMPDIR}/downloads-by-layer.txt."""
         items = self._gather_downloads(args)
-        tmpdir = self.tinfoil.config_data.getVar('TMPDIR')
-        with open(os.path.join(tmpdir, 'downloads-by-layer.txt'), 'w') as f:
+        filename = self.tinfoil.config_data.expand(args.filename)
+        omode = 'a' if args.append else 'w'
+        with open(filename, omode) as f:
             for layer, item in items:
                 f.write('%s\t%s\n' % (layer, item))
 
@@ -199,3 +200,5 @@ class DownloadsPlugin(LayerPlugin):
 
         gather = self.add_command(sp, 'gather-downloads', self.do_gather_downloads, parents=[common], parserecipes=True)
         dump = self.add_command(sp, 'dump-downloads', self.do_dump_downloads, parents=[common], parserecipes=True)
+        dump.add_argument('--append', '-a', help='append to output filename', action='store_true')
+        dump.add_argument('--filename', '-f', help='filename to dump to', default='${TMPDIR}/downloads-by-layer.txt')

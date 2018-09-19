@@ -38,6 +38,11 @@ cat <<EOF > "$BUILDDIR"/custom.xml
 <?xml version="1.0" encoding="utf-8"?>
 <django-objects version="1.0">
 
+  <!-- Define a Bitbake version for custom fixture conformance -->
+  <object model="orm.bitbakeversion" pk="2">
+    <field type="CharField" name="dirpath">bitbake</field>
+  </object>
+
   <!-- Reset to MEL -->
 
   <object model="orm.release" pk="2">
@@ -95,7 +100,7 @@ LAYER_PATHS=$(configured_layers | while read -r layer; do
     LAYER_PATHS="\"$layer\",$LAYER_PATHS"
     echo "$LAYER_PATHS"
 done)
-LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
+LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g' | sed "s:\${TOPDIR}:${BUILDDIR}:g")
 
 cat <<EOF >> "$BUILDDIR"/custom.xml
   <object model="orm.releasedefaultlayer" pk="1">
@@ -132,17 +137,9 @@ cat <<EOF >> "$BUILDDIR"/custom.xml
 
 EOF
 
-LAYER_PATHS=""
-LAYER_PATHS=$(configured_layers | while read -r layer; do
-    LAYER_PATHS="\"$layer\",$LAYER_PATHS"
-    echo "$LAYER_PATHS"
-done)
-LAYER_PATHS=$(echo "$LAYER_PATHS" | sed -n '$p' | sed 's:,: :g'| sed 's:"::g')
-
 pk=1
 # Openembedded-core is poky's meta layer.
-layer=$(dirname "$BITBAKEDIR")
-layer="$layer"/meta
+layer="$MELDIR"/oe-core/meta
 cat <<EOF >> "$BUILDDIR"/custom.xml
   <object model="orm.layer" pk="$pk">
     <field type="CharField" name="name">$OE_CORE_NAME</field>
@@ -220,8 +217,9 @@ if [ "\$#" -ne 1 ]; then
     echo >&2 "Usage: . ./toaster-setup-environment {start|stop}"
 else
   if [ "\$1" == "start" ]; then
+    export CUSTOM_XML_ONLY=1
     . $BUILDDIR/venv/bin/activate
-    . $BITBAKEDIR/bin/toaster start
+    . $BITBAKEDIR/bin/toaster start toasterdir="$BUILDDIR"
     xdg-open "http://localhost:8000"
   elif [ "\$1" == "stop" ]; then
     . $BITBAKEDIR/bin/toaster stop

@@ -1,12 +1,7 @@
-FILESEXTRAPATHS_append = ":${@':'.join('%s/../scripts/release' % l for l in '${BBPATH}'.split(':'))}"
-SRC_URI += "\
-    file://mel-checkout \
-    file://version-sort \
-    file://setup-mel \
-    file://setup-builddir \
-    \
-    ${@' '.join(uninative_urls(d)) if 'mel_downloads' in '${RELEASE_ARTIFACTS}'.split() else ''} \
-"
+FILESEXTRAPATHS_append = ":${@':'.join('%s/../scripts/release:%s/../scripts' % (l, l) for l in '${BBPATH}'.split(':'))}"
+MEL_SCRIPTS_FILES = "mel-checkout version-sort setup-mel setup-builddir setup-ubuntu setup-rh"
+SRC_URI += "${@' '.join(uninative_urls(d)) if 'mel_downloads' in '${RELEASE_ARTIFACTS}'.split() else ''}"
+SRC_URI += "${@' '.join('file://%s' % s for s in d.getVar('MEL_SCRIPTS_FILES').split())}"
 
 inherit layerdirs
 
@@ -22,6 +17,8 @@ GET_REMOTES_HOOK ?= ""
 INDIVIDUAL_MANIFEST_LAYERS ?= ""
 FORKED_REPOS ?= ""
 PUBLIC_REPOS ?= "${FORKED_REPOS}"
+
+RELEASE_EXCLUDED_LAYERNAMES ?= ""
 
 ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
 ARCHIVE_RELEASE_DL_BY_LAYER_PATH = '${TMPDIR}/downloads-by-layer.txt'
@@ -113,6 +110,7 @@ python do_archive_mel_layers () {
     indiv_only_toplevel = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL').split()
     indiv_only = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY').split() + indiv_only_toplevel
     indiv_manifests = d.getVar('INDIVIDUAL_MANIFEST_LAYERS').split()
+    excluded_layers = d.getVar('RELEASE_EXCLUDED_LAYERNAMES').split()
     get_remotes_hook = d.getVar('GET_REMOTES_HOOK')
     if get_remotes_hook:
         get_remotes = bb.utils.get_context().get(get_remotes_hook)
@@ -132,6 +130,8 @@ python do_archive_mel_layers () {
     for subdir in directories:
         subdir = os.path.realpath(subdir)
         layername = layernames.get(subdir)
+        if layername in excluded_layers:
+            continue
         archive_path, dest_path, is_indiv = get_release_info(subdir, layername, topdir, oedir, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
         to_archive.add((archive_path, dest_path))
         if is_indiv:
@@ -181,8 +181,9 @@ python do_archive_mel_layers () {
                 files.append(os.path.relpath(infofn, outdir))
         bb.process.run(['tar', '-cf', os.path.basename(fn) + '.tar'] + files, cwd=outdir)
 
+    scripts = d.getVar('MEL_SCRIPTS_FILES').split()
     bb.process.run(['rm', '-r', 'objects'], cwd=outdir)
-    bb.process.run(['tar', '--transform=s,^,scripts/,', '--transform=s,^scripts/setup-mel,setup-mel,', '-cvf', d.expand('%s/${DISTRO}-scripts.tar' % outdir), 'mel-checkout', 'version-sort', 'setup-mel', 'setup-builddir'], cwd=d.getVar('WORKDIR'))
+    bb.process.run(['tar', '--transform=s,^,scripts/,', '--transform=s,^scripts/setup-mel,setup-mel,', '-cvf', d.expand('%s/${DISTRO}-scripts.tar' % outdir)] + scripts, cwd=d.getVar('WORKDIR'))
 }
 do_archive_mel_layers[dirs] = "${S}/do_archive_mel_layers ${S}"
 do_archive_mel_layers[vardeps] += "${GET_REMOTES_HOOK}"
@@ -204,56 +205,70 @@ def git_archive(subdir, outdir, message=None):
     if message is None:
         message = 'Release of %s' % os.path.basename(subdir)
 
+    parent = None
     if os.path.exists(os.path.join(subdir, '.git')):
         parent = subdir
-        # Handle .git as a file i.e. submodules
+    else:
+        try:
+            git_topdir = bb.process.run(['git', 'rev-parse', '--show-toplevel'], cwd=subdir)[0].rstrip()
+        except bb.process.CmdError:
+            pass
+        else:
+            if git_topdir != subdir:
+                subdir_relpath = os.path.relpath(subdir, git_topdir)
+                try:
+                    ls = bb.process.run(['git', 'ls-tree', '-d', 'HEAD', subdir_relpath], cwd=subdir)
+                except bb.process.CmdError as exc:
+                    pass
+                else:
+                    if ls:
+                        parent = git_topdir
+
+    if parent:
         parent_git = os.path.join(parent, bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip())
         # Handle git worktrees
         _commondir = os.path.join(parent_git, 'commondir')
         if os.path.exists(_commondir):
             with open(_commondir, 'r') as f:
                 parent_git = os.path.join(parent_git, f.read().rstrip())
-    else:
-        parent = None
 
     with tempfile.TemporaryDirectory() as tmpdir:
         gitcmd = ['git', '--git-dir', tmpdir, '--work-tree', subdir]
+        commitcmd = ['commit-tree', '-m', message]
         bb.process.run(gitcmd + ['init'])
         if parent:
             with open(os.path.join(tmpdir, 'objects', 'info', 'alternates'), 'w') as f:
                 f.write(os.path.join(parent_git, 'objects') + '\n')
             parent_head = bb.process.run(['git', 'rev-parse', 'HEAD'], cwd=subdir)[0].rstrip()
             bb.process.run(gitcmd + ['read-tree', parent_head])
+            commitcmd.extend(['-p', parent_head])
+
+            try:
+                cdate, adate = bb.process.run(['git', 'log', '--pretty=%ct\t%at', '-1', '--', os.path.relpath(subdir, parent)], cwd=parent)[0].rstrip().split('\t')
+            except bb.process.CmdError:
+                bb.warn('Error determining commit dates for %s' % subdir)
+                cdate, adate = None, None
 
         bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
         tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
+        commitcmd.append(tree)
+
+        if not parent or not cdate:
+            st = os.stat(os.path.join(subdir, 'conf', 'layer.conf'))
+            cdate = adate = st.st_mtime
 
         env = {
             'GIT_AUTHOR_NAME': 'Build User',
             'GIT_AUTHOR_EMAIL': 'build_user@build_host',
+            'GIT_AUTHOR_DATE': str(adate),
             'GIT_COMMITTER_NAME': 'Build User',
             'GIT_COMMITTER_EMAIL': 'build_user@build_host',
+            'GIT_COMMITTER_DATE': str(cdate),
         }
-        if parent:
-            # Walk the commits until we get a date, as merges don't seem to
-            # report a commit date.
-            cdate, distance = None, 0
-            while not cdate:
-                try:
-                    cdate = bb.process.run(['git', 'diff-tree', '--pretty=format:%ct', '-s', 'HEAD~%d' % distance], cwd=subdir)[0]
-                except bb.process.CmdError:
-                    break
-                distance += 1
 
-            penv = dict(env)
-            if cdate:
-                penv.update(GIT_AUTHOR_DATE=cdate, GIT_COMMITTER_DATE=cdate)
-
-            head = bb.process.run(gitcmd + ['commit-tree', '-m', message, '-p', parent_head, tree], env=penv)[0].rstrip()
-            with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
-                f.write(head + '\n')
-        else:
-            head = bb.process.run(gitcmd + ['commit-tree', '-m', message, tree], env=env)[0].rstrip()
+        head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
+        with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
+            f.write(head + '\n')
 
         # We need a ref to ensure repack includes the new commit, as it
         # does not include dangling objects in the pack.
@@ -327,7 +342,7 @@ python do_archive_mel_downloads () {
         bb.fatal('%s does not exist, but mel_downloads requires it. Please run `bitbake-layers dump-downloads` with appropriate arguments.' % dl_by_layer_fn)
 
     downloads = list(checksummed_downloads(dl_by_layer_fn, dl_dir, archive_dl_dir))
-    downloads.extend(uninative_downloads(d.getVar('WORKDIR'), d.getVar('DL_DIR')))
+    downloads.extend(sorted(uninative_downloads(d.getVar('WORKDIR'), d.getVar('DL_DIR'))))
     outdir = d.expand('${S}/do_archive_mel_downloads')
     mandir = os.path.join(outdir, 'manifests')
     dldir = os.path.join(outdir, 'downloads')
@@ -357,10 +372,10 @@ python do_archive_mel_downloads () {
             layer_manifests[layername] = manifestfn
 
     main_manifest = d.expand('%s/${MANIFEST_NAME}.downloads' % mandir)
-    manifests = collections.defaultdict(set)
+    manifests = collections.defaultdict(list)
     for layername, path, dest_path, checksum in downloads:
         manifestfn = layer_manifests.get(layername) or main_manifest
-        manifests[manifestfn].add((layername, path, dest_path, checksum))
+        manifests[manifestfn].append((layername, path, dest_path, checksum))
 
     for manifest, manifest_downloads in manifests.items():
         with open(manifest, 'w') as f:
