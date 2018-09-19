@@ -54,6 +54,10 @@ MACHINE ??= "qemux86"
 #
 #  "virtualization"  - add docker support. Including meta-virtualization and dependencies
 #                      to bblayers is COMPULSORY for having no errors.
+#
+#  "encrypted-fs"     - add encrypted file system support. Some manual steps are needed
+#                       after flashing the image.
+#
 # There are other options that can be used here, see
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
 # details.
