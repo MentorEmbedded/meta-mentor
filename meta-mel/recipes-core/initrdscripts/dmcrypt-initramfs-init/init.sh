@@ -72,8 +72,7 @@ _UDEV_DAEMON=`udev_daemon`
 
 
 early_setup() {
-        echo "EARLY SETUP STARTS"
-	mkdir -p /proc
+   	mkdir -p /proc
 	mkdir -p /sys
 	mount -t proc proc /proc
 	mount -t sysfs sysfs /sys
@@ -82,11 +81,9 @@ early_setup() {
 
 	mkdir -p /run
 	mkdir -p /var/run
-        echo "REACHED UDEV DAEMON"
 	$_UDEV_DAEMON --daemon
 	udevadm trigger --action=add
 	udevadm settle --timeout=3
-        echo "REACED RETURN AT EARLY SETUP"
 	return 0
 }
 
@@ -175,7 +172,6 @@ else
 fi;
 
 read_args
-
 case $label in
 	boot)
 		do_boot
