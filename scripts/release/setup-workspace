@@ -5,27 +5,12 @@ usage () {
     echo >&2
     echo >&2 "Options:"
     echo >&2 "  -w WORKSPACEDIR  Specify the workspace directory to create (default: 'workspace'))"
-    echo >&2 "  -b BUILDDIR  Specify the build directory to create (default: '<workspacedir>/build'))"
     echo >&2 "  -m MANIFEST  Specify a manifest, rather than interactive selection"
     echo >&2 "  -x EXTRA_MANIFEST Specify an extra manifest. To specify"
     echo >&2 "                    multiple, use multiple -x arguments."
     echo >&2 "  -X           Explicitly disable extra manifests"
-    echo >&2 "  -l LAYERS    Space-separated list of layer names for additional layers you"
-    echo >&2 "  -p PATHS     Specify colon separated list of paths, where you can find layers"
-    echo >&2 "               in addition to the root of the MEL install (default: empty)."
-    echo >&2 "               If any path in this list contains wildcards, the list must be quoted"
-    echo >&2 "               to avoid wildcard substitution by the shell"
-    echo >&2 "               want to be included in the configuration"
     echo >&2 "  -h           Show this usage information"
     echo >&2
-    echo >&2 "All other options are passed directly to the meta-mentor setup-environment script."
-    if [ -e "$BUILDDIR/meta-mentor/setup-environment" ]; then
-        echo >&2
-        echo >&2 "Usage for the underlying meta-mentor setup script:"
-        echo >&2
-        . "$BUILDDIR/meta-mentor/setup-environment" -h 2>&1 | \
-            sed -ne '/^Options:/{n; n; :s; p; n; b s;}'
-    fi
 }
 
 quote () {
@@ -55,7 +40,6 @@ abspath () {
     echo "$_path"
 }
 
-BUILDDIR=
 WORKSPACEDIR=$PWD/workspace
 saved=
 manifest=
@@ -74,17 +58,6 @@ while [ $argnum -le $# ]; do
             else
                 argnum="$(expr $argnum + 1)"
                 WORKSPACEDIR="$(abspath "$WORKSPACEDIR")"
-            fi
-            continue
-            ;;
-        -b)
-            BUILDDIR="$(eval printf "%s" "\$$argnum")"
-            if [ -z "$BUILDDIR" ]; then
-                echo >&2 "-b requires an argument"
-                exit 1
-            else
-                argnum="$(expr $argnum + 1)"
-                BUILDDIR="$(abspath "$BUILDDIR")"
             fi
             continue
             ;;
@@ -141,10 +114,6 @@ while [ $argnum -le $# ]; do
 done
 eval set -- "$saved"
 
-if [ -z "$BUILDDIR" ]; then
-    BUILDDIR="$WORKSPACEDIR/build"
-fi
-
 if [ -e "$WORKSPACEDIR" ]; then
     existing_workspace=1
 else
@@ -156,7 +125,7 @@ if [ $extra_disabled -eq 1 ]; then
     "$scriptdir/mel-checkout" -X "$WORKSPACEDIR" "$manifest"
 else
     "$scriptdir/mel-checkout" "$WORKSPACEDIR" "$manifest" $extra_manifests
-fi && cd "$WORKSPACEDIR" && . ./meta-mentor/setup-environment -b "$BUILDDIR" "$@"
+fi && cd "$WORKSPACEDIR"
 if [ $? -ne 0 ]; then
     if [ $existing_workspace -eq 0 ]; then
         # New workspace, clean up on failure
