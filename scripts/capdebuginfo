@@ -137,36 +137,32 @@ get_hostlicenseinfo () {
 # Collect prerequisite packages/libraries from host
 #    Input: $1=Output directory name 
 #           $2=Filename for host info collection
+
 get_hostprereqsinfo () {
    local __outputdir="${1}"
-   local __output="${1}"/host/"${2}"
-   local __hostos_distid="$(lsb_release -i -s)"
-   local __hostos_distvers="$(lsb_release -r -s)"
+   local __output="${1}/host/${2}"
+   local __hostos_distid=`lsb_release -i -s`
+   local __hostos_distvers=`lsb_release -r -s`
    local __pkgs
    
-   echo -en "\\nHost OS is "${__hostos_distid}" "${__hostos_distvers}":\\n" >> "${__output}"
+   echo -en "\nHost OS is ${__hostos_distid} ${__hostos_distvers}:\n" >> ${__output}
    case "${__hostos_distid}" in
       Ubuntu)
-         if [ -f "${MELDIR}"/meta-mentor/scripts/setup-ubuntu ]; then
-	    source "${MELDIR}"/meta-mentor/scripts/setup-ubuntu
-            __pkgs="$PKGS"
-            dpkg-query -W -f="${binary:Package}" "${Version}" "${db:Status-Status}"\\n "${__pkgs}" >> "${__output}"
-         else   
-            echo "FATAL: setup-ubuntu script not available at meta-mentor/scripts/"
-         fi
+         __pkgs="bmap-tools bzip2 chrpath cvs diffstat gawk gcc git-core gzip g++ \
+                 libgl1-mesa-dev libglu1-mesa-dev libncurses5-dev libsdl1.2-dev \
+                 lsb-release make patch python python3 subversion tar texinfo \
+                 texi2html ubuntu-minimal ubuntu-standard zip"
+         dpkg-query -W -f='${binary:Package} ${Version} ${db:Status-Status}\n' ${__pkgs} >> ${__output}
          ;;      
       CentOS|RedHat*)
-         if [ -f "${MELDIR}"/meta-mentor/scripts/setup-rh ]; then
-            source "${MELDIR}"/meta-mentor/scripts/setup-rh
-            __pkgs="$packages"
-            rpm -q "${__pkgs}" >> "${__output}"
-         else
-            echo "FATAL: setup-rh script not available at meta-mentor/scripts/"
-         fi
+         __pkgs="bzip2 chrpath cvs diffstat gawk gcc gcc-c++ git glibc-devel \ 
+                 glibc-static gzip make ncurses-devel patch perl-Thread-Queue \
+                 python python34 python-virtualenv redhat-lsb SDL-devel sqlite \
+                 subversion tar tetex texinfo texi2html wget"
+         rpm -q ${__pkgs} >> ${__output}
          ;;
    esac
 }
-
 
 # Collect MEL installation info from host 
 #    Input: $1=Output directory name 
@@ -231,9 +227,9 @@ else
 	while [ ! -d "${BUILDERR}" ]; do
 		echo "Please enter package name in which you are having error (option -e):"
 		read IN1
-        echo "$IN1"
+        
 		BUILDERR=$(find "${BUILDDIR}/tmp/work/" -maxdepth 2 -type d -name "${IN1}")
-		           echo "$BUILDERR" 
+		 
 		if [ ! -d "${BUILDERR}" ]; then
 		   echo -en "\\nERROR (option -e):  Invalid package name!!!\\n\\n"
 		fi
@@ -265,7 +261,7 @@ else
 	# Collect host information
 	get_hostinfo "${OUTPUTDIRNAME}" "${HOSTINFOFILE}"
 	get_hostlicenseinfo "${OUTPUTDIRNAME}" "${HOSTINFOFILE}" "${MGLS_LICENSE}"
-	get_hostlicenseinfo "${OUTPUTDIRNAME}" "${HOSTINFOFILE} ${LM_LICENSE}"
+	get_hostlicenseinfo "${OUTPUTDIRNAME}" "${HOSTINFOFILE}" "${LM_LICENSE}"
 	get_hostprereqsinfo "${OUTPUTDIRNAME}" "${HOSTINFOFILE}"
 	get_melinstallinfo "${OUTPUTDIRNAME}" "${HOSTINFOFILE}"
 	get_melbuildinfo "${OUTPUTDIRNAME}" "${BUILDERR}" "${BUILDDIR}"
