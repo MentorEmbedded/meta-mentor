@@ -377,7 +377,7 @@ do_archive_images () {
         echo ${BUILDHISTORY_DIR} >>include
     fi
 
-    release_tar --files-from=include -cf ${MACHINE}.tar
+    release_tar --files-from=include -cf ${MACHINE}-${ARCHIVE_RELEASE_VERSION}.tar
 
     echo "--transform=s,-${MACHINE},,i" >include
     echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
@@ -414,7 +414,7 @@ do_archive_images () {
     chmod +x "${WORKDIR}/bmaptool"
     echo "--transform=s,${WORKDIR}/bmaptool,${BINARY_INSTALL_PATH}/bmaptool," >>include
     echo "${WORKDIR}/bmaptool" >>include
-    release_tar --files-from=include -rhf ${MACHINE}.tar
+    release_tar --files-from=include -rhf ${MACHINE}-${ARCHIVE_RELEASE_VERSION}.tar
     rm -rf runqemu conf-notes.txt local.conf.sample bblayers.conf.sample include
 }
 
