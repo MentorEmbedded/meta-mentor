@@ -8,6 +8,7 @@ inherit layerdirs
 ARCHIVE_RELEASE_VERSION ?= "${DISTRO_VERSION}"
 MANIFEST_NAME ?= "${DISTRO}-${ARCHIVE_RELEASE_VERSION}-${MACHINE}"
 EXTRA_MANIFEST_NAME ?= "${DISTRO}-${ARCHIVE_RELEASE_VERSION}"
+SCRIPTS_ARTIFACT_NAME ?= "${DISTRO}-scripts-${DISTRO_VERSION}"
 BSPFILES_INSTALL_PATH = "${MACHINE}/${ARCHIVE_RELEASE_VERSION}"
 GET_REMOTES_HOOK ?= ""
 
@@ -183,7 +184,7 @@ python do_archive_mel_layers () {
 
     scripts = d.getVar('MEL_SCRIPTS_FILES').split()
     bb.process.run(['rm', '-r', 'objects'], cwd=outdir)
-    bb.process.run(['tar', '--transform=s,^,scripts/,', '--transform=s,^scripts/setup-mel,setup-mel,', '-cvf', d.expand('%s/${DISTRO}-scripts.tar' % outdir)] + scripts, cwd=d.getVar('WORKDIR'))
+    bb.process.run(['tar', '--transform=s,^,scripts/,', '--transform=s,^scripts/setup-mel,setup-mel,', '-cvf', d.expand('%s/${SCRIPTS_ARTIFACT_NAME}.tar' % outdir)] + scripts, cwd=d.getVar('WORKDIR'))
 }
 do_archive_mel_layers[dirs] = "${S}/do_archive_mel_layers ${S}"
 do_archive_mel_layers[vardeps] += "${GET_REMOTES_HOOK}"
