@@ -29,6 +29,7 @@ MACHINE ??= "qemux86"
 # automatically. The variable can contain the following options:
 #
 #  "graphics"        - add a graphical environment, defaulting to wayland/weston
+#                      or x11 depending on vendor support.
 #  "dbg-pkgs"        - add -dbg packages for all installed packages
 #                      (adds symbol information for debugging/profiling)
 #  "dev-pkgs"        - add -dev packages for all installed packages
@@ -42,7 +43,6 @@ MACHINE ??= "qemux86"
 #                      a subset of tools-debug (gdbserver, strace, sftp server)
 #  "debug-tweaks"    - make an image suitable for development
 #                      e.g. ssh root access has a blank password
-#  "x11-mini"        - minimal x11 setup, with window manager and terminal
 #  "splash"          - include a splashscreen (default: psplash, but the
 #                      particular package can be set with the SPLASH variable)
 #  "multimedia"      - add gstreamer support for running multimedia files
