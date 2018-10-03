@@ -18,12 +18,10 @@ UNINATIVE_BUILD_ARCHES ?= "x86_64 i686"
 MELDIR ?= "${COREBASE}/.."
 TEMPLATECONF_STR ?= "${@(oe.utils.read_file('${TOPDIR}/conf/templateconf.cfg') or '${FILE_DIRNAME}/../../../conf').rstrip()}"
 TEMPLATECONF = "${@os.path.join('${COREBASE}', '${TEMPLATECONF_STR}')}"
-PROBECONFIGS ?= "${@bb.utils.which('${BBPATH}', 'conf/probe-configs/${MACHINE}')}"
 
 BSPFILES_INSTALL_PATH ?= "${MACHINE}"
 BINARY_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/binary"
 CONF_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/conf"
-PROBECONFIGS_INSTALL_PATH ?= "${BSPFILES_INSTALL_PATH}/probe-configs"
 
 # Add a default in case the user doesn't inherit copyleft_compliance
 ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
@@ -60,8 +58,8 @@ SUBLAYERS_INDIVIDUAL_ONLY ?= "${@configured_mx6_layers(d)} ${@' '.join(layers_by
 SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL ?= "${@configured_update_layers(d)}"
 
 DEPLOY_DIR_RELEASE ?= "${DEPLOY_DIR}/release-artifacts"
-RELEASE_ARTIFACTS ?= "layers bitbake templates images downloads probeconfigs"
-RELEASE_ARTIFACTS[doc] = "List of artifacts to include (available: layers, bitbake, templates, images, downloads, probeconfigs"
+RELEASE_ARTIFACTS ?= "layers bitbake templates images downloads"
+RELEASE_ARTIFACTS[doc] = "List of artifacts to include (available: layers, bitbake, templates, images, downloads"
 RELEASE_IMAGE ?= "core-image-base"
 RELEASE_IMAGE[doc] = "The image to build and archive in this release"
 RELEASE_USE_TAGS ?= "false"
@@ -406,11 +404,6 @@ do_archive_images () {
         echo "$PWD/local.conf.sample" >>include
         echo "$PWD/bblayers.conf.sample" >>include
     fi
-    if echo "${RELEASE_ARTIFACTS}" | grep -qw probeconfigs && \
-       [ -d "${PROBECONFIGS}" ]; then
-        echo "${PROBECONFIGS}" >>include
-        echo "--transform=s,${PROBECONFIGS},${PROBECONFIGS_INSTALL_PATH}," >>include
-    fi
     chmod +x "${WORKDIR}/bmaptool"
     echo "--transform=s,${WORKDIR}/bmaptool,${BINARY_INSTALL_PATH}/bmaptool," >>include
     echo "${WORKDIR}/bmaptool" >>include
@@ -420,10 +413,6 @@ do_archive_images () {
 
 do_archive_templates () {
     prepare_templates
-}
-
-do_archive_probeconfigs () {
-    :
 }
 
 do_prepare_release () {
