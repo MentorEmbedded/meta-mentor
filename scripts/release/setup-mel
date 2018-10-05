@@ -24,6 +24,7 @@ else
     done
     unset mel_arg
     "$meldir/scripts/setup-workspace" "$@" && \
+    cd "$WORKSPACEDIR" && \
     echo >&2 "MEL setup complete in $WORKSPACEDIR" && \
     echo >&2 "You can now use "$WORKSPACEDIR"/meta-mentor/setup-environment for setting up a build."
 fi
