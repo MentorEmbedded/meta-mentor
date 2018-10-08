@@ -150,7 +150,7 @@ echo "$installdir" >"$project/.installpath"
 
 for install_subdir in ../../codebench ../../codebench-lite; do
     if [ -d "$installdir/$install_subdir" ]; then
-        ln -s "$installdir/$install_subdir" .
+        ln -sf "$installdir/$install_subdir" .
     fi
 done
 
