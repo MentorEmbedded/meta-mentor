@@ -30,6 +30,26 @@ evalf () {
     eval "$(printf "$fmt" "$@")"
 }
 
+verify_machine () {
+    workspace="$1"
+    manifest_name=$(basename "$2")
+    manifest_machine=$(echo "$manifest_name" | cut -d'-' -f3- | cut -d'.' -f1)
+    workspace_machine=$(cat "$workspace/.machine")
+    if [ "$workspace_machine" != "$manifest_machine" ]; then
+        echo >&2 "Error: workspace in $workspace is already setup for $workspace_machine."
+        echo >&2 "Please specify a different location if you want to setup for $manifest_machine"
+        echo >&2 "or clean up $workspace before continuing."
+        exit 1
+    fi
+}
+
+set_machine () {
+    workspace="$1"
+    manifest_name=$(basename "$2")
+    manifest_machine=$(echo "$manifest_name" | cut -d'-' -f3- | cut -d'.' -f1)
+    echo "$manifest_machine" > "$workspace/.machine"
+}
+
 prompt_choice () {
     choice_non_interactive=0
     while getopts n opt; do
@@ -150,7 +170,7 @@ echo "$installdir" >"$project/.installpath"
 
 for install_subdir in ../../codebench ../../codebench-lite; do
     if [ -d "$installdir/$install_subdir" ]; then
-        ln -s "$installdir/$install_subdir" .
+        ln -sf "$installdir/$install_subdir" .
     fi
 done
 
@@ -164,11 +184,18 @@ if [ -z "$1" ]; then
             exit 1
         fi
     fi
+    if [ -e "$project/.machine" ]; then
+        verify_machine "$project" "$(cat "$project/.manifest" | head -n1)"
+    fi
     set -- $(cat "$project/.manifest")
     manifest="$1"
 else
+    if [ -e "$project/.machine" ]; then
+        verify_machine "$project" "$manifest"
+    fi
     echo "$manifest" >"$project/.manifest"
 fi
+set_machine "$project" "$manifest"
 
 if [ $no_extra_manifests -eq 1 ]; then
     set -- "$1"

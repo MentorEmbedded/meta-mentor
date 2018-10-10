@@ -116,8 +116,6 @@ eval set -- "$saved"
 
 if [ -e "$WORKSPACEDIR" ]; then
     existing_workspace=1
-    echo >&2 "A workspace already exists in $WORKSPACEDIR, please choose a different location"
-    exit 1
 else
     existing_workspace=0
 fi
