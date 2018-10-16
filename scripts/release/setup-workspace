@@ -13,25 +13,6 @@ usage () {
     echo >&2
 }
 
-quote () {
-    sed -e "s,','\\\\'',g; 1s,^,',; \$s,\$,',;" << EOF
-$1
-EOF
-}
-
-save () {
-    case "$1" in
-    # when a string contains a "'" we have to escape it
-    *\'*)
-        saved="$saved $(quote "$1")"
-        ;;
-    # otherwise just quote the variable
-    *)
-        saved="$saved '$1'"
-        ;;
-    esac
-}
-
 abspath () {
     _path="$1"
     if [ -n "${_path##/*}" ]; then
@@ -40,34 +21,32 @@ abspath () {
     echo "$_path"
 }
 
+if [ "$1" = "--help" ]; then
+    usage
+    exit 1
+fi
+
 WORKSPACEDIR=$PWD/workspace
-saved=
 manifest=
-extra_disabled=0
+extra_disabled=
 extra_manifests=
-argnum=1
-while [ $argnum -le $# ]; do
-    arg="$(eval printf "%s" "\$$argnum")"
-    argnum="$(expr $argnum + 1)"
-    case "$arg" in
-        -w)
-            WORKSPACEDIR="$(eval printf "%s" "\$$argnum")"
+while getopts w:m:x:Xh opt; do
+    case "$opt" in
+        w)
+            WORKSPACEDIR="$OPTARG"
             if [ -z "$WORKSPACEDIR" ]; then
                 echo >&2 "-w requires an argument"
                 exit 1
             else
-                argnum="$(expr $argnum + 1)"
                 WORKSPACEDIR="$(abspath "$WORKSPACEDIR")"
             fi
-            continue
             ;;
-        -m)
-            manifest="$(eval printf "%s" "\$$argnum")"
+        m)
+            manifest="$OPTARG"
             if [ -z "$manifest" ]; then
                 echo >&2 "-m requires an argument"
                 exit 1
             else
-                argnum="$(expr $argnum + 1)"
                 if [ ! -e "$manifest" ]; then
                     echo >&2 "Error: manifest path $manifest does not exist"
                     exit 1
@@ -75,27 +54,25 @@ while [ $argnum -le $# ]; do
                     manifest="$(abspath "$manifest")"
                 fi
             fi
-            continue
             ;;
-        -X)
+        X)
             if [ -n "$extra_manifest" ]; then
                 echo >&2 "Error: -x and -X are mutually exclusive"
                 exit 1
             fi
             extra_disabled=1
             ;;
-        -x)
-            if [ "$extra_disabled" -eq 1 ]; then
+        x)
+            if [ -n "$extra_disabled" ]; then
                 echo >&2 "Error: -x and -X are mutually exclusive"
                 exit 1
             fi
 
-            extra_manifest="$(eval printf "%s" "\$$argnum")"
-            if [ $argnum -gt $# ]; then
+            extra_manifest="$OPTARG"
+            if [ -z "$extra_manifest" ]; then
                 echo >&2 "-x requires an argument"
                 exit 1
             else
-                argnum="$(expr $argnum + 1)"
                 if [ ! -e "$extra_manifest" ]; then
                     echo >&2 "Error: extra_manifest path $extra_manifest does not exist"
                     exit 1
@@ -103,16 +80,14 @@ while [ $argnum -le $# ]; do
                     extra_manifests="$extra_manifests $(abspath "$extra_manifest")"
                 fi
             fi
-            continue
             ;;
-        -h|--help|-\?)
+        \? | h)
             usage
             exit 1
             ;;
     esac
-    save "$arg"
 done
-eval set -- "$saved"
+shift $((OPTIND - 1))
 
 if [ -e "$WORKSPACEDIR" ]; then
     existing_workspace=1
@@ -121,11 +96,8 @@ else
 fi
 
 scriptdir="$(dirname "$0")"
-if [ $extra_disabled -eq 1 ]; then
-    "$scriptdir/mel-checkout" -X "$WORKSPACEDIR" "$manifest"
-else
-    "$scriptdir/mel-checkout" "$WORKSPACEDIR" "$manifest" $extra_manifests
-fi && cd "$WORKSPACEDIR"
+"$scriptdir/mel-checkout" ${extra_disabled:+-X} "$WORKSPACEDIR" "$manifest" $extra_manifests \
+    && cd "$WORKSPACEDIR"
 if [ $? -ne 0 ]; then
     if [ $existing_workspace -eq 0 ]; then
         # New workspace, clean up on failure
