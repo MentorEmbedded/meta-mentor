@@ -283,8 +283,10 @@ done | (
         if [ -e "$downloads" ]; then
             cat "$downloads" | while read -r path checksum; do
                 destdir="$(dirname "$path")"
-                if [ -n "$destdir" ]; then
+                if [ "$destdir" != "." ]; then
                     mkdir -p "downloads/$destdir"
+                    ln -sf "$path" downloads/
+                    ln -sf "${path}.done" downloads/
                 fi
                 ln -sf "$installdir/downloads/$checksum" "downloads/$path"
                 touch "downloads/${path}.done"
