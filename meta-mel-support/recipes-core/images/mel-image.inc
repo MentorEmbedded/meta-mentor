@@ -10,4 +10,4 @@ LICENSE = "MIT"
 inherit core-image image-sanity-incompatible
 
 IMAGE_FEATURES .= "${@bb.utils.contains('COMBINED_FEATURES', 'alsa', ' tools-audio', '', d)}"
-IMAGE_INSTALL += " quota connman"
+IMAGE_INSTALL += " util-linux connman"
