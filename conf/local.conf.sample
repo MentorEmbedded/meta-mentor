@@ -67,6 +67,11 @@ EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-pr
 # machine doesn't define them, the default types are tar.bz2 and ext3.
 #IMAGE_FSTYPES_append = " jffs2"
 
+# Uncomment and alter to set the root password. Set to 0 to explicitly allow
+# the empty root password even in production-image.
+#ROOT_PASSWORD = ""
+IMAGE_CLASSES_append = " image-root-password"
+
 # User features lets you manipulate the distro features. To add a distro
 # feature, simply add it to USER_FEATURES. To remove, prefix it with ~.
 #
