@@ -95,13 +95,13 @@ USER_FEATURES += "~nfc"
 #SOURCE_MIRROR_URL = "file:///cache/downloads"
 #SOURCE_MIRROR_URL = "http://myserver/sources"
 
-# Our download directory / cache
-DL_DIR ?= "${TOPDIR}/downloads"
+# Our download directory / cache for the workspace
+DL_DIR ?= "${MELDIR}/downloads"
 
-# Continue to pull downloads from the MEL install
+# Continue to pull downloads from the build dir if available
 PREMIRRORS_prepend = "\
     .*://.*/.* file://${MELDIR}/${MACHINE}/downloads/ \n \
-    .*://.*/.* file://${MELDIR}/downloads/ \n \
+    .*://.*/.* file://${TOPDIR}/downloads/ \n \
 "
 
 # BitBake has the capability to accelerate builds based on previously built
