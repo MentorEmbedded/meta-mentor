@@ -16,7 +16,8 @@ if ! xargs --version > /dev/null 2>&1; then
     exit 1
 fi
 
-native_sysroot=$(cat "$env_setup_script" | grep 'OECORE_NATIVE_SYSROOT=' | cut -d'=' -f2 | tr -d '"')
+scriptdir="$target_sdk_dir" eval "$(grep 'OECORE_NATIVE_SYSROOT=' "$env_setup_script" | head -n 1)"
+native_sysroot="$OECORE_NATIVE_SYSROOT"
 
 # replace $default_sdk_dir with the new prefix in all text files: configs/scripts/etc.
 # replace the host perl with SDK perl.
