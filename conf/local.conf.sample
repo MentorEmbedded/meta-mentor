@@ -51,7 +51,8 @@ MACHINE ??= "qemux86"
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
 # details.
 
-EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-profile"
+IMAGE_FEATURES_DEVELOPMENT ?= "debug-tweaks codebench-debug ssh-server-openssh tools-profile"
+EXTRA_IMAGE_FEATURES = "${IMAGE_FEATURES_DEVELOPMENT}"
 
 # Uncomment to enable runtime testing with ptest
 #USER_FEATURES += "ptest"
