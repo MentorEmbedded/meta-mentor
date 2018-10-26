@@ -294,9 +294,10 @@ BB_DISKMON_DIRS = "\
 # Use this to add extra packages to the split-debug filesystem
 #EXTRA_DEBUG_PACKAGES = "ltrace strace"
 
-# enabling dmcrypt-initramfs-image if the encrypted-fs image feature is added to EXTRA_IMAGE_FEATURES variable.
-INITRAMFS_IMAGE = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', 'dmcrypt-initramfs-image', '', d)}"
-INITRAMFS_IMAGE_BUNDLE = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', '1', '', d)}"
+# Uncomment following two lines to enable INITRAMFS. This adds dmcrypt-initramfs-image in 
+# INITRAMFS_IMAGE if encrypted-fs image feature is enabled otherwise add core-image-minimal-initramfs.
+#INITRAMFS_IMAGE = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', 'dmcrypt-initramfs-image', 'core-image-minimal-initramfs', d)}"
+#INITRAMFS_IMAGE_BUNDLE = "1"
 # removing 96boards-tools package so that rootfs does not occupy entire available space over the boot media.
 MACHINE_EXTRA_RRECOMMENDS_remove = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', '96boards-tools', '', d)}"
 # Add initramfs image to the boot partition.
