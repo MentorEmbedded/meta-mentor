@@ -404,6 +404,14 @@ do_archive_images () {
         echo "$PWD/local.conf.sample" >>include
         echo "$PWD/bblayers.conf.sample" >>include
     fi
+
+    if [ -e "${DEPLOY_DIR_IMAGE}/${RELEASE_IMAGE}-${MACHINE}.qemuboot.conf" ]; then
+        cp "${DEPLOY_DIR_IMAGE}/${RELEASE_IMAGE}-${MACHINE}.qemuboot.conf" ${WORKDIR}/qemuboot.conf
+        sed -i -e 's,-${MACHINE},,g' ${WORKDIR}/qemuboot.conf
+        echo "--transform=s,${WORKDIR}/qemuboot.conf,${BINARY_INSTALL_PATH}/${RELEASE_IMAGE}.qemuboot.conf," >>include
+        echo "${WORKDIR}/qemuboot.conf" >>include
+    fi
+
     chmod +x "${WORKDIR}/bmaptool"
     echo "--transform=s,${WORKDIR}/bmaptool,${BINARY_INSTALL_PATH}/bmaptool," >>include
     echo "${WORKDIR}/bmaptool" >>include
