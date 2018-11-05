@@ -10,4 +10,4 @@ LICENSE = "MIT"
 inherit core-image image-sanity-incompatible
 
 IMAGE_FEATURES .= "${@bb.utils.contains('COMBINED_FEATURES', 'alsa', ' tools-audio', '', d)}"
-IMAGE_INSTALL += " util-linux connman"
+IMAGE_INSTALL += " util-linux connman ${@bb.utils.contains("INCOMPATIBLE_LICENSE", "GPLv3", "", "haveged", d)}"
