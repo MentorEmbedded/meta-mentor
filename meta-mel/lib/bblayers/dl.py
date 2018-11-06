@@ -113,6 +113,28 @@ class DownloadsPlugin(LayerPlugin):
 
         return items_by_layer
 
+    def _collect_fetch_recipes(self, targets, ctask, depgraph):
+        tdepends = depgraph['tdepends']
+        fetch_recipes = set()
+        for target in targets:
+            if ':' in target:
+                recipe, task = target.split(':', 1)
+            else:
+                recipe, task = target, ctask
+
+            if not task.startswith('do_'):
+                task = 'do_' + task
+
+            if task == 'do_fetch':
+                fetch_recipes.add(recipe)
+
+        for task, taskdeps in tdepends.items():
+            for dep in taskdeps:
+                deprecipe, deptask = dep.rsplit('.', 1)
+                if deptask == 'do_fetch':
+                    fetch_recipes.add(deprecipe)
+        return fetch_recipes
+
     def _gather_downloads(self, args):
         if args.task is None:
             args.task = self.tinfoil.config_data.getVar('BB_DEFAULT_TASK') or 'build'
@@ -128,7 +150,6 @@ class DownloadsPlugin(LayerPlugin):
                 logger.critical('Failed to get the dependency graph')
                 return 1
 
-        tdepends = depgraph['tdepends']
         layer_data = depgraph['layer-priorities']
 
         def layer_for_file(filename):
@@ -136,24 +157,7 @@ class DownloadsPlugin(LayerPlugin):
                 if re.match(filename):
                     return name
 
-        fetch_recipes = set()
-        for target in args.targets:
-            if ':' in target:
-                recipe, task = target.split(':', 1)
-            else:
-                recipe, task = target, args.task
-
-            if not task.startswith('do_'):
-                task = 'do_' + task
-
-            if task == 'do_fetch':
-                fetch_recipes.add(recipe)
-
-        for task, taskdeps in tdepends.items():
-            for dep in taskdeps:
-                deprecipe, deptask = dep.rsplit('.', 1)
-                if deptask == 'do_fetch':
-                    fetch_recipes.add(deprecipe)
+        fetch_recipes = self._collect_fetch_recipes(args.targets, args.task, depgraph)
 
         self.tinfoil.run_command('enableDataTracking')
 
@@ -192,6 +196,38 @@ class DownloadsPlugin(LayerPlugin):
             for layer, item in items:
                 f.write('%s\t%s\n' % (layer, item))
 
+    def do_dump_licenses(self, args):
+        """Dump licenses of all packages in the depgraph of a target into ${TMPDIR}/pn-buildlist-licenses.txt."""
+        if args.task is None:
+            args.task = self.tinfoil.config_data.getVar('BB_DEFAULT_TASK') or 'build'
+        if not args.task.startswith('do_'):
+            args.task = 'do_' + args.task
+
+        filename = self.tinfoil.config_data.expand(args.filename)
+
+        depgraph, error = self._get_depgraph(args.targets, args.task)
+        if not depgraph:
+            if error:
+                logger.critical('Failed to get the dependency graph: %s' % error)
+                return 1
+            else:
+                logger.critical('Failed to get the dependency graph')
+                return 1
+
+        fetch_recipes = self._collect_fetch_recipes(args.targets, args.task, depgraph)
+
+        with open(filename, 'w') as f:
+            for recipe in fetch_recipes:
+                fn = depgraph['pn'][recipe]['filename']
+                real_fn, cls, mc = bb.cache.virtualfn2realfn(fn)
+                appends = self.tinfoil.get_file_appends(fn)
+                data = self.tinfoil.parse_recipe_file(fn, appendlist=appends)
+
+                pn = data.getVar('PN')
+                pv = data.getVar('PV')
+                lc = data.getVar('LICENSE')
+                f.write('%s,%s,%s\n' % (pn, pv, lc))
+
     def register_commands(self, sp):
         common = argparse.ArgumentParser(add_help=False)
         common.add_argument('--mirrortarballs', '-m', help='show existing mirror tarball paths rather than git clone paths', action='store_true')
@@ -202,3 +238,5 @@ class DownloadsPlugin(LayerPlugin):
         dump = self.add_command(sp, 'dump-downloads', self.do_dump_downloads, parents=[common], parserecipes=True)
         dump.add_argument('--append', '-a', help='append to output filename', action='store_true')
         dump.add_argument('--filename', '-f', help='filename to dump to', default='${TMPDIR}/downloads-by-layer.txt')
+        license = self.add_command(sp, 'dump-licenses', self.do_dump_licenses, parents=[common], parserecipes=True)
+        license.add_argument('--filename', '-f', help='filename to dump to', default='${TMPDIR}/pn-buildlist-licenses.txt')
