@@ -36,3 +36,6 @@ python image_check_zapped_root_password () {
         message = d.getVar('IMAGE_INCOMPATIBLE_ZAPPED_MESSAGE')
         raise oe.utils.ImageQAFailed(message, 'image_check_zapped_root_password')
 }
+
+# Skip the QA check for initramfs images
+IMAGE_QA_COMMANDS_remove = "${@'image_check_zapped_root_password' if d.getVar('IMAGE_FSTYPES') == d.getVar('INITRAMFS_FSTYPES') != '' else ''}"
