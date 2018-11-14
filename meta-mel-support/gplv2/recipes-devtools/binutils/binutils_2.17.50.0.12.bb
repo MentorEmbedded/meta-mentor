@@ -24,6 +24,12 @@ SRC_URI[sha256sum] = "7360808266f72aed6fda41735242fb9f1b6dd3307cd6e283a646932438
 
 DEPENDS += "flex texinfo-native"
 
+#
+# we need chrpath > 0.14 and some distros like centos 7 still have older chrpath
+#
+DEPENDS_append_class-target = " chrpath-replacement-native"
+EXTRANATIVEPATH_append_class-target = " chrpath-native"
+
 EXTRA_OECONF += "\
     --with-sysroot=/ \
     --enable-install-libbfd \
@@ -41,6 +47,13 @@ do_configure () {
 
 do_install_append () {
 	rm -rf ${D}${prefix}/${TARGET_SYS}/lib
+}
+
+# Kill redundant rpaths
+do_install_append_class-target () {
+	for i in ${D}${bindir}/*; do
+		chrpath -d "$i"
+	done
 }
 
 # This version doesn't provide these

@@ -1,18 +1,15 @@
-FILESEXTRAPATHS_append = ":${@':'.join('%s/../scripts/release' % l for l in '${BBPATH}'.split(':'))}"
-SRC_URI += "\
-    file://mel-checkout \
-    file://version-sort \
-    file://setup-mel \
-    file://setup-builddir \
-    \
-    ${@' '.join(uninative_urls(d)) if 'mel_downloads' in '${RELEASE_ARTIFACTS}'.split() else ''} \
-"
+FILESEXTRAPATHS_append = ":${@':'.join('%s/../scripts/release:%s/../scripts' % (l, l) for l in '${BBPATH}'.split(':'))}"
+MEL_SCRIPTS_FILES = "mel-checkout version-sort setup-mel setup-workspace setup-ubuntu setup-rh"
+SRC_URI += "${@' '.join(uninative_urls(d)) if 'mel_downloads' in '${RELEASE_ARTIFACTS}'.split() else ''}"
+SRC_URI += "${@' '.join('file://%s' % s for s in d.getVar('MEL_SCRIPTS_FILES').split())}"
 
 inherit layerdirs
 
 ARCHIVE_RELEASE_VERSION ?= "${DISTRO_VERSION}"
+SCRIPTS_VERSION ?= "0"
 MANIFEST_NAME ?= "${DISTRO}-${ARCHIVE_RELEASE_VERSION}-${MACHINE}"
 EXTRA_MANIFEST_NAME ?= "${DISTRO}-${ARCHIVE_RELEASE_VERSION}"
+SCRIPTS_ARTIFACT_NAME ?= "${DISTRO}-scripts-${DISTRO_VERSION}.${SCRIPTS_VERSION}"
 BSPFILES_INSTALL_PATH = "${MACHINE}/${ARCHIVE_RELEASE_VERSION}"
 GET_REMOTES_HOOK ?= ""
 
@@ -22,6 +19,8 @@ GET_REMOTES_HOOK ?= ""
 INDIVIDUAL_MANIFEST_LAYERS ?= ""
 FORKED_REPOS ?= ""
 PUBLIC_REPOS ?= "${FORKED_REPOS}"
+
+RELEASE_EXCLUDED_LAYERNAMES ?= ""
 
 ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
 ARCHIVE_RELEASE_DL_BY_LAYER_PATH = '${TMPDIR}/downloads-by-layer.txt'
@@ -113,6 +112,7 @@ python do_archive_mel_layers () {
     indiv_only_toplevel = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL').split()
     indiv_only = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY').split() + indiv_only_toplevel
     indiv_manifests = d.getVar('INDIVIDUAL_MANIFEST_LAYERS').split()
+    excluded_layers = d.getVar('RELEASE_EXCLUDED_LAYERNAMES').split()
     get_remotes_hook = d.getVar('GET_REMOTES_HOOK')
     if get_remotes_hook:
         get_remotes = bb.utils.get_context().get(get_remotes_hook)
@@ -132,6 +132,8 @@ python do_archive_mel_layers () {
     for subdir in directories:
         subdir = os.path.realpath(subdir)
         layername = layernames.get(subdir)
+        if layername in excluded_layers:
+            continue
         archive_path, dest_path, is_indiv = get_release_info(subdir, layername, topdir, oedir, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
         to_archive.add((archive_path, dest_path))
         if is_indiv:
@@ -181,8 +183,9 @@ python do_archive_mel_layers () {
                 files.append(os.path.relpath(infofn, outdir))
         bb.process.run(['tar', '-cf', os.path.basename(fn) + '.tar'] + files, cwd=outdir)
 
+    scripts = d.getVar('MEL_SCRIPTS_FILES').split()
     bb.process.run(['rm', '-r', 'objects'], cwd=outdir)
-    bb.process.run(['tar', '--transform=s,^,scripts/,', '--transform=s,^scripts/setup-mel,setup-mel,', '-cvf', d.expand('%s/${DISTRO}-scripts.tar' % outdir), 'mel-checkout', 'version-sort', 'setup-mel', 'setup-builddir'], cwd=d.getVar('WORKDIR'))
+    bb.process.run(['tar', '--transform=s,^,scripts/,', '--transform=s,^scripts/setup-mel,setup-mel,', '-cvf', d.expand('%s/${SCRIPTS_ARTIFACT_NAME}.tar' % outdir)] + scripts, cwd=d.getVar('WORKDIR'))
 }
 do_archive_mel_layers[dirs] = "${S}/do_archive_mel_layers ${S}"
 do_archive_mel_layers[vardeps] += "${GET_REMOTES_HOOK}"

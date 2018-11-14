@@ -9,9 +9,6 @@ CORE_IMAGE_EXTRA_INSTALL += "${@bb.utils.contains('IMAGE_FEATURES', 'tools-profi
 WHITELIST_BINUTILS = "${@'binutils' if d.getVar('PN') == 'binutils' or (bb.data.inherits_class('image', d) and bb.utils.filter('IMAGE_FEATURES', 'tools-profile', d) == 'tools-profile') else ''}"
 WHITELIST_GPL-3.0_append_aarch64 = " ${WHITELIST_BINUTILS}"
 
-# Image features for development-image
-IMAGE_FEATURES_DEVELOPMENT ?= "debug-tweaks codebench-debug ssh-server-openssh tools-profile"
-
 # Image features for production-image
 IMAGE_FEATURES_PRODUCTION ?= ""
 IMAGE_FEATURES_DISABLED_PRODUCTION ?= "${IMAGE_FEATURES_DEVELOPMENT} ssh-server-dropbear"

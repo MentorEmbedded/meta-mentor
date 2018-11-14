@@ -10,27 +10,22 @@ else
     fi
     meldir=`readlink -f "$meldir"`
 
-    if [ -f conf/local.conf -o -f conf/bblayers.conf ]; then
-        # Assuming we're already in the build dir
-        BUILDDIR="$PWD"
-    else
-        BUILDDIR="$PWD/build"
-    fi
-
+    WORKSPACEDIR="$PWD/workspace"
     for i in $(seq $#); do
         mel_arg="$(eval printf "%s" "\$$i")"
         case "$mel_arg" in
-            -b)
-                BUILDDIR="$(eval printf "%s" "\$$(expr $i + 1)")"
-                if [ -z "$BUILDDIR" ]; then
-                    echo >&2 "-b requires an argument"
+            -w)
+                WORKSPACEDIR="$(eval printf "%s" "\$$(expr $i + 1)")"
+                if [ -z "$WORKSPACEDIR" ]; then
+                    echo >&2 "-w requires an argument"
                 fi
                 ;;
         esac
     done
     unset mel_arg
-
-    "$meldir/scripts/setup-builddir" "$@" && \
-        . "$BUILDDIR/setup-environment"
+    "$meldir/scripts/setup-workspace" "$@" && \
+    cd "$WORKSPACEDIR" && \
+    echo >&2 "MEL setup complete in $WORKSPACEDIR" && \
+    echo >&2 "You can now source "$WORKSPACEDIR"/meta-mentor/setup-environment for setting up a build."
 fi
 # vim: set ft=sh :

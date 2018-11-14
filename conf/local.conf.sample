@@ -1,6 +1,4 @@
-# What distribution to use. We default to the Mentor Embedded Linux distro.
-# To build smaller images, you can choose to use the 'mel-tiny' distro, which
-# is based on poky-tiny.
+# Distro is set to Mentor Embedded Linux distro.
 DISTRO = 'mel'
 
 # You need to select a specific machine to target the build with. There are a selection
@@ -12,21 +10,13 @@ MACHINE ??= "qemux86"
 # from the CodeBench we're installed in.
 #EXTERNAL_TOOLCHAIN ?= "/path/to/toolchain"
 
-# Uncomment these, adjusting the path appropriately, to use an external
-# toolchain, but rebuild the toolchain's C library from source.
-#TCMODE = "external-sourcery-rebuild-libc"
-#SOURCERY_SRC_FILE = "/path/to/sourcery/src.tar.gz"
-
 # Uncomment to use the oe/yocto-built toolchain rather than the external
 #TCMODE = "default"
-
-# Uncomment to switch the built toolchain from eglibc to uclibc
-#TCLIBC = "uclibc"
 
 # The CORE_IMAGE_EXTRA_INSTALL variable allows extra individual packages to be
 # added to any of the images inheriting core-image.bbclass, including the
 # "core" images (e.g. core-image-base, core-image-minimal) as well as
-# console-image.
+# development-image and production-image..
 #CORE_IMAGE_EXTRA_INSTALL += "bash"
 
 # The EXTRA_IMAGE_FEATURES variable allows groups of packages to be added to
@@ -34,6 +24,7 @@ MACHINE ??= "qemux86"
 # automatically. The variable can contain the following options:
 #
 #  "graphics"        - add a graphical environment, defaulting to wayland/weston
+#                      or x11 depending on vendor support.
 #  "dbg-pkgs"        - add -dbg packages for all installed packages
 #                      (adds symbol information for debugging/profiling)
 #  "dev-pkgs"        - add -dev packages for all installed packages
@@ -47,18 +38,21 @@ MACHINE ??= "qemux86"
 #                      a subset of tools-debug (gdbserver, strace, sftp server)
 #  "debug-tweaks"    - make an image suitable for development
 #                      e.g. ssh root access has a blank password
-#  "x11-mini"        - minimal x11 setup, with window manager and terminal
 #  "splash"          - include a splashscreen (default: psplash, but the
 #                      particular package can be set with the SPLASH variable)
 #  "multimedia"      - add gstreamer support for running multimedia files
 #
 #  "virtualization"  - add docker support. Including meta-virtualization and dependencies
 #                      to bblayers is COMPULSORY for having no errors.
+#
+#  "encrypted-fs"     - add encrypted file system support. Some manual steps are needed
+#                       after flashing the image.
 # There are other options that can be used here, see
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
 # details.
 
-EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-profile"
+IMAGE_FEATURES_DEVELOPMENT ?= "debug-tweaks codebench-debug ssh-server-openssh tools-profile"
+EXTRA_IMAGE_FEATURES = "${IMAGE_FEATURES_DEVELOPMENT}"
 
 # Uncomment to enable runtime testing with ptest
 #USER_FEATURES += "ptest"
@@ -73,6 +67,11 @@ EXTRA_IMAGE_FEATURES = "debug-tweaks ssh-server-openssh codebench-debug tools-pr
 # Example of how to add additional image types beyond the default. If the
 # machine doesn't define them, the default types are tar.bz2 and ext3.
 #IMAGE_FSTYPES_append = " jffs2"
+
+# Uncomment and alter to set the root password. Set to 0 to explicitly allow
+# the empty root password even in production-image.
+#ROOT_PASSWORD = ""
+IMAGE_CLASSES_append = " image-root-password"
 
 # User features lets you manipulate the distro features. To add a distro
 # feature, simply add it to USER_FEATURES. To remove, prefix it with ~.
@@ -95,11 +94,6 @@ USER_FEATURES += "~nfc"
 # Uncomment to exclude GPLv3 software from the build
 #INCOMPATIBLE_LICENSE = "GPLv3"
 
-# Uncomment to indicate your acceptance of the Freescale end user license
-# agreement. This is needed to use the proprietary components for Freescale
-# hardware.
-#ACCEPT_FSL_EULA = "1"
-
 # Download files from a mirror
 # Uncomment this INHERIT, and define SOURCE_MIRROR_URL
 #
@@ -107,13 +101,13 @@ USER_FEATURES += "~nfc"
 #SOURCE_MIRROR_URL = "file:///cache/downloads"
 #SOURCE_MIRROR_URL = "http://myserver/sources"
 
-# Our download directory / cache
-DL_DIR ?= "${TOPDIR}/downloads"
+# Our download directory / cache for the workspace
+DL_DIR ?= "${MELDIR}/downloads"
 
-# Continue to pull downloads from the MEL install
+# Continue to pull downloads from the build dir if available
 PREMIRRORS_prepend = "\
     .*://.*/.* file://${MELDIR}/${MACHINE}/downloads/ \n \
-    .*://.*/.* file://${MELDIR}/downloads/ \n \
+    .*://.*/.* file://${TOPDIR}/downloads/ \n \
 "
 
 # BitBake has the capability to accelerate builds based on previously built
@@ -291,12 +285,6 @@ BB_DISKMON_DIRS = "\
 #    file:///some/local/dir \
 #"
 
-# Uncomment following lines to enable sysvinit
-#VIRTUAL-RUNTIME_init_manager = "sysvinit"
-#VIRTUAL-RUNTIME_initscripts = "initscripts"
-#DISTRO_FEATURES_BACKFILL_CONSIDERED = ""
-#DISTRO_FEATURES_remove = " systemd"
-
 # This may be used to abort the build when using an untested/unverified
 # version of the external toolchain.
 #SOURCERY_VERSION_REQUIRED = "2012.03"
@@ -306,6 +294,15 @@ BB_DISKMON_DIRS = "\
 #
 # Use this to add extra packages to the split-debug filesystem
 #EXTRA_DEBUG_PACKAGES = "ltrace strace"
+
+# Uncomment following two lines to enable INITRAMFS. This adds dmcrypt-initramfs-image in 
+# INITRAMFS_IMAGE if encrypted-fs image feature is enabled otherwise add core-image-minimal-initramfs.
+#INITRAMFS_IMAGE = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', 'dmcrypt-initramfs-image', 'core-image-minimal-initramfs', d)}"
+#INITRAMFS_IMAGE_BUNDLE = "1"
+# removing 96boards-tools package so that rootfs does not occupy entire available space over the boot media.
+MACHINE_EXTRA_RRECOMMENDS_remove = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', '96boards-tools', '', d)}"
+# Add initramfs image to the boot partition.
+MACHINE_BOOT_FILES += "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', '${dm-initramfs}', '', d)}"
 
 # CONF_VERSION is increased each time build/conf/ changes incompatibly and is used to
 # track the version of this file when it was generated. This can safely be ignored if
