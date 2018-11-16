@@ -125,7 +125,7 @@ configure_for_machine () {
     sed -i -e"s/^#*MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
     sed -n -i -e "s|##COREBASE##|$OEROOT|g" -e '/^BBLAYERS /{ :start; /\\$/{n; b start}; d; }; p' -e "/BBFILE_PRIORITY/d" $BUILDDIR/conf/bblayers.conf
 
-    echo 'BBLAYERS = "\' >> $BUILDDIR/conf/bblayers.conf
+    echo 'BBLAYERS ?= "\' >> $BUILDDIR/conf/bblayers.conf
     layersfile=$(mktemp setup-mel-builddir.XXXXXX)
 
     # Convert layer paths to layer names for bb-determine-layers
