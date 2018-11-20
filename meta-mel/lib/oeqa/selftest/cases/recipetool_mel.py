@@ -60,8 +60,9 @@ class RecipetoolMelTests(recipetool.RecipetoolAppendsrcBase):
             subdir = 'git'
         else:
             subdir = os.path.relpath(srcdir, workdir)
-        arch = get_bb_var('ARCH', testrecipe)
-        destdir = '%s/arch/%s/boot/dts' % (subdir, arch)
+        destdir = 'arch/\\${ARCH}/boot/dts'
+        if subdir != '.':
+            destdir = os.path.join(subdir, destdir)
 
         expected_file_info = {
             os.path.basename(self.testfile): destdir,
