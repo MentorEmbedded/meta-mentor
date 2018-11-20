@@ -3,11 +3,9 @@ import logging
 import tempfile
 import urllib.parse
 
-from . import recipetool
-
 from oeqa.utils.commands import runCmd, bitbake, get_bb_var, create_temp_layer
 from oeqa.utils.decorators import testcase
-from oeqa.selftest import devtool
+from oeqa.selftest.cases import recipetool
 
 
 templayerdir = None
