@@ -3,11 +3,9 @@ import logging
 import tempfile
 import urllib.parse
 
-from . import recipetool
-
 from oeqa.utils.commands import runCmd, bitbake, get_bb_var, create_temp_layer
 from oeqa.utils.decorators import testcase
-from oeqa.selftest import devtool
+from oeqa.selftest.cases import recipetool
 
 
 templayerdir = None
@@ -62,8 +60,9 @@ class RecipetoolMelTests(recipetool.RecipetoolAppendsrcBase):
             subdir = 'git'
         else:
             subdir = os.path.relpath(srcdir, workdir)
-        arch = get_bb_var('ARCH', testrecipe)
-        destdir = '%s/arch/%s/boot/dts' % (subdir, arch)
+        destdir = 'arch/\\${ARCH}/boot/dts'
+        if subdir != '.':
+            destdir = os.path.join(subdir, destdir)
 
         expected_file_info = {
             os.path.basename(self.testfile): destdir,
