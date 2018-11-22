@@ -13,6 +13,9 @@ WHITELIST_GPL-3.0_append_aarch64 = " ${WHITELIST_BINUTILS}"
 IMAGE_FEATURES_PRODUCTION ?= ""
 IMAGE_FEATURES_DISABLED_PRODUCTION ?= "${IMAGE_FEATURES_DEVELOPMENT} ssh-server-dropbear"
 
+# Add timezone data automatically in case of readonly rootfs.
+IMAGE_INSTALL_append = " ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', bb.utils.contains('EXTRA_IMAGE_FEATURES', 'read-only-rootfs', 'tzdata', '', d), '', d)}"
+
 # Uncomment to set a site name (shown in CodeBench) for the ADE
 # Default: ADE for ${ADE_IDENTIFIER}
 #ADE_SITENAME ?= "My Company's ADE for ${ADE_IDENTIFIER}"
