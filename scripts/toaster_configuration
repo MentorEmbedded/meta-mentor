@@ -224,6 +224,7 @@ else
   elif [ "\$1" == "stop" ]; then
     . $BITBAKEDIR/bin/toaster stop
     deactivate
+    unset CUSTOM_XML_ONLY
   else
      echo >&2 "Usage: . ./toaster-setup-environment {start|stop}"
   fi
