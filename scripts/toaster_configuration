@@ -218,13 +218,17 @@ if [ "\$#" -ne 1 ]; then
 else
   if [ "\$1" == "start" ]; then
     export CUSTOM_XML_ONLY=1
+    export OE_ROOT="$POKYDIR"
     . $BUILDDIR/venv/bin/activate
     . $BITBAKEDIR/bin/toaster start toasterdir="$BUILDDIR"
     xdg-open "http://localhost:8000"
+    unset OE_ROOT
   elif [ "\$1" == "stop" ]; then
+    export OE_ROOT="$POKYDIR"
     . $BITBAKEDIR/bin/toaster stop
     deactivate
     unset CUSTOM_XML_ONLY
+    unset OE_ROOT
   else
      echo >&2 "Usage: . ./toaster-setup-environment {start|stop}"
   fi
