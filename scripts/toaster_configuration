@@ -138,7 +138,7 @@ cat <<EOF >> "$BUILDDIR"/custom.xml
 EOF
 
 pk=1
-# Openembedded-core is poky's meta layer.
+# Openembedded-core is oe-core's meta layer.
 layer="$MELDIR"/oe-core/meta
 cat <<EOF >> "$BUILDDIR"/custom.xml
   <object model="orm.layer" pk="$pk">
@@ -203,11 +203,11 @@ create_toaster_venv () {
 }
 
 create_toaster_setupscript() {
-POKYDIR=$(configured_layers | while read layer; do
+OECOREDIR=$(configured_layers | while read layer; do
     layername=$(basename "$layer")
     if [ "$layername" = "meta" ]; then
-          POKYDIR=$(dirname "$layer")
-          echo "$POKYDIR"
+          OECOREDIR=$(dirname "$layer")
+          echo "$OECOREDIR"
     fi
 done)
 
@@ -218,13 +218,13 @@ if [ "\$#" -ne 1 ]; then
 else
   if [ "\$1" == "start" ]; then
     export CUSTOM_XML_ONLY=1
-    export OE_ROOT="$POKYDIR"
+    export OE_ROOT="$OECOREDIR"
     . $BUILDDIR/venv/bin/activate
     . $BITBAKEDIR/bin/toaster start toasterdir="$BUILDDIR"
     xdg-open "http://localhost:8000"
     unset OE_ROOT
   elif [ "\$1" == "stop" ]; then
-    export OE_ROOT="$POKYDIR"
+    export OE_ROOT="$OECOREDIR"
     . $BITBAKEDIR/bin/toaster stop
     deactivate
     unset CUSTOM_XML_ONLY
