@@ -1,0 +1,6 @@
+diff git a/scripts/connman_resolvconf.conf.in b/scripts/connman_resolvconf.conf.in
+--- a/scripts/connman_resolvconf.conf.in
++++ b/scripts/connman_resolvconf.conf.in
+@@ -1,2 +1 @@
+ d	@runstatedir@/connman	- - - -
+-L+	/etc/resolv.conf	- - - -	@runstatedir@/connman/resolv.conf
