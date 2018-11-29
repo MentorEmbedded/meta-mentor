@@ -2,6 +2,7 @@ SUMMARY = "Firmware files for wireless chips for use with Linux kernel"
 SECTION = "kernel"
 
 LICENSE = "\
+    Firmware-qualcommAthos_ath10k & \
     Firmware-atheros & \
     Firmware-broadcom & \
     Firmware-cw1200 & \
@@ -18,6 +19,7 @@ LICENSE = "\
 "
 
 LIC_FILES_CHKSUM = "\
+    file://LICENSE.QualcommAtheros_ath10k;md5=cb42b686ee5f5cb890275e4321db60a8 \
     file://LICENSE.atheros;md5=670a25baf80964a6a286bfa4d981aef4 \
     file://LICENSE.broadcom;md5=8cba1397cda6386db37210439a0da3eb \
     file://LICENSE.cw1200;md5=f0f770864e7a8444a5c5aa9d12a3a7ed \
@@ -32,6 +34,7 @@ LIC_FILES_CHKSUM = "\
     file://LICENSE.carl9170;md5=751419260aa954499f7abaabaa882bbe \
 "
 
+NO_GENERIC_LICENSE[Firmware-qualcommAthos_ath10k] = "LICENSE.QualcommAtheros_ath10k"
 NO_GENERIC_LICENSE[Firmware-atheros] = "LICENSE.atheros"
 NO_GENERIC_LICENSE[Firmware-broadcom] = "LICENSE.broadcom"
 NO_GENERIC_LICENSE[Firmware-cw1200] = "LICENSE.cw1200"
@@ -45,7 +48,7 @@ NO_GENERIC_LICENSE[Firmware-ti-connectivity] = "LICENSE.ti-connectivity"
 NO_GENERIC_LICENSE[Firmware-via_vt6656] = "LICENSE.via_vt6656"
 NO_GENERIC_LICENSE[Firmware-carl9170] = "LICENSE.carl9170"
 
-SRCREV = "c2c3df64df50d826d7649e03fbbe84ea99e5dbc8"
+SRCREV = "4b939aff1262372a789fd85a0785ca3ab4da8834"
 PV = "0.0+git${SRCPV}"
 
 SRC_URI = "git://github.com/MentorEmbedded/firmware-wireless;protocol=https"
