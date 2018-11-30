@@ -12,3 +12,7 @@ IMAGE_FEATURES_DISABLED_PRODUCTION ?= "debug-tweaks codebench-debug tools-profil
 IMAGE_FEATURES_remove = "${IMAGE_FEATURES_DISABLED_PRODUCTION}"
 
 require recipes-core/images/mel-image.inc
+
+# Exclude the extra vmlinux from production, as this is used for debugging
+EXTRA_VMLINUX = "${@'1' if 'vmlinux' in set(d.getVar('KERNEL_IMAGETYPES').split()) and len(set(d.getVar('KERNEL_IMAGETYPES').split())) > 1 else ''}"
+BAD_RECOMMENDATIONS += "${@'kernel-image-vmlinux' if d.getVar('EXTRA_VMLINUX') == '1' else ''}"
