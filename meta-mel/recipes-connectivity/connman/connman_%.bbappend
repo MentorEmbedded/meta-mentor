@@ -8,3 +8,10 @@ python () {
     if bt_pkgconf:
         d.setVarFlag('PACKAGECONFIG', 'bluetooth', d.getVar('BT_PKGCONF', False))
 }
+
+# do not use connman as a DNs
+# proxy because both dnsmasq and connman try to bind to same port 53.
+do_install_append () {
+    sed -i '/^ExecStart=/ s@-n@--nodnsproxy -n@g' ${D}${systemd_unitdir}/system/connman.service
+}
+

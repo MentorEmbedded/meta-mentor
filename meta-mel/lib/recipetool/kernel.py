@@ -54,7 +54,8 @@ def tinfoil_init(instance):
 
 def _get_recipe_file(cooker, pn):
     import oe.recipeutils
-    recipefile = oe.recipeutils.pn_to_recipe(cooker, pn)
+    best = cooker.findBestProvider(pn)
+    recipefile = best[3]
     if not recipefile:
         skipreasons = oe.recipeutils.get_unavailable_reasons(cooker, pn)
         if skipreasons:
@@ -65,14 +66,11 @@ def _get_recipe_file(cooker, pn):
 
 
 def _parse_recipe(pn, tinfoil):
-    import oe.recipeutils
     recipefile = _get_recipe_file(tinfoil.cooker, pn)
     if not recipefile:
         # Error already logged
         return None
-    append_files = tinfoil.cooker.collection.get_file_appends(recipefile)
-    rd = oe.recipeutils.parse_recipe(tinfoil.cooker, recipefile, append_files)
-    return rd
+    return tinfoil.parse_recipe(pn)
 
 
 def append_srcfiles(destlayer, rd, files, use_workdir=False, use_machine=False, wildcard_version=False, extralines=None):
