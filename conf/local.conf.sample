@@ -68,9 +68,10 @@ EXTRA_IMAGE_FEATURES = "${IMAGE_FEATURES_DEVELOPMENT}"
 # machine doesn't define them, the default types are tar.bz2 and ext3.
 #IMAGE_FSTYPES_append = " jffs2"
 
-# Uncomment and alter to set the root password. Set to 0 to explicitly allow
-# the empty root password even in production-image.
-#ROOT_PASSWORD = ""
+# Uncomment and alter to set the root password. Set to '0' to explicitly allow
+# the empty root password even in production-image. Set to '*' to explicitly
+# disable root login.
+#ROOT_PASSWORD = "0"
 IMAGE_CLASSES_append = " image-root-password"
 
 # User features lets you manipulate the distro features. To add a distro
