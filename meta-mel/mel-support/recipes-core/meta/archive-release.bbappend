@@ -75,7 +75,7 @@ def layer_git_root(subdir, too_far_paths):
 
     return git_root
 
-def get_release_info(layerdir, layername, topdir, oedir, indiv_only=None, indiv_only_toplevel=None, indiv_manifests=None):
+def get_release_info(layerdir, layername, topdir, oedir, too_far_paths, indiv_only=None, indiv_only_toplevel=None, indiv_manifests=None):
     import collections
     import fnmatch
 
@@ -86,15 +86,11 @@ def get_release_info(layerdir, layername, topdir, oedir, indiv_only=None, indiv_
     if indiv_manifests is None:
         indiv_manifests = []
 
-    parent = os.path.dirname(layerdir)
     relpath = None
-    if (layerdir not in indiv_only and
-            not os.path.exists(os.path.join(layerdir, '.git')) and
-            parent not in (oedir, topdir) and
-            os.path.exists(os.path.join(parent, '.git'))):
-        ls = bb.process.run(['git', 'ls-tree', '-d', 'HEAD', layerdir], cwd=parent)
-        if ls:
-            return parent, os.path.basename(parent), False
+    if layerdir not in indiv_only:
+        git_root = layer_git_root(layerdir, too_far_paths)
+        if git_root:
+            return git_root, os.path.basename(git_root), False
 
     if layername and any(fnmatch.fnmatchcase(layername, pat) for pat in indiv_manifests):
         indiv_layer = True
@@ -159,7 +155,7 @@ python do_archive_mel_layers () {
             if layername and any(fnmatch.fnmatchcase(layername, pat) for pat in indiv_manifests):
                 indiv_manifest_dirs.add(subdir)
         else:
-            archive_path, dest_path, is_indiv = get_release_info(subdir, layername, topdir, oedir, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
+            archive_path, dest_path, is_indiv = get_release_info(subdir, layername, topdir, oedir, too_far_paths, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
             to_archive.add((archive_path, dest_path, None))
             if is_indiv:
                 indiv_manifest_dirs.add(subdir)
@@ -395,6 +391,7 @@ python do_archive_mel_downloads () {
     indiv_only_toplevel = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL').split()
     indiv_only = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY').split() + indiv_only_toplevel
     indiv_manifests = d.getVar('INDIVIDUAL_MANIFEST_LAYERS').split()
+    too_far_paths = d.getVar('GIT_ROOT_TOO_FAR_PATHS').split()
 
     layers = set(i[0] for i in downloads)
     for layername in layers:
@@ -402,7 +399,7 @@ python do_archive_mel_downloads () {
             continue
 
         layerdir = d.getVar('LAYERDIR_%s' % layername)
-        archive_path, dest_path, is_indiv = get_release_info(layerdir, layername, topdir, oedir, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
+        archive_path, dest_path, is_indiv = get_release_info(layerdir, layername, topdir, oedir, too_far_paths, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
         if is_indiv:
             extra_name = dest_path.replace('/', '_')
             bb.utils.mkdirhier(os.path.join(mandir, 'extra', extra_name))
