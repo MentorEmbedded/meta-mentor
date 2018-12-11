@@ -61,7 +61,22 @@ def mel_get_remotes(subdir, d):
 
 GET_REMOTES_HOOK_mel ?= "mel_get_remotes"
 
-def get_release_info(layerdir, layername, topdir, oedir, indiv_only=None, indiv_only_toplevel=None, indiv_manifests=None):
+GIT_ROOT_TOO_FAR_PATHS = "${OEDIR} ${TOPDIR} ${HOME}"
+
+def layer_git_root(subdir, too_far_paths):
+    try:
+        git_root = bb.process.run(['git', 'rev-parse', '--show-toplevel'], cwd=subdir)[0].rstrip()
+    except bb.process.CmdError:
+        return None
+
+    too_far_under_root = any(too_far_path.startswith(git_root + os.sep) for too_far_path in too_far_paths):
+    if git_root in too_far_paths or too_far_under_root:
+        return None
+
+    return git_root
+
+def get_release_info(layerdir, layername, topdir, oedir, too_far_paths, indiv_only=None, indiv_only_toplevel=None, indiv_manifests=None):
+    import collections
     import fnmatch
 
     if indiv_only is None:
@@ -71,15 +86,11 @@ def get_release_info(layerdir, layername, topdir, oedir, indiv_only=None, indiv_
     if indiv_manifests is None:
         indiv_manifests = []
 
-    parent = os.path.dirname(layerdir)
     relpath = None
-    if (layerdir not in indiv_only and
-            not os.path.exists(os.path.join(layerdir, '.git')) and
-            parent not in (oedir, topdir) and
-            os.path.exists(os.path.join(parent, '.git'))):
-        ls = bb.process.run(['git', 'ls-tree', '-d', 'HEAD', layerdir], cwd=parent)
-        if ls:
-            return parent, os.path.basename(parent), False
+    if layerdir not in indiv_only:
+        git_root = layer_git_root(layerdir, too_far_paths)
+        if git_root:
+            return git_root, os.path.basename(git_root), False
 
     if layername and any(fnmatch.fnmatchcase(layername, pat) for pat in indiv_manifests):
         indiv_layer = True
@@ -113,6 +124,7 @@ python do_archive_mel_layers () {
     indiv_only = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY').split() + indiv_only_toplevel
     indiv_manifests = d.getVar('INDIVIDUAL_MANIFEST_LAYERS').split()
     excluded_layers = d.getVar('RELEASE_EXCLUDED_LAYERNAMES').split()
+    too_far_paths = d.getVar('GIT_ROOT_TOO_FAR_PATHS').split()
     get_remotes_hook = d.getVar('GET_REMOTES_HOOK')
     if get_remotes_hook:
         get_remotes = bb.utils.get_context().get(get_remotes_hook)
@@ -127,6 +139,7 @@ python do_archive_mel_layers () {
         if layerdir:
             layernames[layerdir] = layername
 
+    git_indivs = collections.defaultdict(set)
     to_archive, indiv_manifest_dirs = set(), set()
     path = d.getVar('PATH') + ':' + ':'.join(os.path.join(l, '..', 'scripts') for l in directories)
     for subdir in directories:
@@ -134,10 +147,21 @@ python do_archive_mel_layers () {
         layername = layernames.get(subdir)
         if layername in excluded_layers:
             continue
-        archive_path, dest_path, is_indiv = get_release_info(subdir, layername, topdir, oedir, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
-        to_archive.add((archive_path, dest_path))
-        if is_indiv:
-            indiv_manifest_dirs.add(subdir)
+
+        parent = os.path.dirname(subdir)
+        git_root = layer_git_root(subdir, too_far_paths)
+        if subdir in indiv_only and git_root:
+            git_indivs[git_root].add(os.path.relpath(subdir, git_root))
+            if layername and any(fnmatch.fnmatchcase(layername, pat) for pat in indiv_manifests):
+                indiv_manifest_dirs.add(subdir)
+        else:
+            archive_path, dest_path, is_indiv = get_release_info(subdir, layername, topdir, oedir, too_far_paths, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
+            to_archive.add((archive_path, dest_path, None))
+            if is_indiv:
+                indiv_manifest_dirs.add(subdir)
+
+    for parent, keep_files in git_indivs.items():
+        to_archive.add((parent, os.path.basename(parent), tuple(keep_files)))
 
     outdir = d.expand('${S}/do_archive_mel_layers')
     mandir = os.path.join(outdir, 'manifests')
@@ -150,8 +174,8 @@ python do_archive_mel_layers () {
     message = '%s release' % d.getVar('DISTRO')
 
     manifestdata = collections.defaultdict(list)
-    for subdir, path in sorted(to_archive):
-        pack_base, head = git_archive(subdir, objdir, message)
+    for subdir, path, keep_paths in sorted(to_archive):
+        pack_base, head = git_archive(subdir, objdir, message, keep_paths)
         if get_remotes:
             remotes = get_remotes(subdir, d) or {}
         else:
@@ -194,13 +218,14 @@ do_archive_mel_layers[vardeps] += "${GET_REMOTES_HOOK}"
 do_archive_mel_layers[vardepsexclude] += "DATE TIME"
 addtask archive_mel_layers after do_patch
 
-def git_archive(subdir, outdir, message=None):
+def git_archive(subdir, outdir, message=None, keep_paths=None):
     """Create an archive for the specified subdir, holding a single git object
 
     1. Clone or create the repo to a temporary location
-    2. Make the repo shallow
-    3. Repack the repo into a single git pack
-    4. Copy the pack files to outdir
+    2. Filter out paths not in keep_paths, if set
+    3. Make the repo shallow
+    4. Repack the repo into a single git pack
+    5. Copy the pack files to outdir
     """
     import glob
     import tempfile
@@ -252,6 +277,13 @@ def git_archive(subdir, outdir, message=None):
                 cdate, adate = None, None
 
         bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
+        if keep_paths and parent:
+            files = bb.process.run(gitcmd + ['ls-tree', '-r', '--name-only', parent_head])[0].splitlines()
+            kill_files = [f for f in files if f not in keep_paths and not any(f.startswith(p + '/') for p in keep_paths)]
+            keep_files = set(files) - set(kill_files)
+            if not keep_files:
+                bb.fatal('No files kept for %s' % parent)
+            bb.process.run(gitcmd + ['update-index', '--force-remove', '--'] + kill_files, cwd=subdir)
         tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
         commitcmd.append(tree)
 
@@ -359,6 +391,7 @@ python do_archive_mel_downloads () {
     indiv_only_toplevel = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL').split()
     indiv_only = d.getVar('SUBLAYERS_INDIVIDUAL_ONLY').split() + indiv_only_toplevel
     indiv_manifests = d.getVar('INDIVIDUAL_MANIFEST_LAYERS').split()
+    too_far_paths = d.getVar('GIT_ROOT_TOO_FAR_PATHS').split()
 
     layers = set(i[0] for i in downloads)
     for layername in layers:
@@ -366,7 +399,7 @@ python do_archive_mel_downloads () {
             continue
 
         layerdir = d.getVar('LAYERDIR_%s' % layername)
-        archive_path, dest_path, is_indiv = get_release_info(layerdir, layername, topdir, oedir, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
+        archive_path, dest_path, is_indiv = get_release_info(layerdir, layername, topdir, oedir, too_far_paths, indiv_only=indiv_only, indiv_only_toplevel=indiv_only_toplevel, indiv_manifests=indiv_manifests)
         if is_indiv:
             extra_name = dest_path.replace('/', '_')
             bb.utils.mkdirhier(os.path.join(mandir, 'extra', extra_name))
