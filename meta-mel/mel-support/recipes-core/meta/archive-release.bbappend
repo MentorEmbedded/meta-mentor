@@ -69,7 +69,7 @@ def layer_git_root(subdir, too_far_paths):
     except bb.process.CmdError:
         return None
 
-    too_far_under_root = any(too_far_path.startswith(git_root + os.sep) for too_far_path in too_far_paths):
+    too_far_under_root = any(too_far_path.startswith(git_root + os.sep) for too_far_path in too_far_paths)
     if git_root in too_far_paths or too_far_under_root:
         return None
 
