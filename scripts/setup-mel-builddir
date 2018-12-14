@@ -314,12 +314,17 @@ setup_builddir () {
         echo "You had no local.conf file. This configuration file has therefore been"
         echo "created for you with some default values."
 
-        if [ -h "$MELDIR/codebench" ]; then
-            codebench_path="$(cd "$MELDIR" && cd "$(readlink codebench)" && pwd -P)" || codebench_path="$MELDIR/../../codebench"
-            sedexpr="\${MELDIR}/codebench"
+        codebench_type="codebench"
+        if [ "$DISTRO" = "mel-lite" ]; then
+            codebench_type="codebench-lite"
+        fi
+
+        if [ -h "$MELDIR/$codebench_type" ]; then
+            codebench_path="$(cd "$MELDIR" && cd "$(readlink $codebench_type)" && pwd -P)" || codebench_path="$MELDIR/../../$codebench_type"
+            sedexpr="\${MELDIR}/$codebench_type"
         else
-            codebench_path="$MELDIR/../../codebench"
-            sedexpr="\${MELDIR}/../../codebench"
+            codebench_path="$MELDIR/../../$codebench_type"
+            sedexpr="\${MELDIR}/../../$codebench_type"
         fi
 
         if [ -d "$codebench_path" ]; then
@@ -398,9 +403,6 @@ layerdir="${scriptsdir%/*}"
 setup_builddir "$@" || exit $?
 if [ -e $BUILDDIR/conf/local.conf ]; then
     sed -i -e "s/^DISTRO.*/DISTRO = \'$DISTRO\'/" $BUILDDIR/conf/local.conf
-    if [ -d "$MELDIR/../../codebench-lite" ]; then
-        sed -i -e 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "${MELDIR}/../../codebench-lite",' "$BUILDDIR/conf/local.conf"
-    fi
 fi
 
 if [ $toasterconfig -eq 1 ]; then
