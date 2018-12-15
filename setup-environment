@@ -42,6 +42,12 @@ else
             fi
         done
 
+        if [ -z "${DISTRO}" ]; then
+            if [ -e "$layerdir/../.mel-lite" ]; then
+                export DISTRO="mel-lite"
+            fi
+        fi
+
         if [ "${DISTRO}" = "mel-lite" ]; then
             OPTIONALLAYERS="${OPTIONALLAYERS-tracing-layer}"
         else
