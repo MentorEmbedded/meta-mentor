@@ -32,9 +32,9 @@ If the build directory already exists and is configured, you can leave MACHINE
 unspecified, and the script will set you up for that build directory without
 changing its configuration.
 
-All layers whose directory name is update-*, at toplevel or a subdir, of the
-parent of meta-mentor, will be automatically included, as a mechanism for
-delivering sets of updates for releases.
+All layers whose directory name is update-* or meta-mentor-cve, at toplevel or
+a subdir, of the parent of meta-mentor, will be automatically included, as
+a mechanism for delivering sets of updates for releases.
 
 Options:
 
@@ -222,7 +222,9 @@ process_arguments () {
     fi
 
     updatelayers=
-    for lconf in $MELDIR/update-*/conf/layer.conf $MELDIR/*/update-*/conf/layer.conf; do
+    for lconf in $MELDIR/update-*/conf/layer.conf \
+                 $MELDIR/*/update-*/conf/layer.conf \
+                 $MELDIR/meta-mentor-cve/conf/layer.conf; do
         updatelayer="${lconf%/conf/layer.conf}"
         if [ -e "$updatelayer" ]; then
             updatelayers="$updatelayers $updatelayer"
