@@ -1,5 +1,9 @@
 # If any of these layers are available, but not included in BBLAYERS, warn
-UPDATES_CHECK_LAYERS ?= "${MELDIR}/updates/update-*/ ${MELDIR}/update-*/"
+UPDATES_CHECK_LAYERS ?= "\
+    ${MELDIR}/updates/update-*/ \
+    ${MELDIR}/update-*/ \
+    ${MELDIR}/meta-mentor-cve \
+"
 UPDATES_CHECK_LAYERS[type] = "list"
 
 check_for_updates () {
