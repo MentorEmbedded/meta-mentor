@@ -1,0 +1,35 @@
+From befcce7e25a74424b9c4c42cecd67daea71819da Mon Sep 17 00:00:00 2001
+From: Awais Belal <awais_belal@mentor.com>
+Date: Tue, 29 Jan 2019 15:02:45 +0500
+Subject: [PATCH 2/3] udev-extraconf/mount.sh: save mount name in our tmp file
+ cache
+
+Doing this will allow to fetch the exact name created by the
+auto-mounter during the remove action where depending on the
+scenario utilities such as the blkid might not be usable due
+to actual device not being present on the system.
+
+Signed-off-by: Awais Belal <awais_belal@mentor.com>
+---
+ mount.sh | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/mount.sh b/mount.sh
+index 3ee8558..e4ae816 100644
+--- a/mount.sh
++++ b/mount.sh
+@@ -55,7 +55,10 @@ automount() {
+ 		rm_dir "$MOUNT_PREFIX/$name"
+ 	else
+ 		logger "mount.sh/automount" "Auto-mount of [$MOUNT_PREFIX/$name] successful"
+-		touch "/tmp/.automount-$name"
++		# The actual device might not be present in the remove event so blkid cannot
++		# be used to calculate what name was generated here. Simply save the mount
++		# name in our tmp file.
++		echo "$name" > "/tmp/.automount-$name"
+ 	fi
+ }
+ 	
+-- 
+2.11.1
+
