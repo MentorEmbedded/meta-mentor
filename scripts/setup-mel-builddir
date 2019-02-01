@@ -46,7 +46,9 @@ Options:
                If any path in this list contains wildcards, the list must be quoted
                to avoid wildcard substitution by the shell
   -l LAYERS    Space-separated list of layer names for additional layers you
-               want to be included in the configuration
+               want to be included in the configuration. This argument is
+               cumulative. Both '-l "meta-foo meta-bar"' and
+               '-l meta-foo -l meta-bar' are valid and include both layers.
   -t           Create toaster configuration file in the build directory with layers
                configured
   -f           Force overwrite of existing configuration files in the build
@@ -190,7 +192,7 @@ process_arguments () {
                 extrasearchpaths="$OPTARG"
                 ;;
             l)
-                extralayers="$OPTARG"
+                extralayers="$extralayers $OPTARG"
                 ;;
             t)
                 toasterconfig=1
