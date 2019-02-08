@@ -403,6 +403,7 @@ do_archive_images () {
         echo "--transform=s,$PWD/,${CONF_INSTALL_PATH}/," >>include
         echo "$PWD/local.conf.sample" >>include
         echo "$PWD/bblayers.conf.sample" >>include
+        echo "$PWD/conf-notes.txt" >>include
     fi
 
     if [ -e "${DEPLOY_DIR_IMAGE}/${RELEASE_IMAGE}-${MACHINE}.qemuboot.conf" ]; then
