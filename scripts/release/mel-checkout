@@ -118,7 +118,7 @@ prompt_choice () {
 
 prompt_manifest () {
     find "$1" -maxdepth 1 -type f -name \*.manifest | \
-        sed 's,^.*/,,' | sort -rn | \
+        sed 's,^.*/,,' | sed '/qemu/!s/^/1 /; /qemu/s/^/0 /;' | sort -rn | sed 's/^[01] //' | \
         ( set +u; prompt_choice $prompt_non_interactive "$2" 1; ) | sed "s,^,$1/,"
 }
 
