@@ -303,7 +303,7 @@ BB_DISKMON_DIRS = "\
 # removing 96boards-tools package so that rootfs does not occupy entire available space over the boot media.
 MACHINE_EXTRA_RRECOMMENDS_remove = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', '96boards-tools', '', d)}"
 # Add initramfs image to the boot partition.
-IMAGE_BOOT_FILES += "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', '${dm-initramfs}', '', d)}"
+IMAGE_BOOT_FILES_append = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', '${dm-initramfs}', '', d)}"
 
 # CONF_VERSION is increased each time build/conf/ changes incompatibly and is used to
 # track the version of this file when it was generated. This can safely be ignored if
