@@ -9,13 +9,13 @@ Signed-off-by: Christopher Larson <chris_larson@mentor.com>
  Lib/site.py | 8 ++++++--
  1 file changed, 6 insertions(+), 2 deletions(-)
 
-Index: Python-3.5.2/Lib/site.py
+Index: Python-3.7.2/Lib/site.py
 ===================================================================
---- Python-3.5.2.orig/Lib/site.py	2017-04-04 00:53:24.878200401 +0500
-+++ Python-3.5.2/Lib/site.py	2017-04-04 00:54:53.062201987 +0500
-@@ -306,6 +306,10 @@
+--- Python-3.7.2.orig/Lib/site.py
++++ Python-3.7.2/Lib/site.py
+@@ -337,6 +337,10 @@ def getsitepackages(prefixes=None):
              sitepackages.append(os.path.join(prefix, sys.lib,
-                                         "python" + sys.version[:3],
+                                         "python%d.%d" % sys.version_info[:2],
                                          "site-packages"))
 +            if sys.lib != "lib":
 +                sitepackages.append(os.path.join(prefix, "lib",
