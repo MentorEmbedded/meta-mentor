@@ -32,9 +32,9 @@ If the build directory already exists and is configured, you can leave MACHINE
 unspecified, and the script will set you up for that build directory without
 changing its configuration.
 
-All layers whose directory name is update-*, at toplevel or a subdir, of the
-parent of meta-mentor, will be automatically included, as a mechanism for
-delivering sets of updates for releases.
+All layers whose directory name is update-* or meta-mentor-cve, at toplevel or
+a subdir, of the parent of meta-mentor, will be automatically included, as
+a mechanism for delivering sets of updates for releases.
 
 Options:
 
@@ -46,7 +46,9 @@ Options:
                If any path in this list contains wildcards, the list must be quoted
                to avoid wildcard substitution by the shell
   -l LAYERS    Space-separated list of layer names for additional layers you
-               want to be included in the configuration
+               want to be included in the configuration. This argument is
+               cumulative. Both '-l "meta-foo meta-bar"' and
+               '-l meta-foo -l meta-bar' are valid and include both layers.
   -t           Create toaster configuration file in the build directory with layers
                configured
   -f           Force overwrite of existing configuration files in the build
@@ -190,7 +192,7 @@ process_arguments () {
                 extrasearchpaths="$OPTARG"
                 ;;
             l)
-                extralayers="$OPTARG"
+                extralayers="$extralayers $OPTARG"
                 ;;
             t)
                 toasterconfig=1
@@ -222,7 +224,9 @@ process_arguments () {
     fi
 
     updatelayers=
-    for lconf in $MELDIR/update-*/conf/layer.conf $MELDIR/*/update-*/conf/layer.conf; do
+    for lconf in $MELDIR/update-*/conf/layer.conf \
+                 $MELDIR/*/update-*/conf/layer.conf \
+                 $MELDIR/meta-mentor-cve/conf/layer.conf; do
         updatelayer="${lconf%/conf/layer.conf}"
         if [ -e "$updatelayer" ]; then
             updatelayers="$updatelayers $updatelayer"
@@ -314,12 +318,17 @@ setup_builddir () {
         echo "You had no local.conf file. This configuration file has therefore been"
         echo "created for you with some default values."
 
-        if [ -h "$MELDIR/codebench" ]; then
-            codebench_path="$(cd "$MELDIR" && cd "$(readlink codebench)" && pwd -P)" || codebench_path="$MELDIR/../../codebench"
-            sedexpr="\${MELDIR}/codebench"
+        codebench_type="codebench"
+        if [ "$DISTRO" = "mel-lite" ]; then
+            codebench_type="codebench-lite"
+        fi
+
+        if [ -h "$MELDIR/$codebench_type" ]; then
+            codebench_path="$(cd "$MELDIR" && cd "$(readlink $codebench_type)" && pwd -P)" || codebench_path="$MELDIR/../../$codebench_type"
+            sedexpr="\${MELDIR}/$codebench_type"
         else
-            codebench_path="$MELDIR/../../codebench"
-            sedexpr="\${MELDIR}/../../codebench"
+            codebench_path="$MELDIR/../../$codebench_type"
+            sedexpr="\${MELDIR}/../../$codebench_type"
         fi
 
         if [ -d "$codebench_path" ]; then
@@ -395,16 +404,9 @@ scriptsdir="$(cd $(dirname $0) && pwd)"
 scriptsdir="$(abspath $scriptsdir)"
 layerdir="${scriptsdir%/*}"
 
-if [ -e $layerdir/../.mel-lite ]; then
-    DISTRO="mel-lite"
-fi
-
 setup_builddir "$@" || exit $?
 if [ -e $BUILDDIR/conf/local.conf ]; then
     sed -i -e "s/^DISTRO.*/DISTRO = \'$DISTRO\'/" $BUILDDIR/conf/local.conf
-    if [ -d "$MELDIR/../../codebench-lite" ]; then
-        sed -i -e 's,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= "${MELDIR}/../../codebench-lite",' "$BUILDDIR/conf/local.conf"
-    fi
 fi
 
 if [ $toasterconfig -eq 1 ]; then
