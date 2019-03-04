@@ -23,13 +23,13 @@ Signed-off-by: Arsalan H. Awan <Arsalan_Awan@mentor.com>
  mount.sh | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/mount.sh b/mount.sh
-index d760328a09..6b2e5d6cdf 100644
---- a/mount.sh
-+++ b/mount.sh
-@@ -20,6 +20,16 @@ done
- automount() {	
- 	name="`basename "$DEVNAME"`"
+Index: 1.1-r0/mount.sh
+===================================================================
+--- 1.1-r0.orig/mount.sh
++++ 1.1-r0/mount.sh
+@@ -85,6 +85,16 @@ automount() {
+ 	# configured in fstab
+ 	grep -q "^$DEVNAME " /proc/mounts && return
  
 +	# Get the LABEL or PARTLABEL
 +	LABEL=`/sbin/blkid | grep "${DEVNAME}:" | grep -o 'LABEL=".*"' | cut -d '"' -f2`
@@ -44,6 +44,3 @@ index d760328a09..6b2e5d6cdf 100644
  	! test -d "/run/media/$name" && mkdir -p "/run/media/$name"
  	# Silent util-linux's version of mounting auto
  	if [ "x`readlink $MOUNT`" = "x/bin/mount.util-linux" ] ;
--- 
-2.11.1
-
