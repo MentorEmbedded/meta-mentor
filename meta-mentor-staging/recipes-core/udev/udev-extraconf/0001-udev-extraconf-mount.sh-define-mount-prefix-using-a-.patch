@@ -13,19 +13,20 @@ Signed-off-by: Awais Belal <awais_belal@mentor.com>
  mount.sh | 13 +++++++------
  1 file changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/mount.sh b/mount.sh
-index 6b2e5d6..3ee8558 100644
---- a/mount.sh
-+++ b/mount.sh
-@@ -8,6 +8,7 @@
- MOUNT="/bin/mount"
+Index: 1.1-r0/mount.sh
+===================================================================
+--- 1.1-r0.orig/mount.sh
++++ 1.1-r0/mount.sh
+@@ -25,6 +25,8 @@ else
+ fi
+ 
  PMOUNT="/usr/bin/pmount"
- UMOUNT="/bin/umount"
++UMOUNT="/bin/umount"
 +MOUNT_PREFIX="/run/media"
+ 
  for line in `grep -h -v ^# /etc/udev/mount.blacklist /etc/udev/mount.blacklist.d/*`
  do
- 	if [ ` expr match "$DEVNAME" "$line" ` -gt 0 ];
-@@ -30,7 +31,7 @@ automount() {
+@@ -95,7 +97,7 @@ automount() {
  		name="${LABEL}-${name}"
  	fi
  
@@ -34,7 +35,7 @@ index 6b2e5d6..3ee8558 100644
  	# Silent util-linux's version of mounting auto
  	if [ "x`readlink $MOUNT`" = "x/bin/mount.util-linux" ] ;
  	then
-@@ -48,12 +49,12 @@ automount() {
+@@ -113,12 +115,12 @@ automount() {
  		;;
  	esac
  
@@ -51,13 +52,10 @@ index 6b2e5d6..3ee8558 100644
  		touch "/tmp/.automount-$name"
  	fi
  }
-@@ -96,5 +97,5 @@ if [ "$ACTION" = "remove" ] || [ "$ACTION" = "change" ] && [ -x "$UMOUNT" ] && [
- 	
- 	# Remove empty directories from auto-mounter
- 	name="`basename "$DEVNAME"`"
--	test -e "/tmp/.automount-$name" && rm_dir "/run/media/$name"
-+	test -e "/tmp/.automount-$name" && rm_dir "$MOUNT_PREFIX/$name"
+@@ -157,5 +159,5 @@ if [ "$ACTION" = "remove" ] || [ "$ACTIO
+ 
+     # Remove empty directories from auto-mounter
+     name="`basename "$DEVNAME"`"
+-    test -e "/tmp/.automount-$name" && rm_dir "/run/media/$name"
++    test -e "/tmp/.automount-$name" && rm_dir "$MOUNT_PREFIX/$name"
  fi
--- 
-2.11.1
-
