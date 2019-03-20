@@ -27,6 +27,9 @@ PKGS="$PKGS bmap-tools"
 # This is needed for Windows ADE
 PKGS="$PKGS zip"
 
+# Host Security Tool's cmdline requires this for update image generation
+PKGS="$PKGS realpath"
+
 echo "Installing packages required to build Mentor Embedded Linux"
 apt-get update
 apt-get -y install $PKGS
