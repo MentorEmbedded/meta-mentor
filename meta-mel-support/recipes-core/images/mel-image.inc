@@ -11,4 +11,4 @@ inherit core-image image-sanity-incompatible
 
 IMAGE_FEATURES .= "${@bb.utils.contains('COMBINED_FEATURES', 'alsa', ' tools-audio', '', d)}"
 IMAGE_INSTALL += " util-linux-mkfs connman ${@bb.utils.contains("INCOMPATIBLE_LICENSE", "GPLv3", "", "haveged", d)}"
-IMAGE_FEATURES += "splash"
+IMAGE_FEATURES += "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'graphics', 'splash', '', d)}"
