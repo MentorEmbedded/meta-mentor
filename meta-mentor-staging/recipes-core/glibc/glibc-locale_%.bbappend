@@ -8,3 +8,9 @@
 do_prep_locale_tree_append () {
     chown -R root:root $treedir
 }
+
+# Explicitly disable host-user-contaminated to further work around the
+# pseudo bug. With pseudo acting up, even if the ownership is correct,
+# it may well think it is not, so just sidestep the issue until upstream
+# fixes the root cause.
+ERROR_QA_remove = "host-user-contaminated"
