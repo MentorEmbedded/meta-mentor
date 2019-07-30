@@ -1,4 +1,4 @@
-SUMMARY = "Wayland/Weston image based on core-image-weston image recipe from Poky"
+SUMMARY = "Wayland/Weston image based on core-image-weston image recipe"
 
 IMAGE_FEATURES += "splash package-management hwcodecs"
 
