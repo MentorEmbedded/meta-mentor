@@ -241,7 +241,7 @@ setup_builddir () {
     shift $(expr $OPTIND - 1)
 
     OEROOT="$($layerdir/scripts/bb-determine-layers -g "$layerpaths" -l core)/.." || {
-        echo >&2 "Error: unable to locate core layer (oe-core or poky) in $MELDIR, aborting"
+        echo >&2 "Error: unable to locate core layer (oe-core) in $MELDIR, aborting"
         return 3
     }
 
