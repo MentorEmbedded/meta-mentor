@@ -41,6 +41,9 @@ MACHINE ??= "qemux86"
 #  "splash"          - include a splashscreen (default: psplash, but the
 #                      particular package can be set with the SPLASH variable)
 #  "multimedia"      - add gstreamer support for running multimedia files
+#  "multilib-runtime" - basic runtime multilib libraries to enable execution
+#                       of third party executables and CodeBench development
+#                       on non-default archs (libgcc, libc, libstdc++, lttng)
 #
 #  "virtualization"  - add docker support. Including meta-virtualization and dependencies
 #                      to bblayers is COMPULSORY for having no errors.
@@ -49,7 +52,7 @@ MACHINE ??= "qemux86"
 # details.
 
 IMAGE_FEATURES_DEVELOPMENT ?= "debug-tweaks codebench-debug ssh-server-openssh tools-profile"
-EXTRA_IMAGE_FEATURES = "${IMAGE_FEATURES_DEVELOPMENT}"
+EXTRA_IMAGE_FEATURES = "${IMAGE_FEATURES_DEVELOPMENT} multilib-runtime"
 
 # Uncomment the following to enable BSP specific patches and configurations for
 # kernel debugging
