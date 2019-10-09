@@ -25,13 +25,17 @@ do_install () {
     install -d ${D}${sbindir}
     install -m 0755 ${S}/resize-helper ${D}${sbindir}
 
-    install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${S}/resize-helper.service ${D}${systemd_unitdir}/system
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'true', 'false', d)}; then
+        install -d ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/resize-helper.service ${D}${systemd_unitdir}/system
+    fi
 
-    install -d ${D}${sysconfdir}/init.d
-    install -m 0755 ${WORKDIR}/resize-helper.sh.in ${D}${sysconfdir}/init.d/resize-helper.sh
-    sed -i -e "s:@bindir@:${bindir}:; s:@sbindir@:${sbindir}:; s:@sysconfdir@:${sysconfdir}:" \
-        ${D}${sysconfdir}/init.d/resize-helper.sh}
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'sysvinit', 'true', 'false', d)}; then
+        install -d ${D}${sysconfdir}/init.d
+        install -m 0755 ${WORKDIR}/resize-helper.sh.in ${D}${sysconfdir}/init.d/resize-helper.sh
+        sed -i -e "s:@bindir@:${bindir}:; s:@sbindir@:${sbindir}:; s:@sysconfdir@:${sysconfdir}:" \
+            ${D}${sysconfdir}/init.d/resize-helper.sh}
+    fi
 }
 
 SYSTEMD_SERVICE_${PN} = "resize-helper.service"
