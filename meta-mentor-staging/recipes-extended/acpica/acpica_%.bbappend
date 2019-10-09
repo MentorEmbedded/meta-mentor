@@ -1,1 +1,1 @@
-DEPENDS += "flex-native bison-native"
+DEPENDS += "bison-native"

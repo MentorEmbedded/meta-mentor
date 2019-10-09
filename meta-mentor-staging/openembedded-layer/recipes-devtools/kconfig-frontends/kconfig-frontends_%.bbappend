@@ -1,2 +1,2 @@
-DEPENDS += "flex-native bison-native"
+DEPENDS += "flex-native"
 DEPENDS_remove = "flex bison"
