@@ -1,5 +1,4 @@
-inherit bluetooth
-
+BLUEZ ?= "bluez5"
 VIRTUAL-RUNTIME_bluetooth-stack ?= "${BLUEZ}"
 VIRTUAL-RUNTIME_bluetooth-hw-support ?= ""
 

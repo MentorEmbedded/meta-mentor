@@ -5,9 +5,9 @@ SECTION = "devel"
 LICENSE = "GPLv2+"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/GPL-2.0;md5=801f80980d171dd6425610833a22dbe6"
 
-SRCREV = "193f355823d9dc38f370759153ac950a2833b0e2"
-SRC_URI = "git://github.com/96boards/96boards-tools;branch=master;protocol=https \
-		file://resize-helper.sh.in"
+SRCREV = "ed0f0dbec02c1869a0c4fa0140b4aa5338c9d010"
+SRC_URI = "git://github.com/96boards/96boards-tools;branch=master;protocol=https\
+           file://resize-helper.sh.in"
 
 S = "${WORKDIR}/git"
 
@@ -22,17 +22,20 @@ do_install () {
     install -d ${D}${sysconfdir}/udev/rules.d
     install -m 0755 ${S}/*.rules ${D}${sysconfdir}/udev/rules.d/
 
-    install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${S}/resize-helper.service ${D}${systemd_unitdir}/system
-
     install -d ${D}${sbindir}
     install -m 0755 ${S}/resize-helper ${D}${sbindir}
 
-	install -d ${D}${sysconfdir}/init.d
-	install -m 0755 ${WORKDIR}/resize-helper.sh.in ${D}${sysconfdir}/init.d/resize-helper.sh
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'true', 'false', d)}; then
+        install -d ${D}${systemd_unitdir}/system
+        install -m 0644 ${S}/resize-helper.service ${D}${systemd_unitdir}/system
+    fi
 
-	sed -i -e "s:@bindir@:${bindir}:; s:@sbindir@:${sbindir}:; s:@sysconfdir@:${sysconfdir}:" \
-			${D}${sysconfdir}/init.d/resize-helper.sh
+    if ${@bb.utils.contains('DISTRO_FEATURES', 'sysvinit', 'true', 'false', d)}; then
+        install -d ${D}${sysconfdir}/init.d
+        install -m 0755 ${WORKDIR}/resize-helper.sh.in ${D}${sysconfdir}/init.d/resize-helper.sh
+        sed -i -e "s:@bindir@:${bindir}:; s:@sbindir@:${sbindir}:; s:@sysconfdir@:${sysconfdir}:" \
+            ${D}${sysconfdir}/init.d/resize-helper.sh}
+    fi
 }
 
 SYSTEMD_SERVICE_${PN} = "resize-helper.service"
