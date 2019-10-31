@@ -2,6 +2,7 @@
 
 import argparse
 import collections
+import collections.abc
 import contextlib
 import glob
 import os
@@ -223,7 +224,7 @@ class Layer(object):
             return layers
 
 
-class Layers(collections.MutableSet):
+class Layers(collections.abc.MutableSet):
     def __init__(self, iterable=None):
         """A collection of layers. Maintains lookup mappings by path and name"""
         self.layers = set()
