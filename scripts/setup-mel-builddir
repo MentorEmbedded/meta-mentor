@@ -338,16 +338,6 @@ setup_builddir () {
                 sed -i -e "s,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= \"$sedexpr\"," "$BUILDDIR/conf/local.conf"
             fi
         fi
-
-        (
-            JOBS_FACTOR="2"
-            THREADS_FACTOR="3 / 2"
-            NCPU=`grep -c processor /proc/cpuinfo`
-            JOBS=`expr $NCPU \* $JOBS_FACTOR`
-            THREADS=`expr $NCPU \* $THREADS_FACTOR`
-            sed -i -e"s/^#*PARALLEL_MAKE *?*=.*/PARALLEL_MAKE ?= \"-j$JOBS\"/" $BUILDDIR/conf/local.conf
-            sed -i -e"s/^#*BB_NUMBER_THREADS *?*=.*/BB_NUMBER_THREADS ?= \"$THREADS\"/" $BUILDDIR/conf/local.conf
-        )
     else
         if [ -n "$MACHINE" ]; then
             echo "Configuring existing local.conf for $MACHINE"

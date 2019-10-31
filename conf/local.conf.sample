@@ -87,10 +87,10 @@ USER_FEATURES += "~3g"
 USER_FEATURES += "~nfc"
 
 # How many tasks bitbake should run in parallel
-#BB_NUMBER_THREADS = "4"
+BB_NUMBER_THREADS ?= "${@int(oe.utils.cpu_count() * 1.5)}"
 
 # How many jobs 'make' should run in parallel when compiling
-#PARALLEL_MAKE = "-j 4"
+PARALLEL_MAKE ?= "-j ${@oe.utils.cpu_count() * 2}"
 
 # Uncomment to exclude GPLv3 software from the build
 #INCOMPATIBLE_LICENSE = "GPLv3"
