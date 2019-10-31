@@ -381,11 +381,11 @@ setup_builddir () {
 
     cat >$BUILDDIR/setup-environment <<END
 if [ -n "\$BASH_SOURCE" ]; then
-    BUILDDIR="\$(dirname "\$BASH_SOURCE")"
+    BUILDDIR="\$(cd "\$(dirname "\$BASH_SOURCE")" && pwd -P)"
 elif [ -n "\$ZSH_NAME" ]; then
-    BUILDDIR="\$(dirname "\$0")"
+    BUILDDIR="\$(cd "\$(dirname "\$0")" && pwd -P)"
 else
-    BUILDDIR="\$(pwd)"
+    BUILDDIR="\$(pwd -P)"
 fi
 export TEMPLATECONF="$TEMPLATECONF"
 OEINIT="\$(find "$OEROOT" -maxdepth 1 -name \*-init-build-env | head -n 1)"
