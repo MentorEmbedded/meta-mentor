@@ -112,7 +112,7 @@ abspath () {
     readlink -f "$1"
 }
 
-configure_for_machine () {
+configure_builddir () {
     if [ -n "$EXCLUDEDLAYERS" ]; then
         set -- "$@" -x "$EXCLUDEDLAYERS"
     fi
@@ -360,12 +360,10 @@ setup_builddir () {
         BITBAKEDIR="$OEROOT/bitbake"
     fi
 
-    if [ -n "$MACHINE" ]; then
-        if [ -e "$layerdir/pre-setup.$MACHINE" ]; then
-            . "$layerdir/pre-setup.$MACHINE"
-        fi
-        PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" configure_for_machine || return $?
+    if [ -e "$layerdir/pre-setup.$MACHINE" ]; then
+        . "$layerdir/pre-setup.$MACHINE"
     fi
+    PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" configure_builddir || return $?
 
     cat "$scriptsdir/build-setup-environment.in" \
         | sed -e "s#@OEROOT@#$OEROOT#g" \
