@@ -122,7 +122,7 @@ else
 
         load_lconf_snippet "$layerdir" "conf/local.conf.append"
         load_lconf_snippet "$layerdir" "conf/local.conf.append.$SETUP_ENV_MACHINE"
-        configured_layers | grep -vx "$layerdir" | while read layer; do
+        configured_layers | grep -Fvx "$layerdir" | while read layer; do
             if [ -e $layer/post-setup-environment ]; then
                 . $layer/post-setup-environment
             fi
