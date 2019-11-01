@@ -105,7 +105,7 @@ else
                 return
             fi
             (
-            lheadername="${1##*/}/$2"
+            lheadername="${1#${layerdir%/*}/}/$2"
             printf '\n## Begin %s\n\n' "$lheadername"
             cat "$1/$2"
             printf '\n## End %s\n' "$lheadername"
