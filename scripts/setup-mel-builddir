@@ -149,7 +149,7 @@ configure_for_machine () {
     $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "$CORELAYERS $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" -O "$layer_priority_overrides" -m "$MACHINE" -d "$DISTRO" "$@" >$layersfile
     if [ $? -ne 0 ]; then
         echo >&2 "Error in execution of bb-determine-layers, aborting"
-        exit 1
+        return 1
     fi
     sed -e "s#^$BUILDDIR/#\${TOPDIR}/#g;" -e 's,^,    ,; s,$, \\,' <$layersfile >>$BUILDDIR/conf/bblayers.conf
     echo '"' >> $BUILDDIR/conf/bblayers.conf
@@ -284,6 +284,12 @@ setup_builddir () {
         rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
     fi
 
+    if [ -d "$BUILDDIR" ]; then
+        existing_builddir=1
+    else
+        existing_builddir=0
+    fi
+
     mkdir -p $BUILDDIR/conf
 
     if [ -z "$TEMPLATECONF" ]; then
@@ -297,7 +303,7 @@ setup_builddir () {
             TEMPLATECONF="$(cd "$(dirname "$TEMPLATECONF")" && pwd -P)/$(basename "$TEMPLATECONF")"
         else
             echo >&2 "Unable to determine TEMPLATECONF"
-            exit 1
+            return 1
         fi
     fi
 
@@ -390,7 +396,13 @@ layerdir="${scriptsdir%/*}"
 
 tmpdir="$(mktemp -d -t "${0##*/}.XXXXX")" || exit 1
 trap 'rm -rf "$tmpdir"' EXIT INT TERM
-setup_builddir "$@" || exit $?
+
+setup_builddir "$@" || {
+    if [ $existing_builddir -eq 0 ]; then
+        rm -rf "$BUILDDIR"
+    fi
+    exit $?
+}
 if [ -e $BUILDDIR/conf/local.conf ]; then
     sed -i -e "s/^DISTRO.*/DISTRO = \'$DISTRO\'/" $BUILDDIR/conf/local.conf
 fi
