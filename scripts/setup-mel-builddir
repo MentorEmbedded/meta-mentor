@@ -73,20 +73,18 @@ prompt_choice () {
     prompt_message="$1"
     prompt_default="${2:-}"
 
-    prompt_options="$(mktemp prompt-choice.XXXXXX)"
-    cat >>"$prompt_options"
+    prompt_options="$tmpdir/prompt-choice"
+    cat >"$prompt_options"
 
     prompt_count="$(wc -l <"$prompt_options")"
     case $prompt_count in
         0)
             # No choices provided
-            rm -f "$prompt_options"
             return 1
             ;;
         1)
             # Only one choice
             cat "$prompt_options"
-            rm -f "$prompt_options"
             return 0
             ;;
     esac
@@ -108,7 +106,6 @@ prompt_choice () {
         prompt_value="$(eval echo \${prompt_value_$selection})"
     done
     printf "%s\n" "$prompt_value"
-    rm -f "$prompt_options"
 }
 
 abspath () {
@@ -128,7 +125,7 @@ configure_for_machine () {
     sed -n -i -e "s|##COREBASE##|$OEROOT|g" -e '/^BBLAYERS /{ :start; /\\$/{n; b start}; d; }; p' -e "/BBFILE_PRIORITY/d" $BUILDDIR/conf/bblayers.conf
 
     echo 'BBLAYERS ?= "\' >> $BUILDDIR/conf/bblayers.conf
-    layersfile=$(mktemp setup-mel-builddir.XXXXXX)
+    layersfile="$tmpdir/layers"
 
     # Convert layer paths to layer names for bb-determine-layers
     extralayernames=
@@ -151,15 +148,12 @@ configure_for_machine () {
 
     $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "$CORELAYERS $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" -O "$layer_priority_overrides" -m "$MACHINE" -d "$DISTRO" "$@" >$layersfile
     if [ $? -ne 0 ]; then
-        rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
         exit 1
     fi
     sed -e "s#^$BUILDDIR/#\${TOPDIR}/#g;" -e 's,^,    ,; s,$, \\,' <$layersfile >>$BUILDDIR/conf/bblayers.conf
     echo '"' >> $BUILDDIR/conf/bblayers.conf
     configured_layers="$(PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" $(dirname "$0")/bb-print-layer-data $(cat $layersfile) 2>/dev/null | cut -d: -f1 | xargs)"
-    rm -f $layersfile
-    unset layersfile
 
     echo "$layer_priority_overrides" | tr " " "\n" | \
         while IFS== read -r layer priority; do
@@ -265,19 +259,17 @@ setup_builddir () {
             else
                 non_interactive=
             fi
-            tmpfile="$(mktemp -t "${0##*/}.XXXXX")"
             ls -1d $MELDIR/*/binary 2>/dev/null | sed "s,^$MELDIR/,,; s,/binary$,," | \
                 while read machine; do
                     if [ ! -e "$MELDIR/$machine/conf/local.conf.sample" ]; then
                         continue
                     fi
                     echo "$machine"
-                done | prompt_choice $non_interactive "Select BSP to use" >$tmpfile || {
+                done | prompt_choice $non_interactive "Select BSP to use" >$tmpdir/machine || {
                     echo >&2 "Error: unable to prompt for an installed MEL BSP, please specify MACHINE"
                     return 1
                 }
-            MACHINE="$(cat "$tmpfile")"
-            rm -f "$tmpfile"
+            MACHINE="$(cat "$tmpdir/machine")"
             if [ -z "$MACHINE" ]; then
                 echo >&2 "Error: unable to locate installed MEL BSP, please specify MACHINE"
                 return 1
@@ -366,7 +358,7 @@ setup_builddir () {
         if [ -e "$layerdir/pre-setup.$MACHINE" ]; then
             . "$layerdir/pre-setup.$MACHINE"
         fi
-        PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" configure_for_machine
+        PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" configure_for_machine || return $?
     fi
 
     cat >$BUILDDIR/setup-environment <<END
@@ -396,6 +388,8 @@ scriptsdir="$(cd $(dirname $0) && pwd)"
 scriptsdir="$(abspath $scriptsdir)"
 layerdir="${scriptsdir%/*}"
 
+tmpdir="$(mktemp -d -t "${0##*/}.XXXXX")" || exit 1
+trap 'rm -rf "$tmpdir"' EXIT INT TERM
 setup_builddir "$@" || exit $?
 if [ -e $BUILDDIR/conf/local.conf ]; then
     sed -i -e "s/^DISTRO.*/DISTRO = \'$DISTRO\'/" $BUILDDIR/conf/local.conf
