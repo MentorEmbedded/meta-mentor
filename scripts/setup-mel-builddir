@@ -367,27 +367,10 @@ setup_builddir () {
         PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" configure_for_machine || return $?
     fi
 
-    cat >$BUILDDIR/setup-environment <<END
-if [ -n "\$BASH_SOURCE" ]; then
-    BUILDDIR="\$(cd "\$(dirname "\$BASH_SOURCE")" && pwd -P)"
-elif [ -n "\$ZSH_NAME" ]; then
-    BUILDDIR="\$(cd "\$(dirname "\$0")" && pwd -P)"
-else
-    BUILDDIR="\$(pwd -P)"
-fi
-export TEMPLATECONF="$TEMPLATECONF"
-OEINIT="\$(find "$OEROOT" -maxdepth 1 -name \*-init-build-env | head -n 1)"
-if [ -z "\$OEINIT" ]; then
-    echo >&2 "oe-init-build-env not found in $OEROOT"
-    false
-else
-    . "\$OEINIT" "\$BUILDDIR" "$BITBAKEDIR"
-    export BB_ENV_EXTRAWHITE="\$BB_ENV_EXTRAWHITE GIT_SSL_CAINFO MGLS_LICENSE_FILE LM_LICENSE_FILE"
-    unset TEMPLATECONF OEINIT
-    cd "\$BUILDDIR"
-    command -v bitbake >/dev/null 2>&1
-fi
-END
+    cat "$scriptsdir/build-setup-environment.in" \
+        | sed -e "s#@OEROOT@#$OEROOT#g" \
+              -e "s#@BITBAKEDIR@#$BITBAKEDIR#g" \
+              -e "s#@TEMPLATECONF@#$TEMPLATECONF#g" >"$BUILDDIR/setup-environment"
 }
 
 scriptsdir="$(cd $(dirname $0) && pwd)"
