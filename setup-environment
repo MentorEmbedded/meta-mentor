@@ -2,13 +2,12 @@ if [ -z "$ZSH_NAME" ] && [ "x$0" = "x./setup-environment" ]; then
     echo >&2 "Error: This script needs to be sourced. Please run as '. ./setup-environment'"
 else
     if [ -n "$BASH_SOURCE" ]; then
-        layerdir="`dirname $BASH_SOURCE`"
+        layerdir="$(cd "$(dirname "$BASH_SOURCE")" && pwd -P)"
     elif [ -n "$ZSH_NAME" ]; then
-        layerdir="`dirname $0`"
+        layerdir="$(cd "$(dirname "$0")" && pwd -P)"
     else
-        layerdir="`pwd`"
+        layerdir="$(pwd -P)"
     fi
-    layerdir=`readlink -f "$layerdir"`
 
     export PYENV_ROOT="${PYENV_ROOT:-~/.pyenv}"
     PATH="$PYENV_ROOT/shims:$PATH"
