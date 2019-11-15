@@ -249,16 +249,20 @@ setup_builddir () {
         MACHINE="$1"
     fi
 
+    if [ -z "$MACHINE" ]; then
+        if [ -e "$MELDIR/.machine" ]; then
+            MACHINE="$(cat "$MELDIR/.machine")"
+        elif [ -e "$BUILDDIR/conf/local.conf" ]; then
+            MACHINE=$(sed -n 's/^MACHINE ?*= "\([^"]*\)"/\1/p' $BUILDDIR/conf/local.conf)
+        fi
+    fi
+
     if [ -n "$MACHINE" ]; then
         if [ -e $MELDIR/$MACHINE/binary ]; then
             # User specified machine and we have the binary content for this BSP
             TEMPLATECONF=$MELDIR/$MACHINE/conf
         fi
     else
-        if [ -e "$BUILDDIR/conf/local.conf" ]; then
-            MACHINE=$(sed -n 's/^MACHINE ?*= "\([^"]*\)"/\1/p' $BUILDDIR/conf/local.conf)
-        fi
-
         if [ ! -e $BUILDDIR/conf/local.conf -o ! -e $BUILDDIR/conf/bblayers.conf ] || [ -z "$MACHINE" ]; then
             if ! [ -t 1 ] || ! [ -t 0 ]; then
                 non_interactive=-n
