@@ -1,0 +1,19 @@
+if [ -n "$BASH_SOURCE" ]; then
+    BUILDDIR="$(cd "$(dirname "$BASH_SOURCE")" && pwd -P)"
+elif [ -n "$ZSH_NAME" ]; then
+    BUILDDIR="$(cd "$(dirname "$0")" && pwd -P)"
+else
+    BUILDDIR="$(pwd -P)"
+fi
+export TEMPLATECONF="@TEMPLATECONF@"
+OEINIT="$(find "@OEROOT@" -maxdepth 1 -name \*-init-build-env | head -n 1)"
+if [ -z "$OEINIT" ]; then
+    echo >&2 "oe-init-build-env not found in @OEROOT@"
+    false
+else
+    . "$OEINIT" "$BUILDDIR" "@BITBAKEDIR@"
+    export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE GIT_SSL_CAINFO MGLS_LICENSE_FILE LM_LICENSE_FILE"
+    unset TEMPLATECONF OEINIT
+    cd "$BUILDDIR"
+    command -v bitbake >/dev/null 2>&1
+fi

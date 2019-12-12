@@ -2,13 +2,12 @@ if [ -z "$ZSH_NAME" ] && [ "x$0" = "x./setup-environment" ]; then
     echo >&2 "Error: This script needs to be sourced. Please run as '. ./setup-environment'"
 else
     if [ -n "$BASH_SOURCE" ]; then
-        layerdir="`dirname $BASH_SOURCE`"
+        layerdir="$(cd "$(dirname "$BASH_SOURCE")" && pwd -P)"
     elif [ -n "$ZSH_NAME" ]; then
-        layerdir="`dirname $0`"
+        layerdir="$(cd "$(dirname "$0")" && pwd -P)"
     else
-        layerdir="`pwd`"
+        layerdir="$(pwd -P)"
     fi
-    layerdir=`readlink -f "$layerdir"`
 
     export PYENV_ROOT="${PYENV_ROOT:-~/.pyenv}"
     PATH="$PYENV_ROOT/shims:$PATH"
@@ -28,6 +27,7 @@ else
                 if [ -z "$BUILDDIR" ]; then
                     echo >&2 "-b requires an argument"
                 fi
+                BUILDDIR="$(readlink -f "$BUILDDIR")"
                 ;;
         esac
     done
@@ -87,23 +87,12 @@ else
         fi
 
         export OPTIONALLAYERS EXTRAMELLAYERS EXCLUDEDLAYERS
-        if [ -e "$BUILDDIR" ]; then
-            existing_builddir=1
-        else
-            existing_builddir=0
-        fi
+
         $layerdir/scripts/setup-mel-builddir "$@"
-        if [ $? -ne 0 ]; then
-            if [ $existing_builddir -eq 0 ]; then
-                # New build dir, clean up on failure
-                rm -r "$BUILDDIR"
-            fi
-            exit 1
-        fi
     )
     mel_setup_ret=$?
     if [ $mel_setup_ret -eq 0 ] && [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ]; then
-        . $BUILDDIR/setup-environment >/dev/null 2>&1
+        . $BUILDDIR/setup-environment
 
         configured_layers () {
             tac $BUILDDIR/conf/bblayers.conf | \
@@ -116,7 +105,7 @@ else
                 return
             fi
             (
-            lheadername="${1##*/}/$2"
+            lheadername="${1#${layerdir%/*}/}/$2"
             printf '\n## Begin %s\n\n' "$lheadername"
             cat "$1/$2"
             printf '\n## End %s\n' "$lheadername"
@@ -127,20 +116,22 @@ else
             . $layerdir/post-setup-environment
         fi
 
-        sed -i -n -e ":out; /^## Begin /{ :loop; /^## End /{ d; b out; }; n; b loop; }; p;" conf/local.conf
-        SETUP_ENV_MACHINE="$(sed -n -e 's/^MACHINE *?*= *"\(.*\)"/\1/p' "$BUILDDIR/conf/local.conf")"
+        if [ -e "$BUILDDIR/conf/local.conf" ] && [ -e "$BUILDDIR/conf/bblayers.conf" ]; then
+            sed -i -n -e ":out; /^## Begin /{ :loop; /^## End /{ d; b out; }; n; b loop; }; p;" conf/local.conf
+            SETUP_ENV_MACHINE="$(sed -n -e 's/^MACHINE *?*= *"\(.*\)"/\1/p' "$BUILDDIR/conf/local.conf")"
 
-        load_lconf_snippet "$layerdir" "conf/local.conf.append"
-        load_lconf_snippet "$layerdir" "conf/local.conf.append.$SETUP_ENV_MACHINE"
-        configured_layers | grep -vx "$layerdir" | while read layer; do
-            if [ -e $layer/post-setup-environment ]; then
-                . $layer/post-setup-environment
-            fi
-            load_lconf_snippet "$layer" "conf/local.conf.append"
-            load_lconf_snippet "$layer" "conf/local.conf.append.$SETUP_ENV_MACHINE"
-        done
+            load_lconf_snippet "$layerdir" "conf/local.conf.append"
+            load_lconf_snippet "$layerdir" "conf/local.conf.append.$SETUP_ENV_MACHINE"
+            configured_layers | grep -Fvx "$layerdir" | while read layer; do
+                if [ -e $layer/post-setup-environment ]; then
+                    . $layer/post-setup-environment
+                fi
+                load_lconf_snippet "$layer" "conf/local.conf.append"
+                load_lconf_snippet "$layer" "conf/local.conf.append.$SETUP_ENV_MACHINE"
+            done
 
-        . $BUILDDIR/setup-environment
+            . $BUILDDIR/setup-environment >/dev/null 2>&1
+        fi
 
         unset SETUP_ENV_MACHINE
         unset load_lconf_snippet

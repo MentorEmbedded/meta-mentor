@@ -73,20 +73,18 @@ prompt_choice () {
     prompt_message="$1"
     prompt_default="${2:-}"
 
-    prompt_options="$(mktemp prompt-choice.XXXXXX)"
-    cat >>"$prompt_options"
+    prompt_options="$tmpdir/prompt-choice"
+    cat >"$prompt_options"
 
     prompt_count="$(wc -l <"$prompt_options")"
     case $prompt_count in
         0)
             # No choices provided
-            rm -f "$prompt_options"
             return 1
             ;;
         1)
             # Only one choice
             cat "$prompt_options"
-            rm -f "$prompt_options"
             return 0
             ;;
     esac
@@ -108,14 +106,13 @@ prompt_choice () {
         prompt_value="$(eval echo \${prompt_value_$selection})"
     done
     printf "%s\n" "$prompt_value"
-    rm -f "$prompt_options"
 }
 
 abspath () {
     readlink -f "$1"
 }
 
-configure_for_machine () {
+configure_builddir () {
     if [ -n "$EXCLUDEDLAYERS" ]; then
         set -- "$@" -x "$EXCLUDEDLAYERS"
     fi
@@ -128,7 +125,7 @@ configure_for_machine () {
     sed -n -i -e "s|##COREBASE##|$OEROOT|g" -e '/^BBLAYERS /{ :start; /\\$/{n; b start}; d; }; p' -e "/BBFILE_PRIORITY/d" $BUILDDIR/conf/bblayers.conf
 
     echo 'BBLAYERS ?= "\' >> $BUILDDIR/conf/bblayers.conf
-    layersfile=$(mktemp setup-mel-builddir.XXXXXX)
+    layersfile="$tmpdir/layers"
 
     # Convert layer paths to layer names for bb-determine-layers
     extralayernames=
@@ -151,15 +148,12 @@ configure_for_machine () {
 
     $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "$CORELAYERS $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" -O "$layer_priority_overrides" -m "$MACHINE" -d "$DISTRO" "$@" >$layersfile
     if [ $? -ne 0 ]; then
-        rm -f $layersfile
         echo >&2 "Error in execution of bb-determine-layers, aborting"
-        exit 1
+        return 1
     fi
     sed -e "s#^$BUILDDIR/#\${TOPDIR}/#g;" -e 's,^,    ,; s,$, \\,' <$layersfile >>$BUILDDIR/conf/bblayers.conf
     echo '"' >> $BUILDDIR/conf/bblayers.conf
     configured_layers="$(PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" $(dirname "$0")/bb-print-layer-data $(cat $layersfile) 2>/dev/null | cut -d: -f1 | xargs)"
-    rm -f $layersfile
-    unset layersfile
 
     echo "$layer_priority_overrides" | tr " " "\n" | \
         while IFS== read -r layer priority; do
@@ -269,19 +263,17 @@ setup_builddir () {
             else
                 non_interactive=
             fi
-            tmpfile="$(mktemp -t "${0##*/}.XXXXX")"
             ls -1d $MELDIR/*/binary 2>/dev/null | sed "s,^$MELDIR/,,; s,/binary$,," | \
                 while read machine; do
                     if [ ! -e "$MELDIR/$machine/conf/local.conf.sample" ]; then
                         continue
                     fi
                     echo "$machine"
-                done | prompt_choice $non_interactive "Select BSP to use" >$tmpfile || {
-                echo >&2 "Error: unable to prompt for an installed MEL BSP, please specify MACHINE"
-                return 1
-            }
-            MACHINE="$(cat "$tmpfile")"
-            rm -f "$tmpfile"
+                done | prompt_choice $non_interactive "Select BSP to use" >$tmpdir/machine || {
+                    echo >&2 "Error: unable to prompt for an installed MEL BSP, please specify MACHINE"
+                    return 1
+                }
+            MACHINE="$(cat "$tmpdir/machine")"
             if [ -z "$MACHINE" ]; then
                 echo >&2 "Error: unable to locate installed MEL BSP, please specify MACHINE"
                 return 1
@@ -294,6 +286,12 @@ setup_builddir () {
 
     if [ $force_overwrite -eq 1 ]; then
         rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
+    fi
+
+    if [ -d "$BUILDDIR" ]; then
+        existing_builddir=1
+    else
+        existing_builddir=0
     fi
 
     mkdir -p $BUILDDIR/conf
@@ -309,7 +307,7 @@ setup_builddir () {
             TEMPLATECONF="$(cd "$(dirname "$TEMPLATECONF")" && pwd -P)/$(basename "$TEMPLATECONF")"
         else
             echo >&2 "Unable to determine TEMPLATECONF"
-            exit 1
+            return 1
         fi
     fi
 
@@ -342,16 +340,6 @@ setup_builddir () {
                 sed -i -e "s,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= \"$sedexpr\"," "$BUILDDIR/conf/local.conf"
             fi
         fi
-
-        (
-            JOBS_FACTOR="2"
-            THREADS_FACTOR="3 / 2"
-            NCPU=`grep -c processor /proc/cpuinfo`
-            JOBS=`expr $NCPU \* $JOBS_FACTOR`
-            THREADS=`expr $NCPU \* $THREADS_FACTOR`
-            sed -i -e"s/^#*PARALLEL_MAKE *?*=.*/PARALLEL_MAKE ?= \"-j$JOBS\"/" $BUILDDIR/conf/local.conf
-            sed -i -e"s/^#*BB_NUMBER_THREADS *?*=.*/BB_NUMBER_THREADS ?= \"$THREADS\"/" $BUILDDIR/conf/local.conf
-        )
     else
         if [ -n "$MACHINE" ]; then
             echo "Configuring existing local.conf for $MACHINE"
@@ -376,39 +364,30 @@ setup_builddir () {
         BITBAKEDIR="$OEROOT/bitbake"
     fi
 
-    if [ -n "$MACHINE" ]; then
-        if [ -e "$layerdir/pre-setup.$MACHINE" ]; then
-            . "$layerdir/pre-setup.$MACHINE"
-        fi
-        PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" configure_for_machine
+    if [ -e "$layerdir/pre-setup.$MACHINE" ]; then
+        . "$layerdir/pre-setup.$MACHINE"
     fi
+    PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" configure_builddir || return $?
 
-    cat >$BUILDDIR/setup-environment <<END
-if [ -n "\$BASH_SOURCE" ]; then
-    BUILDDIR="\$(dirname "\$BASH_SOURCE")"
-elif [ -n "\$ZSH_NAME" ]; then
-    BUILDDIR="\$(dirname "\$0")"
-else
-    BUILDDIR="\$(pwd)"
-fi
-export TEMPLATECONF="$TEMPLATECONF"
-for i in $OEROOT/*-init-build-env; do
-    if [ -e "\$i" ]; then
-        . \$i "\$BUILDDIR" "$BITBAKEDIR"
-        break
-    fi
-done
-export BB_ENV_EXTRAWHITE="\$BB_ENV_EXTRAWHITE GIT_SSL_CAINFO MGLS_LICENSE_FILE LM_LICENSE_FILE"
-unset TEMPLATECONF
-cd "\$BUILDDIR"
-END
+    cat "$scriptsdir/build-setup-environment.in" \
+        | sed -e "s#@OEROOT@#$OEROOT#g" \
+              -e "s#@BITBAKEDIR@#$BITBAKEDIR#g" \
+              -e "s#@TEMPLATECONF@#$TEMPLATECONF#g" >"$BUILDDIR/setup-environment"
 }
 
 scriptsdir="$(cd $(dirname $0) && pwd)"
 scriptsdir="$(abspath $scriptsdir)"
 layerdir="${scriptsdir%/*}"
 
-setup_builddir "$@" || exit $?
+tmpdir="$(mktemp -d -t "${0##*/}.XXXXX")" || exit 1
+trap 'rm -rf "$tmpdir"' EXIT INT TERM
+
+setup_builddir "$@" || {
+    if [ $existing_builddir -eq 0 ]; then
+        rm -rf "$BUILDDIR"
+    fi
+    exit $?
+}
 if [ -e $BUILDDIR/conf/local.conf ]; then
     sed -i -e "s/^DISTRO.*/DISTRO = \'$DISTRO\'/" $BUILDDIR/conf/local.conf
 fi

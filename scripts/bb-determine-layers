@@ -2,6 +2,7 @@
 
 import argparse
 import collections
+import collections.abc
 import contextlib
 import glob
 import os
@@ -223,7 +224,7 @@ class Layer(object):
             return layers
 
 
-class Layers(collections.MutableSet):
+class Layers(collections.abc.MutableSet):
     def __init__(self, iterable=None):
         """A collection of layers. Maintains lookup mappings by path and name"""
         self.layers = set()
@@ -355,15 +356,19 @@ def get_layerpaths_bitbake(globs=None, paths=None):
             layerconf_path = os.path.join(glob_path, 'conf', 'layer.conf')
             if os.path.exists(layerconf_path):
                 layer_paths.add(os.path.realpath(glob_path))
-            elif os.path.exists(os.path.join(glob_path, 'bin', 'bitbake')):
+            elif not bitbake_path and os.path.exists(os.path.join(glob_path, 'bin', 'bitbake')):
                 bitbake_path = os.path.join(glob_path, 'bin')
+                if not os.path.exists(os.path.join(bitbake_path, '..', 'lib', 'bb')):
+                    bitbake_path = None
 
     for path in paths:
         for subpath in find(path, dirfilter=lambda d: d != 'lib'):
             if subpath.endswith('/conf/layer.conf'):
                 layer_paths.add(os.path.realpath(os.path.dirname(os.path.dirname(subpath))))
-            elif subpath.endswith('/bin/bitbake'):
+            elif not bitbake_path and subpath.endswith('/bin/bitbake'):
                 bitbake_path = os.path.dirname(subpath)
+                if not os.path.exists(os.path.join(bitbake_path, '..', 'lib', 'bb')):
+                    bitbake_path = None
 
     return layer_paths, bitbake_path
 
