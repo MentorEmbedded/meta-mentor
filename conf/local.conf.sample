@@ -53,6 +53,7 @@ MACHINE ??= "qemux86"
 
 IMAGE_FEATURES_DEVELOPMENT ?= "debug-tweaks codebench-debug ssh-server-openssh tools-profile"
 EXTRA_IMAGE_FEATURES = "${IMAGE_FEATURES_DEVELOPMENT}"
+EXTRA_IMAGE_FEATURES_append_mel = " mel-examples"
 
 # Uncomment to enable runtime testing with ptest
 #USER_FEATURES += "ptest"

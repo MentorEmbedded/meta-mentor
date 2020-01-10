@@ -1,0 +1,126 @@
+#!/bin/sh
+
+LANG=C
+export LANG
+
+error_msg() {
+    msg="$1"
+    [ -z "${msg}" ] && msg="Unknown error"
+    printf "ERROR: %s\n" "${msg}" >&2
+    exit 1
+}
+
+warn_msg() {
+    msg="$1"
+    [ -z "${msg}" ] && msg="Unknown error"
+    printf "WARNING: %s\n" "${msg}" >&2
+}
+
+info_msg() {
+    msg="$1"
+    [ -z "${msg}" ] && msg="Unknown info"
+    printf "INFO: %s\n" "${msg}" >&1
+}
+
+check_root() {
+    if [ "$(id -ru)" -eq 0 ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+exit_on_fail() {
+    exit_code="$?"
+    [ "$#" -lt 2 ] && error_msg "Usage: exit_on_fail <success_phrase> <fail_phrase> [skip_list]"
+    success_phrase="$1"
+    fail_phrase="$2"
+    skip_list="$3"
+
+    if [ "${exit_code}" -ne 0 ]; then
+        warn_msg "${fail_phrase}" | tee -a "${RESULT_FILE}"
+
+        # skip_list is a list of tests separated by space. This might be
+        # useful when exiting on prerequisite not met.
+        if [ -n "${skip_list}" ]; then
+            for i in ${skip_list}; do
+                warn_msg "$i skipped" | tee -a "${RESULT_FILE}"
+            done
+        fi
+
+        # Exit normally to continue to run the following steps defined in test
+        # definition file.
+        exit 0
+    else
+        info_msg "${success_phrase}" | tee -a "${RESULT_FILE}"
+        return 0
+    fi
+}
+
+check_return() {
+    exit_code="$?"
+    [ "$#" -ne 2 ] && error_msg "Usage: check_return <success_phrase> <fail_phrase>"
+    success_phrase="$1"
+    fail_phrase="$2"
+
+    if [ "${exit_code}" -ne 0 ]; then
+        warn_msg "${fail_phrase}" | tee -a "${RESULT_FILE}"
+        return "${exit_code}"
+    else
+        info_msg "${success_phrase}" | tee -a "${RESULT_FILE}"
+        return 0
+    fi
+}
+
+report_successful() {
+    [ "$#" -ne 1 ] && error_msg "Usage: report_successful success_phrase"
+    success_phrase="$1"
+    info_msg "${success_phrase}" | tee -a "${RESULT_FILE}"
+}
+
+report_fail() {
+    [ "$#" -ne 1 ] && error_msg "Usage: report_fail fail_phrase"
+    fail_phrase="$1"
+    warn_msg "${fail_phrase}" | tee -a "${RESULT_FILE}"
+}
+
+check_deps() {
+    pkgs="$1"
+    [ -z "${pkgs}" ] && error_msg "Usage: check_deps pkgs"
+
+    ! check_root && \
+	    error_msg "About to check packages, please run this script as root."
+    info_msg "Checking ${pkgs}"
+
+    count=0
+    for pkg in ${pkgs}; do
+        opkg list-installed | grep -wq "${pkg} "
+        check_return "${pkg} installed" "${pkg} not installed!"
+	((count+=$?))
+    done
+    [ ${count} -eq 0 ]
+    exit_on_fail "Dependencies are installed" "Dependency package/s not installed!"
+}
+
+# Return the exit code of the first command when using pipe.
+pipe0_status() {
+    [ "$#" -ne 2 ] && error_msg "Usage: pipe0_status cmd1 cmd2"
+    cmd1="$1"
+    cmd2="$2"
+
+    exec 4>&1
+    ret_val=$({ { eval "${cmd1}" 3>&-; echo "$?" 1>&3; } 4>&- \
+                | eval "${cmd2}" 1>&4; } 3>&1)
+    exec 4>&-
+
+    return "${ret_val}"
+}
+
+create_out_dir() {
+    [ -z "$1" ] && error_msg "Usage: create_out_dir output_dir"
+    OUTPUT=$1
+    [ -d "${OUTPUT}" ] &&
+        mv "${OUTPUT}" "${OUTPUT}_$(date -r "${OUTPUT}" +%Y%m%d%H%M%S)"
+    mkdir -p "${OUTPUT}"
+    [ -d "${OUTPUT}" ] || error_msg "Could not create output directory ${OUTPUT}"
+}
