@@ -9,5 +9,5 @@ LICENSE = "MIT"
 
 inherit core-image image-sanity-incompatible
 
-IMAGE_FEATURES_append_mel = "${@bb.utils.contains('COMBINED_FEATURES', 'alsa', ' tools-audio', '', d)}"
-IMAGE_INSTALL += " util-linux-mkfs connman ${@bb.utils.contains("INCOMPATIBLE_LICENSE", "GPLv3", "", bb.utils.contains("BBFILE_COLLECTIONS", "openembedded-layer", "haveged", "", d), d)}"
+IMAGE_FEATURES_append_mel = "splash ${@bb.utils.contains('COMBINED_FEATURES', 'alsa', ' tools-audio', '', d)}"
+IMAGE_INSTALL_append_mel = " util-linux-mkfs connman ${@bb.utils.contains("INCOMPATIBLE_LICENSE", "GPLv3", "", bb.utils.contains("BBFILE_COLLECTIONS", "openembedded-layer", "haveged", "", d), d)}"

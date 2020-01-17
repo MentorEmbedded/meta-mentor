@@ -41,18 +41,22 @@ MACHINE ??= "qemux86"
 #  "splash"          - include a splashscreen (default: psplash, but the
 #                      particular package can be set with the SPLASH variable)
 #  "multimedia"      - add gstreamer support for running multimedia files
+#  "multilib-runtime" - basic runtime multilib libraries to enable execution
+#                       of third party executables and CodeBench development
+#                       on non-default archs (libgcc, libc, libstdc++, lttng)
 #
 #  "virtualization"  - add docker support. Including meta-virtualization and dependencies
 #                      to bblayers is COMPULSORY for having no errors.
-#
-#  "encrypted-fs"     - add encrypted file system support. Some manual steps are needed
-#                       after flashing the image.
 # There are other options that can be used here, see
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more
 # details.
 
 IMAGE_FEATURES_DEVELOPMENT ?= "debug-tweaks codebench-debug ssh-server-openssh tools-profile"
-EXTRA_IMAGE_FEATURES = "${IMAGE_FEATURES_DEVELOPMENT}"
+EXTRA_IMAGE_FEATURES = "${IMAGE_FEATURES_DEVELOPMENT} multilib-runtime"
+
+# Uncomment the following to enable BSP specific patches and configurations for
+# kernel debugging
+#MACHINE_FEATURES_append = " mel-debugging"
 
 # Uncomment to enable runtime testing with ptest
 #USER_FEATURES += "ptest"
@@ -294,14 +298,13 @@ BB_DISKMON_DIRS = "\
 # Use this to add extra packages to the split-debug filesystem
 #EXTRA_DEBUG_PACKAGES = "ltrace strace"
 
-# Uncomment following two lines to enable INITRAMFS. This adds dmcrypt-initramfs-image in 
-# INITRAMFS_IMAGE if encrypted-fs image feature is enabled otherwise add core-image-minimal-initramfs.
-#INITRAMFS_IMAGE = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', 'dmcrypt-initramfs-image', 'core-image-minimal-initramfs', d)}"
+# Uncomment to enable encrypted-fs User Feature:
+#USER_FEATURES_append = " encrypted-fs"
+EXTRA_IMAGE_FEATURES_append = " ${@bb.utils.contains('USER_FEATURES', 'encrypted-fs', 'encrypted-fs', '', d)}"
+# Uncomment it to enable INITRAMFS:
+#INITRAMFS_IMAGE = "${@bb.utils.contains('USER_FEATURES', 'encrypted-fs', 'dmcrypt-initramfs-image', 'core-image-minimal-initramfs', d)}"
+# Uncomment it to bundle initramfs image with kernel image:
 #INITRAMFS_IMAGE_BUNDLE = "1"
-# removing 96boards-tools package so that rootfs does not occupy entire available space over the boot media.
-MACHINE_EXTRA_RRECOMMENDS_remove = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', '96boards-tools', '', d)}"
-# Add initramfs image to the boot partition.
-IMAGE_BOOT_FILES_append = "${@bb.utils.contains('EXTRA_IMAGE_FEATURES', 'encrypted-fs', '${dm-initramfs}', '', d)}"
 
 # CONF_VERSION is increased each time build/conf/ changes incompatibly and is used to
 # track the version of this file when it was generated. This can safely be ignored if

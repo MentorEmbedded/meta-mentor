@@ -25,5 +25,4 @@ Mailing list: meta-mentor@yoctoproject.org
 When sending single patches, please use something like
 'git send-email -1 --subject-prefix 'PATCH][meta-mentor-staging' --to meta-mentor@yoctoproject.org'
 
-When sending a series, please use poky/meta/scripts/create-pull-request (aka
-oe-core/scripts/create-pull-request).
+When sending a series, please use oe-core/scripts/create-pull-request.
