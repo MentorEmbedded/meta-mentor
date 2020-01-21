@@ -6,7 +6,10 @@ SRC_URI += "${@' '.join('file://%s' % s for s in d.getVar('MEL_SCRIPTS_FILES').s
 inherit layerdirs
 
 ARCHIVE_RELEASE_VERSION ?= "${DISTRO_VERSION}"
-SCRIPTS_VERSION ?= "1"
+# The variable setting for SCRIPTS_VERSION from mel.conf takes
+# precedence when the mel distro is in use but the recipe can be
+# used on a different distro so we need it here as well.
+SCRIPTS_VERSION ?= "0"
 MANIFEST_NAME ?= "${DISTRO}-${ARCHIVE_RELEASE_VERSION}-${MACHINE}"
 EXTRA_MANIFEST_NAME ?= "${DISTRO}-${ARCHIVE_RELEASE_VERSION}"
 SCRIPTS_ARTIFACT_NAME ?= "${DISTRO}-scripts-${DISTRO_VERSION}.${SCRIPTS_VERSION}"
