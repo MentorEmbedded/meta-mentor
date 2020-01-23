@@ -4,7 +4,7 @@ IMAGE_FEATURES += "splash package-management hwcodecs"
 
 LICENSE = "MIT"
 
-inherit core-image distro_features_check
+inherit core-image features_check
 
 REQUIRED_DISTRO_FEATURES = "wayland"
 
