@@ -30,7 +30,8 @@ WORKSPACEDIR=$PWD/workspace
 manifest=
 extra_disabled=
 extra_manifests=
-while getopts w:m:x:Xh opt; do
+all_versions=
+while getopts w:m:x:Xah opt; do
     case "$opt" in
         w)
             WORKSPACEDIR="$OPTARG"
@@ -81,6 +82,9 @@ while getopts w:m:x:Xh opt; do
                 fi
             fi
             ;;
+        a)
+            all_versions=1
+            ;;
         \? | h)
             usage
             exit 1
@@ -96,7 +100,7 @@ else
 fi
 
 scriptdir="$(dirname "$0")"
-"$scriptdir/mel-checkout" ${extra_disabled:+-X} "$WORKSPACEDIR" "$manifest" $extra_manifests \
+"$scriptdir/mel-checkout" ${all_versions:+-a} ${extra_disabled:+-X} "$WORKSPACEDIR" "$manifest" $extra_manifests \
     && cd "$WORKSPACEDIR"
 if [ $? -ne 0 ]; then
     if [ $existing_workspace -eq 0 ]; then
