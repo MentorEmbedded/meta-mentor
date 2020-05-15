@@ -1,8 +1,0 @@
-[Plymouth Theme]
-Name=MEL Theme
-Description=Mentor Embedded Linux theme
-ModuleName=script
-
-[script]
-ImageDir=/usr/share/plymouth/themes/mel
-ScriptFile=/usr/share/plymouth/themes/mel/mel.script
