@@ -30,4 +30,5 @@ do_install_append_mel() {
                 install -m 0644 ${WORKDIR}/psplash-start.service ${D}${systemd_unitdir}/system
                 install -m 0644 ${WORKDIR}/psplash-final.service ${D}${systemd_unitdir}/system
         fi
+        rm -f ${D}${systemd_unitdir}/system/psplash-systemd.service
 }
