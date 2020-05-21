@@ -302,7 +302,7 @@ BB_DISKMON_DIRS = "\
 #USER_FEATURES_append = " encrypted-fs"
 EXTRA_IMAGE_FEATURES_append = " ${@bb.utils.contains('USER_FEATURES', 'encrypted-fs', 'encrypted-fs', '', d)}"
 # Uncomment it to enable INITRAMFS:
-INITRAMFS_IMAGE = "${@bb.utils.contains('USER_FEATURES', 'encrypted-fs', 'dmcrypt-initramfs-image', 'core-image-minimal-initramfs', d)}"
+INITRAMFS_IMAGE = "mel-initramfs-image"
 # Uncomment it to bundle initramfs image with kernel image:
 INITRAMFS_IMAGE_BUNDLE = "1"
 
