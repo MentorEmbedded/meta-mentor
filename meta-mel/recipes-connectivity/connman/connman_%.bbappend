@@ -11,7 +11,7 @@ python () {
 
 # do not use connman as a DNs
 # proxy because both dnsmasq and connman try to bind to same port 53.
-do_install_append () {
+do_install_append_mel () {
     sed -i '/^ExecStart=/ s@-n@--nodnsproxy -n@g' ${D}${systemd_unitdir}/system/connman.service
 }
 
