@@ -1,3 +1,6 @@
+# When meta-virtualization is enabled, enable the distro feature as well
+USER_FEATURES += "${@bb.utils.contains('BBFILE_COLLECTIONS', 'virtualization-layer', 'virtualization', '', d)}"
+
 # Install binutils with tools-profile, as our tracing scripts need ld
 CORE_IMAGE_EXTRA_INSTALL += "${@bb.utils.contains('IMAGE_FEATURES', 'tools-profile', 'binutils', '', d)}"
 
