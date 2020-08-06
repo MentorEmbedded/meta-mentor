@@ -299,10 +299,6 @@ BB_DISKMON_DIRS = "\
 # Use this to add extra packages to the split-debug filesystem
 #EXTRA_DEBUG_PACKAGES = "ltrace strace"
 
-# Uncomment to enable encrypted-fs User Feature:
-#USER_FEATURES_append = " encrypted-fs"
-EXTRA_IMAGE_FEATURES_append = " ${@bb.utils.contains('USER_FEATURES', 'encrypted-fs', 'encrypted-fs', '', d)}"
-
 # CONF_VERSION is increased each time build/conf/ changes incompatibly and is used to
 # track the version of this file when it was generated. This can safely be ignored if
 # this doesn't mean anything to you.

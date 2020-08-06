@@ -2,8 +2,6 @@ DESCRIPTION = "MEL Image initramfs"
 
 PACKAGE_INSTALL = "initramfs-framework-base ${VIRTUAL-RUNTIME_base-utils} udev base-passwd ${ROOTFS_BOOTSTRAP_INSTALL}"
 
-IMAGE_FEATURES = "${@bb.utils.contains('USER_FEATURES', 'encrypted-fs', 'encrypted-fs', '', d)}"
-
 export IMAGE_BASENAME = "mel-initramfs-image"
 IMAGE_LINGUAS = ""
 
