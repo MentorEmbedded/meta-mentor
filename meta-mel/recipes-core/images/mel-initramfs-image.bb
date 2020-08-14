@@ -1,6 +1,6 @@
 DESCRIPTION = "MEL Image initramfs"
 
-PACKAGE_INSTALL = "initramfs-framework-base ${VIRTUAL-RUNTIME_base-utils} udev base-passwd ${ROOTFS_BOOTSTRAP_INSTALL}"
+PACKAGE_INSTALL = "initramfs-framework-base ${VIRTUAL-RUNTIME_base-utils} initramfs-module-udev udev base-passwd ${ROOTFS_BOOTSTRAP_INSTALL}"
 
 IMAGE_FEATURES = "${@bb.utils.contains('USER_FEATURES', 'encrypted-fs', 'encrypted-fs', '', d)}"
 
