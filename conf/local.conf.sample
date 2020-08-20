@@ -55,6 +55,16 @@ TCMODE = "default"
 IMAGE_FEATURES_DEVELOPMENT ?= "debug-tweaks codebench-debug ssh-server-openssh tools-profile"
 EXTRA_IMAGE_FEATURES = "${IMAGE_FEATURES_DEVELOPMENT} multilib-runtime"
 
+# Image features for production-image
+IMAGE_FEATURES_PRODUCTION ?= ""
+IMAGE_FEATURES_DISABLED_PRODUCTION ?= "${IMAGE_FEATURES_DEVELOPMENT} ssh-server-dropbear"
+
+# Install binutils with the tools-profile feature, as our tracing scripts need ld
+CORE_IMAGE_EXTRA_INSTALL += "${@bb.utils.contains('IMAGE_FEATURES', 'tools-profile', 'binutils', '', d)}"
+
+# Install tzdata with systemd when building read only images
+CORE_IMAGE_EXTRA_INSTALL += "${@bb.utils.contains('IMAGE_FEATURES', 'read-only-rootfs', 'tzdata' if d.getVar('VIRTUAL-RUNTIME_init_manager') == 'systemd' else '', '', d)}"
+
 # Uncomment the following to enable BSP specific patches and configurations for
 # kernel debugging
 #MACHINE_FEATURES_append = " mel-debugging"
@@ -63,11 +73,6 @@ EXTRA_IMAGE_FEATURES = "${IMAGE_FEATURES_DEVELOPMENT} multilib-runtime"
 #USER_FEATURES += "ptest"
 #EXTRA_IMAGE_FEATURES += "ptest-pkgs"
 #CORE_IMAGE_EXTRA_INSTALL += "ptest-runner"
-
-# Uncomment this to enable inclusion of gdbserver in the codebench-debug
-# packagegroup / image feature even when GPLv3 is in INCOMPATIBLE_LICENSE, or
-# using a distro which sets it that way (atp).
-#ALLOW_GPLV3_GDBSERVER = "1"
 
 # Example of how to add additional image types beyond the default. If the
 # machine doesn't define them, the default types are tar.bz2 and ext3.
@@ -91,6 +96,9 @@ USER_FEATURES += "~3g"
 # Disable near field communication support by default
 USER_FEATURES += "~nfc"
 
+# When the meta-virtualization layer is enabled, enable the feature by default
+USER_FEATURES += "${@bb.utils.contains('BBFILE_COLLECTIONS', 'virtualization-layer', 'virtualization', '', d)}"
+
 # How many tasks bitbake should run in parallel
 BB_NUMBER_THREADS ?= "${@int(oe.utils.cpu_count() * 1.5)}"
 
@@ -99,6 +107,18 @@ PARALLEL_MAKE ?= "-j ${@oe.utils.cpu_count() * 2}"
 
 # Uncomment to exclude GPLv3 software from the build
 #INCOMPATIBLE_LICENSE = "GPLv3"
+
+# Uncomment this to enable inclusion of gdbserver in the codebench-debug
+# packagegroup / image feature even when GPLv3 is in INCOMPATIBLE_LICENSE, or
+# using a distro which sets it that way (atp).
+#ALLOW_GPLV3_GDBSERVER = "1"
+
+# The gplv2 binutils does not support aarch64, so the gplv3 version is built and
+# installed with tools-profile on that architecture by default, even in a
+# non-gplv3 build. To disable this, you may comment this out, comment out line
+# which installs binutils, or remove tools-profile from EXTRA_IMAGE_FEATURES.
+WHITELIST_BINUTILS = "${@'binutils' if d.getVar('PN') == 'binutils' or (bb.data.inherits_class('image', d) and bb.utils.filter('IMAGE_FEATURES', 'tools-profile', d) == 'tools-profile') else ''}"
+WHITELIST_GPL-3.0_append_aarch64 = " ${WHITELIST_BINUTILS}"
 
 # Download files from a mirror
 # Uncomment this INHERIT, and define SOURCE_MIRROR_URL
@@ -177,6 +197,16 @@ TOOLCHAIN_HOST_TASK_remove = "${TOOLCHAIN_HOST_REMOVE}"
 # TOOLCHAIN_TARGET_TASK is used to add target packages to the ADE/SDK, for
 # example, to add libncurses:
 #TOOLCHAIN_TARGET_TASK_append = " ncurses-libncurses"
+
+# Uncomment to set a site name (shown in CodeBench) for the ADE
+# Default: ADE for ${ADE_IDENTIFIER}
+#ADE_SITENAME ?= "My Company's ADE for ${ADE_IDENTIFIER}"
+
+# Uncomment to alter the identifier for the ADE. This mechanism is used to
+# support installation of multiple ADEs side-by-side. By default, every ADE
+# build gets its own identifier, so is self-contained already.
+# Default: ${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}
+#ADE_IDENTIFIER ?= "${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}.customized"
 
 # The following is a list of additional classes to use when building which
 # enable extra features. Some available options which can be included in this variable
