@@ -85,7 +85,7 @@ class MELUtilsPlugin(LayerPlugin):
         urldata = fetcher.ud
 
         items_by_layer = defaultdict(set)
-        items_files = data.varhistory.get_variable_items_files('SRC_URI', data)
+        items_files = data.varhistory.get_variable_items_files('SRC_URI')
         for item, filename in items_files.items():
             ud = urldata[item]
             decoded = bb.fetch.decodeurl(item)
