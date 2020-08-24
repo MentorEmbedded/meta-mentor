@@ -18,4 +18,7 @@ IMAGE_QA_COMMANDS_remove = "image_check_zapped_root_password"
 
 BAD_RECOMMENDATIONS += "busybox-syslog"
 
+# We don't need selinux labels in initramfs
+IMAGE_PREPROCESS_COMMAND_remove = "selinux_set_labels ;"
+
 COMPATIBLE_HOST_mel = "(arm|aarch64|i.86|x86_64).*-linux"
