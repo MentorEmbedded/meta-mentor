@@ -49,8 +49,6 @@ Options:
                want to be included in the configuration. This argument is
                cumulative. Both '-l "meta-foo meta-bar"' and
                '-l meta-foo -l meta-bar' are valid and include both layers.
-  -t           Create toaster configuration file in the build directory with layers
-               configured
   -f           Force overwrite of existing configuration files in the build
                directory. This includes local.conf and bblayers.conf, but not
                site.conf
@@ -172,7 +170,6 @@ process_arguments () {
     extrasearchpaths=
     extralayers=
     force_overwrite=0
-    toasterconfig=0
     verbose=0
     while getopts b:o:p:l:tfvh opt; do
         case "$opt" in
@@ -187,9 +184,6 @@ process_arguments () {
                 ;;
             l)
                 extralayers="$extralayers $OPTARG"
-                ;;
-            t)
-                toasterconfig=1
                 ;;
             f)
                 force_overwrite=1
@@ -392,36 +386,3 @@ if [ -e $BUILDDIR/conf/local.conf ]; then
     sed -i -e "s/^DISTRO.*/DISTRO = \'$DISTRO\'/" $BUILDDIR/conf/local.conf
 fi
 
-if [ $toasterconfig -eq 1 ]; then
-    machine=$(echo "$@" | awk -F" " {'print $NF'})
-    cmdline_string="$MELDIR/meta-mentor/setup-environment "
-    check_layer_option=0
-    for i in "$@"; do
-       if [ "$i" = "-t" ]; then
-          continue
-       fi
-       if [ "$i" = "-l" ]; then
-          check_layer_option=1
-          cmdline_string="$cmdline_string $i"
-          continue
-       fi
-       if [ $check_layer_option -eq 1 ]; then
-            check_layer_option=0
-            i="\"$i\""
-            cmdline_string="$cmdline_string $i"
-            continue
-       fi
-       if [ "$i" = "$machine" ]; then
-           cmdline_string="$cmdline_string -b \"%BUILDDIR%\" $machine"
-           continue
-       fi
-       cmdline_string="$cmdline_string $i"
-    done
-    CMD_LINE="$cmdline_string"
-    cd "${MELDIR}"
-    if [ ! -e "${BUILDDIR}/conf/recipes-list.txt" ] && [ -e "${MACHINE}/recipes-list.txt" ]; then
-        cp -f "${MACHINE}/recipes-list.txt" "${BUILDDIR}/conf/recipes-list.txt"
-    fi
-    ${MELDIR}/meta-mentor/scripts/list-recipes "$BUILDDIR/conf/recipes-list.txt"
-    $layerdir/scripts/toaster_configuration "$BUILDDIR" "$MELDIR" "$BITBAKEDIR" "$CMD_LINE"
-fi
