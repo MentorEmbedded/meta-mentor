@@ -59,9 +59,6 @@ EXTRA_IMAGE_FEATURES = "${IMAGE_FEATURES_DEVELOPMENT} multilib-runtime"
 IMAGE_FEATURES_PRODUCTION ?= ""
 IMAGE_FEATURES_DISABLED_PRODUCTION ?= "${IMAGE_FEATURES_DEVELOPMENT} ssh-server-dropbear"
 
-# Install binutils with the tools-profile feature, as our tracing scripts need ld
-CORE_IMAGE_EXTRA_INSTALL += "${@bb.utils.contains('IMAGE_FEATURES', 'tools-profile', 'binutils', '', d)}"
-
 # Install tzdata with systemd when building read only images
 CORE_IMAGE_EXTRA_INSTALL += "${@bb.utils.contains('IMAGE_FEATURES', 'read-only-rootfs', 'tzdata' if d.getVar('VIRTUAL-RUNTIME_init_manager') == 'systemd' else '', '', d)}"
 
