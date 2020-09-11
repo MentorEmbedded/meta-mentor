@@ -491,6 +491,8 @@ def determine_layers(cmdline_opts):
                     sys.exit("Layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
                 else:
                     found.update(layers)
+            else:
+                sys.exit("Layer `{0}` was not found".format(name))
 
         s.set_layer_status(found)
         configured_layers |= found
