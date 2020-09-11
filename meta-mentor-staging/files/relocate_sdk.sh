@@ -53,6 +53,10 @@ if [ -e "$native_sysroot/lib" ]; then
     find $native_sysroot -type f \
             \( -perm -0100 -o -perm -0010 -o -perm -0001 \) -print0 | \
             xargs -0 ${PYTHON} ${env_setup_script%/*}/relocate_sdk.py $target_sdk_dir $dl_path
+    if [ $? -ne 0 ]; then
+        echo "Failed to run ${env_setup_script%/*}/relocate_sdk.py. Abort!"
+        exit 1
+    fi
 
     # change all symlinks pointing to $default_sdk_dir
     for l in $(find $native_sysroot -type l); do
@@ -69,5 +73,9 @@ post_relocate="$target_sdk_dir/post-relocate-setup.sh"
 if [ -e "$post_relocate" ]; then
     sed -e "s:$default_sdk_dir:$target_sdk_dir:g" -i $post_relocate
     /bin/sh $post_relocate "$target_sdk_dir" "$default_sdk_dir"
+    if [ $? -ne 0 ]; then
+        echo "Failed to run $post_relocate. Abort!"
+        exit 1
+    fi
     rm -f $post_relocate
 fi
