@@ -391,6 +391,23 @@ def get_layerpaths_bitbake(globs=None, paths=None):
     return layer_paths, bitbake_path
 
 
+
+def get_layers_for(all_layers, value, varname, cfgpath, verbose=False):
+    with LayerStatus("Determining layers to include for {0} '{1}'".format(varname, value), verbose=verbose) as s:
+        layers = all_layers.which('conf/{0}/{1}.conf'.format(cfgpath, value))
+        if not layers:
+            sys.exit("No layer found for {0} `{1}`".format(varname, value))
+
+        found_layers = Layers()
+        for name in set(l.name for l in layers):
+            layers, missing_layers = all_layers.get_by_name_recursive(name)
+            found_layers |= layers
+            if missing_layers:
+                sys.exit("Layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
+        s.set_layer_status(found_layers)
+        return found_layers
+
+
 def determine_layers(cmdline_opts):
     args = process_arguments(cmdline_opts)
 
@@ -427,38 +444,7 @@ def determine_layers(cmdline_opts):
             if priority_override is not None:
                 layer.priority = priority_override
 
-    def get_layers_for(value, varname, cfgpath):
-        with LayerStatus("Determining layers to include for {0} '{1}'".format(varname, value), verbose=args.verbose) as s:
-            layers = all_layers.which('conf/{0}/{1}.conf'.format(cfgpath, value))
-            if not layers:
-                sys.exit("No layer found for {0} `{1}`".format(varname, value))
-
-            s.set_layer_status(layers)
-            layer_names = set(l.name for l in layers)
-            return layer_names
-
-    configured_layer_names = set(args.layers)
-
-    if args.distro and args.distro != 'nodistro':
-        configured_layer_names |= get_layers_for(args.distro, 'DISTRO', 'distro')
-
-    if args.machine:
-        configured_layer_names |= get_layers_for(args.machine, 'MACHINE', 'machine')
-
-    if args.sdkmachine:
-        configured_layer_names |= get_layers_for(args.sdkmachine, 'SDKMACHINE', 'machine-sdk')
-
-    with status('Processing layer dependencies'):
-        configured_layers = Layers()
-        for name in configured_layer_names:
-            if name not in all_layers.by_name:
-                sys.exit("Layer '{0}' not found".format(name))
-
-            layers, missing_layers = all_layers.get_by_name_recursive(name)
-            if missing_layers:
-                sys.exit("Dependent layers `{0}` not found for requested layer `{1}`".format(', '.join(missing_layers), name))
-            configured_layers |= layers
-
+    configured_layers = Layers()
     if args.layers:
         with LayerStatus('Checking for base layers', verbose=args.verbose) as s:
             found = set()
@@ -472,6 +458,15 @@ def determine_layers(cmdline_opts):
 
             s.set_layer_status(found)
             configured_layers |= found
+
+    if args.distro and args.distro != 'nodistro':
+        configured_layers |= get_layers_for(all_layers, args.distro, 'DISTRO', 'distro', args.verbose)
+
+    if args.machine:
+        configured_layers |= get_layers_for(all_layers, args.machine, 'MACHINE', 'machine', args.verbose)
+
+    if args.sdkmachine:
+        configured_layers |= get_layers_for(all_layers, args.sdkmachine, 'SDKMACHINE', 'machine-sdk', args.verbose)
 
     if args.optional_layers:
         with LayerStatus('Checking for optional layers', verbose=args.verbose) as s:
