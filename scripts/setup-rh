@@ -6,11 +6,10 @@
 # version 2.  This program  is licensed "as is" without any warranty of any
 # kind, whether express or implied.
 
-packages="make gcc gcc-c++ patch texi2html diffstat texinfo tetex cvs git
-          subversion gawk tar gzip bzip2 redhat-lsb sqlite ncurses-devel \
-          SDL-devel glibc-devel glibc-static glibc-devel.i686 libgcc.i686 \
-          chrpath python wget perl-Thread-Queue python-virtualenv xorg-x11-server-Xvfb \
-          xorg-x11-utils"
+packages="python38 \
+          patch diffstat git bzip2 tar \
+          gzip gawk chrpath wget cpio perl file which \
+          make gcc gcc-c++"
 
 set -e
 
@@ -20,45 +19,20 @@ if [ "$(id -u)" != "0" ]; then
         echo >&2 "Could not use sudo, exiting"
         exit 1
     fi
-    alias yum="sudo yum"
+    exec sudo "$0" "$@"
+fi
+
+echo "Enabling any required repos"
+if grep -q "^Red Hat Enterprise Linux release 8" /etc/redhat-release 2>/dev/null; then
+    ARCH=$(/bin/arch)
+    subscription-manager repos --enable "codeready-builder-for-rhel-8-${ARCH}-rpms"
+elif grep -q "^CentOS" /etc/redhat-release 2>/dev/null; then
+    dnf config-manager --set-enabled PowerTools
 fi
 
 echo "Installing packages required to build Mentor Embedded Linux"
-yum -y install $packages || {
+dnf install "$@" $packages || {
     echo >&2 "Error installing our required packages, aborting"
     exit 1
 }
-
-if ! which python3 >/dev/null 2>&1; then
-    echo "Installing packages required to build python3"
-    yum -y install gcc zlib-devel bzip2 bzip2-devel readline-devel sqlite sqlite-devel openssl-devel tk-devel libffi-devel || {
-        echo >&2 "Error installing python build dependencies, aborting"
-        exit 1
-    }
-
-    # EPEL's python isn't always viable, i.e. on RHEL7 it requires openssl 1.0.2
-    # which might not be available. Install python3 with pyenv instead.
-    export PYENV_ROOT="${PYENV_ROOT:-~/.pyenv}"
-    PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
-
-    # Default to fairly performant, even if it takes a little longer to build, as
-    # pgo can really affect bitbake parse times
-    export CFLAGS="-O2 -fomit-frame-pointer"
-    export PYTHON_CONFIGURE_OPTS="${PYTHON_CONFIGURE_OPTS-${CONFIGURE_OPTS---with-lto --enable-optimizations}}"
-
-    if [ ! -d "$PYENV_ROOT" ]; then
-        git clone https://github.com/pyenv/pyenv.git "$PYENV_ROOT"
-    fi
-    pyenv install 3.6.5
-
-    # At this point python is python2, and python2 and python3 work as expected,
-    # but python tools run with these pythons will have that python install first
-    # in the PATH. In the case of python3, this means in that process, 'python'
-    # will now correspond to python3, which will not do (see bitbake).
-    for i in "$(dirname "$(pyenv which python3)")"/*3; do
-        rm -f "${i%3}"
-    done
-    pyenv rehash
-fi
-
 echo "Setup complete"
