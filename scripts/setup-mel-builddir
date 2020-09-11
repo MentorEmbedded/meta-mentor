@@ -7,9 +7,9 @@
 # kind, whether express or implied.
 
 DISTRO="${DISTRO:-mel}"
-CORELAYERS="${CORELAYERS:-core mel-support mentor-staging}"
-OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
-EXTRAMELLAYERS="${EXTRAMELLAYERS-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery gplv2}"
+CORELAYERS="${CORELAYERS:-}"
+OPTIONALLAYERS="${OPTIONALLAYERS-}"
+EXTRAMELLAYERS="${EXTRAMELLAYERS-}"
 layer_priority_overrides="openembedded-layer=1"
 
 
