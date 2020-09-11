@@ -463,6 +463,20 @@ def determine_layers(cmdline_opts):
                 sys.exit("Dependent layers `{0}` not found for requested layer `{1}`".format(', '.join(missing_layers), name))
             configured_layers |= layers
 
+    if args.layers:
+        with LayerStatus('Checking for base layers', verbose=args.verbose) as s:
+            found = set()
+            for name in args.layers:
+                if name in all_layers.by_name:
+                    layers, missing_layers = all_layers.get_by_name_recursive(name)
+                    if missing_layers:
+                        sys.exit("Layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
+                    else:
+                        found.update(layers)
+
+            s.set_layer_status(found)
+            configured_layers |= found
+
     if args.optional_layers:
         with LayerStatus('Checking for optional layers', verbose=args.verbose) as s:
             found_optional = set()
