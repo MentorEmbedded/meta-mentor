@@ -94,7 +94,8 @@ USER_FEATURES += "~3g"
 USER_FEATURES += "~nfc"
 
 # When the meta-virtualization layer is enabled, enable the feature by default
-USER_FEATURES += "${@bb.utils.contains('BBFILE_COLLECTIONS', 'virtualization-layer', 'virtualization', '', d)}"
+USER_FEATURES_append_mel = "${@bb.utils.contains('BBFILE_COLLECTIONS', 'virtualization-layer', ' virtualization', '', d)}"
+EXTRA_IMAGE_FEATURES += "${@bb.utils.contains('DISTRO_FEATURES', 'virtualization', 'virtualization', '', d)}"
 
 # How many tasks bitbake should run in parallel
 BB_NUMBER_THREADS ?= "${@int(oe.utils.cpu_count() * 1.5)}"
