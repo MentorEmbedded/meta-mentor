@@ -27,7 +27,7 @@ PKGS="$PKGS bmap-tools"
 # This is needed for Windows ADE
 PKGS="$PKGS zip"
 
-echo "Installing packages required to build Mentor Embedded Linux"
+echo "Installing packages required to build Mentor Embedded Linux Flex OS"
 apt-get update
 apt-get -y install $PKGS
 
