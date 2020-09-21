@@ -10,9 +10,8 @@ MACHINE ??= "qemux86"
 # from the CodeBench we're installed in.
 #EXTERNAL_TOOLCHAIN ?= "/path/to/toolchain"
 
-# Comment out this line the external codebench toolchain rather than the
-# oe-/yocto-built.
-TCMODE = "default"
+# Uncomment to use the oe/yocto-built toolchain rather than the external
+#TCMODE = "default"
 
 # The CORE_IMAGE_EXTRA_INSTALL variable allows extra individual packages to be
 # added to any of the images inheriting core-image.bbclass, including the
