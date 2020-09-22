@@ -1,4 +1,4 @@
-# Distro is set to Mentor Embedded Linux distro.
+# Distro is set to Mentor Embedded Linux Flex OS distro.
 DISTRO = 'mel'
 
 # You need to select a specific machine to target the build with. There are a selection

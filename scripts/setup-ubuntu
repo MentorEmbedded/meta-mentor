@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2007-2016 Mentor Graphics Corporation
+# Copyright 2007-2020 Mentor, a Siemens Business
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -27,7 +27,7 @@ PKGS="$PKGS bmap-tools"
 # This is needed for Windows ADE
 PKGS="$PKGS zip"
 
-echo "Installing packages required to build Mentor Embedded Linux"
+echo "Installing packages required to build Mentor Embedded Linux Flex OS"
 apt-get update
 apt-get -y install $PKGS
 

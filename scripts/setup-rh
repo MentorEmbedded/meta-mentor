@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2007-2016 Mentor Graphics Corporation
+# Copyright 2007-2020 Mentor, a Siemens Business
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -30,7 +30,7 @@ elif grep -q "^CentOS" /etc/redhat-release 2>/dev/null; then
     dnf config-manager --set-enabled PowerTools
 fi
 
-echo "Installing packages required to build Mentor Embedded Linux"
+echo "Installing packages required to build Mentor Embedded Linux Flex OS"
 dnf install "$@" $packages || {
     echo >&2 "Error installing our required packages, aborting"
     exit 1

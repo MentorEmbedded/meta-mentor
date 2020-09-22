@@ -1,7 +1,7 @@
-Mentor Embedded Linux Distribution Layer for Yocto/OE
+Mentor Embedded Linux Flex OS Distribution Layer for Yocto/OE
 =====================================================
 
-This layer holds the Mentor Embedded Linux distro configuration and
+This layer holds the Mentor Embedded Linux Flex OS distro configuration and
 associated policy.
 
 This layer depends on:
