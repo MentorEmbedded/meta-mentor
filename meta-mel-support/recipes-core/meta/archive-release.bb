@@ -364,15 +364,12 @@ do_archive_images () {
         grep -Ev '^${DEPLOY_DIR_IMAGE}/${DEPLOY_IMAGES_EXCLUDE_PATTERN}' >>include
 
     # Lock down any autorevs
-    buildhistory-collect-srcrevs -p "${BUILDHISTORY_DIR}" >"${WORKDIR}/autorevs.conf"
-    if [ -s "${WORKDIR}/autorevs.conf" ]; then
-        echo "--transform=s,${WORKDIR}/autorevs.conf,${CONF_INSTALL_PATH}/autorevs.conf," >>include
-        echo "${WORKDIR}/autorevs.conf" >>include
-    fi
-
     if [ -e "${BUILDHISTORY_DIR}" ]; then
-        echo "--transform=s,${BUILDHISTORY_DIR},${BINARY_INSTALL_PATH}/buildhistory," >>include
-        echo ${BUILDHISTORY_DIR} >>include
+        buildhistory-collect-srcrevs -p "${BUILDHISTORY_DIR}" >"${WORKDIR}/autorevs.conf"
+        if [ -s "${WORKDIR}/autorevs.conf" ]; then
+            echo "--transform=s,${WORKDIR}/autorevs.conf,${CONF_INSTALL_PATH}/autorevs.conf," >>include
+            echo "${WORKDIR}/autorevs.conf" >>include
+        fi
     fi
 
     release_tar --files-from=include -cf ${MACHINE}-${ARCHIVE_RELEASE_VERSION}.tar
