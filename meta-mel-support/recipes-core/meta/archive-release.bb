@@ -74,16 +74,17 @@ BINARY_ARTIFACTS_COMPRESSION[doc] = "Compression type for images and downloads a
 LAYERS_OWN_DOWNLOADS ?= "${@' '.join(l for l in '${BBFILE_COLLECTIONS}'.split() if l.startswith('update-'))}"
 LAYERS_OWN_DOWNLOADS[doc] = "Names of layers whose downloads should be shipped inside the layer itself, self contained."
 
-# Kernel images and filesystems are handled separately, as they produce
-# timestamped filenames, and we only want the current ones (symlinked ones).
-DEPLOY_IMAGES_EXCLUDE_PATTERN = "(${KERNEL_IMAGETYPE}|README|\.|.*-image-)"
-DEPLOY_IMAGES = "\
-    ${@' '.join('${RELEASE_IMAGE}-${MACHINE}.%s' % ext for ext in IMAGE_EXTENSIONS.split())} \
-    ${RELEASE_IMAGE}-${MACHINE}.license_manifest \
-    ${RELEASE_IMAGE}-${MACHINE}.license_manifest.csv \
-    ${KERNEL_IMAGETYPE}* \
+IMAGE_BASENAME = "${RELEASE_IMAGE}"
+IMAGE_LINK_NAME ?= "${IMAGE_BASENAME}-${MACHINE}"
+IMAGE_NAME_SUFFIX ?= ".rootfs"
+EXTRA_IMAGES_ARCHIVE_RELEASE ?= ""
+DEPLOY_IMAGES ?= "\
+    ${@' '.join('${IMAGE_LINK_NAME}.%s' % ext for ext in d.getVar('IMAGE_EXTENSIONS').split())} \
+    ${IMAGE_LINK_NAME}.license_manifest \
+    ${IMAGE_LINK_NAME}.license_manifest.csv \
     ${EXTRA_IMAGES_ARCHIVE_RELEASE} \
 "
+DEPLOY_IMAGES_append_qemuall = "${@' ' + d.getVar('KERNEL_IMAGETYPE') if 'wic' not in d.getVar('IMAGE_EXTENSIONS') else ''}"
 DEPLOY_IMAGES[doc] = "List of files from DEPLOY_DIR_IMAGE which will be archived"
 
 # Use IMAGE_EXTENSION_xxx to map image type 'xxx' with real image file
@@ -96,7 +97,7 @@ IMAGE_EXTENSION_live = "hddimg iso"
 # internal use without necessarily packaging them in the installers.
 ARCHIVE_RELEASE_IMAGE_FSTYPES_EXCLUDE ?= ""
 
-python () {
+def image_extensions(d):
     extensions = set()
     fstypes = d.getVar('IMAGE_FSTYPES').split()
     fstypes_exclude = d.getVar('ARCHIVE_RELEASE_IMAGE_FSTYPES_EXCLUDE').split()
@@ -105,8 +106,15 @@ python () {
             continue
         extension = d.getVar('IMAGE_EXTENSION_%s' % type) or type
         extensions.add(extension)
+    return ' '.join(sorted(extensions))
     d.setVar('IMAGE_EXTENSIONS', ' '.join(sorted(extensions)))
 
+# If a wic image is enabled, that's all we want
+IMAGE_EXTENSIONS_FULL = "${@image_extensions(d)}"
+IMAGE_EXTENSIONS_WIC = "${@' '.join(e for e in d.getVar('IMAGE_EXTENSIONS_FULL').split() if 'wic' in e)}"
+IMAGE_EXTENSIONS ?= "${@d.getVar('IMAGE_EXTENSIONS_WIC') if d.getVar('IMAGE_EXTENSIONS_WIC') else d.getVar('IMAGE_EXTENSIONS_FULL')}"
+
+python () {
     # Make sure MELDIR is absolute, as we use it in transforms
     d.setVar('MELDIR', os.path.abspath(d.getVar('MELDIR')))
 
@@ -136,8 +144,8 @@ def uninative_urls(d):
             yield srcuri
 
 release_tar () {
-    tar --absolute-names "$@" --exclude=.svn \
-        --exclude=.git --exclude=\*.pyc --exclude=\*.pyo --exclude=.gitignore \
+    tar --absolute-names --exclude=.svn \
+        --exclude=.git --exclude=\*.pyc --exclude=\*.pyo --exclude=.gitignore "$@"  \
         -v --show-stored-names
 }
 
@@ -360,8 +368,9 @@ do_archive_images () {
     echo "--transform=s,-${MACHINE},,i" >include
     echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
 
-    find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1 \( -type f -o -type l \) | \
-        grep -Ev '^${DEPLOY_DIR_IMAGE}/${DEPLOY_IMAGES_EXCLUDE_PATTERN}' >>include
+    for filename in ${DEPLOY_IMAGES}; do
+        echo "${DEPLOY_DIR_IMAGE}/$filename" >>include
+    done
 
     # Lock down any autorevs
     if [ -e "${BUILDHISTORY_DIR}" ]; then
@@ -371,14 +380,6 @@ do_archive_images () {
             echo "${WORKDIR}/autorevs.conf" >>include
         fi
     fi
-
-    release_tar --files-from=include -cf ${MACHINE}-${ARCHIVE_RELEASE_VERSION}.tar
-
-    echo "--transform=s,-${MACHINE},,i" >include
-    echo "--transform=s,${DEPLOY_DIR_IMAGE},${BINARY_INSTALL_PATH}," >>include
-    {
-        ${@'\n'.join('find ${DEPLOY_DIR_IMAGE}/ -maxdepth 1  -iname "%s" || true' % pattern for pattern in DEPLOY_IMAGES.split())}
-    } >>include
 
     if echo "${OVERRIDES}" | tr ':' '\n' | grep -qx 'qemuall'; then
         ext="$(echo "${IMAGE_EXTENSIONS}" | tr ' ' '\n' | grep -v '^tar' | head -n 1)"
@@ -413,8 +414,7 @@ do_archive_images () {
     chmod +x "${WORKDIR}/bmaptool"
     echo "--transform=s,${WORKDIR}/bmaptool,${BINARY_INSTALL_PATH}/bmaptool," >>include
     echo "${WORKDIR}/bmaptool" >>include
-    release_tar --files-from=include -rhf ${MACHINE}-${ARCHIVE_RELEASE_VERSION}.tar
-    rm -rf runqemu conf-notes.txt local.conf.sample bblayers.conf.sample include
+    release_tar --files-from=include -chf ${MACHINE}-${ARCHIVE_RELEASE_VERSION}.tar
 }
 
 do_archive_templates () {
