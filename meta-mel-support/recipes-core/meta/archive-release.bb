@@ -395,8 +395,8 @@ do_archive_images () {
         fi
         sed -e "s/##ROOTFS##/${RELEASE_IMAGE}.$ext/; s/##KERNEL##/$kernel/" ${WORKDIR}/runqemu.in >runqemu
         chmod +x runqemu
-        echo ./runqemu >>include
-        echo "--transform=s,./runqemu$,${BINARY_INSTALL_PATH}/runqemu," >>include
+        echo "--transform=s,runqemu,${BINARY_INSTALL_PATH}/runqemu," >>include
+        echo runqemu >>include
     fi
     if echo "${RELEASE_ARTIFACTS}" | grep -qw templates; then
         prepare_templates
