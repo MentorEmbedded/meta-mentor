@@ -49,37 +49,58 @@ python do_archive_release_downloads () {
     bb.utils.mkdirhier(sources_dir)
 
     for u in ud.values():
-        local = fetch.localpath(u.url)
-        if local.endswith('.bb'):
-            continue
-        elif not local.startswith(dl_dir + '/'):
-            # For our purposes, we only want downloads, not what's in the layers
-            continue
-        elif local.endswith('/'):
-            local = local[:-1]
-
-        if hasattr(u, 'mirrortarballs'):
-            tarballs = u.mirrortarballs
-        elif u.mirrortarball:
-            tarballs = [u.mirrortarball]
-        else:
-            tarballs = None
-
-        if tarballs:
-            for tarball in tarballs:
-                if tarball:
-                    tarball_path = os.path.join(dl_dir, tarball)
-                    if os.path.exists(tarball_path):
-                        local = tarball_path
-                        break
-            else:
-                bb.warn('No mirror tarball found for %s, using %s' % (p, local))
-
-        oe.path.symlink(local, os.path.join(sources_dir, os.path.basename(local)), force=True)
-        donestamp = local + '.done'
-        if os.path.exists(donestamp):
-            oe.path.symlink(donestamp, os.path.join(sources_dir, os.path.basename(donestamp)), force=True)
+        archive_download(u, dl_dir, sources_dir, d)
 }
+
+def archive_download(u, dl_dir, sources_dir, d):
+    if hasattr(u.method, 'process_submodules'):
+        def archive_submodule(ud, url, module, modpath, workdir, d):
+            url += ";bareclone=1;nobranch=1"
+            newfetch = bb.fetch2.Fetch([url], d)
+            for subud in newfetch.ud.values():
+                return archive_download(subud, dl_dir, sources_dir, d)
+
+        # If we're using a shallow mirror tarball it needs to be unpacked
+        # temporarily so that we can examine the .gitmodules file
+        if u.shallow and os.path.exists(u.fullshallow) and u.method.need_update(u, d):
+            import tempfile
+            with tempfile.TemporaryDirectory(dir=sources_dir) as tmpdir:
+                bb.fetch2.runfetchcmd("tar -xzf %s" % u.fullshallow, d, workdir=tmpdir)
+                u.method.process_submodules(u, tmpdir, archive_submodule, d)
+        else:
+            u.method.process_submodules(u, u.clonedir, archive_submodule, d)
+
+    u.setup_localpath(d)
+    local = u.localpath
+    if local.endswith('.bb'):
+        return
+    elif not local.startswith(dl_dir + '/'):
+        # For our purposes, we only want downloads, not what's in the layers
+        return
+    elif local.endswith('/'):
+        local = local[:-1]
+
+    if hasattr(u, 'mirrortarballs'):
+        tarballs = u.mirrortarballs
+    elif u.mirrortarball:
+        tarballs = [u.mirrortarball]
+    else:
+        tarballs = None
+
+    if tarballs:
+        for tarball in tarballs:
+            if tarball:
+                tarball_path = os.path.join(dl_dir, tarball)
+                if os.path.exists(tarball_path):
+                    local = tarball_path
+                    break
+        else:
+            bb.warn('No mirror tarball found for %s, using %s' % (u.url, local))
+
+    oe.path.symlink(local, os.path.join(sources_dir, os.path.basename(local)), force=True)
+    donestamp = local + '.done'
+    if os.path.exists(donestamp):
+        oe.path.symlink(donestamp, os.path.join(sources_dir, os.path.basename(donestamp)), force=True)
 
 do_archive_release_downloads[dirs] = "${WORKDIR}"
 addtask archive_release_downloads after do_fetch
