@@ -8,9 +8,7 @@
 
 DISTRO="${DISTRO:-mel}"
 CORELAYERS="${CORELAYERS:-core mel-support mentor-staging}"
-if [ "${DISTRO}" != "mel-lite" ]; then
-    OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
-fi
+OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
 EXTRAMELLAYERS="${EXTRAMELLAYERS-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery gplv2}"
 layer_priority_overrides="openembedded-layer=1"
 
@@ -314,17 +312,12 @@ setup_builddir () {
         echo "You had no local.conf file. This configuration file has therefore been"
         echo "created for you with some default values."
 
-        codebench_type="codebench"
-        if [ "$DISTRO" = "mel-lite" ]; then
-            codebench_type="codebench-lite"
-        fi
-
-        if [ -h "$MELDIR/$codebench_type" ]; then
-            codebench_path="$(cd "$MELDIR" && cd "$(readlink $codebench_type)" && pwd -P)" || codebench_path="$MELDIR/../../$codebench_type"
-            sedexpr="\${MELDIR}/$codebench_type"
+        if [ -h "$MELDIR/codebench" ]; then
+            codebench_path="$(cd "$MELDIR" && cd "$(readlink codebench)" && pwd -P)" || codebench_path="$MELDIR/../../codebench"
+            sedexpr="\${MELDIR}/codebench"
         else
-            codebench_path="$MELDIR/../../$codebench_type"
-            sedexpr="\${MELDIR}/../../$codebench_type"
+            codebench_path="$MELDIR/../../codebench"
+            sedexpr="\${MELDIR}/../../codebench"
         fi
 
         if [ -d "$codebench_path" ]; then
