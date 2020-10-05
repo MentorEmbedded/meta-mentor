@@ -42,26 +42,16 @@ else
             fi
         done
 
-        if [ -z "${DISTRO}" ]; then
-            if [ -e "$layerdir/../.mel-lite" ]; then
-                export DISTRO="mel-lite"
-            fi
-        fi
-
-        if [ "${DISTRO}" = "mel-lite" ]; then
-            OPTIONALLAYERS="${OPTIONALLAYERS-}"
-        else
-            OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
-        fi
+        OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
         # Customer directory layers handling (e.g. <customername>-custom)
         for layercheck in . $layerdir/..; do
             if [ -e "$layercheck/customer.conf" ]; then
                 while read -r _customer; do
                     for layercheck2 in . $layerdir/..; do
                         if [ -d "$layercheck2/$_customer-custom" ]; then
-                            if [ -e "$layercheck2/$_customer-custom/custom.conf" ] ; then
-                                CUSTOMERLAYERS=`cat $layercheck2/$_customer-custom/custom.conf | sed -e '/^[ 	]*#/d'`
-                                CUSTOMERLAYERS=`echo $CUSTOMERLAYERS | sed -e 's/\n//g'`
+                            if [ -e "$layercheck2/$_customer-custom/custom.conf" ]; then
+                                CUSTOMERLAYERS=$(cat $layercheck2/$_customer-custom/custom.conf | sed -e '/^[ 	]*#/d')
+                                CUSTOMERLAYERS=$(echo $CUSTOMERLAYERS | sed -e 's/\n//g')
                                 OPTIONALLAYERS="$OPTIONALLAYERS $CUSTOMERLAYERS"
                             fi
                             break
@@ -73,16 +63,16 @@ else
         done
 
         # Hotfix layers handling
-        if [ -e "$layerdir/../hotfixes/hotfix.conf" ] ; then
-            HOTFIXES=`cat $layerdir/../hotfixes/hotfix.conf | sed -e '/^[ 	]*#/d'`
-            HOTFIXES=`echo $HOTFIXES | sed -e 's/\n//g'`
+        if [ -e "$layerdir/../hotfixes/hotfix.conf" ]; then
+            HOTFIXES=$(cat $layerdir/../hotfixes/hotfix.conf | sed -e '/^[ 	]*#/d')
+            HOTFIXES=$(echo $HOTFIXES | sed -e 's/\n//g')
             OPTIONALLAYERS="$OPTIONALLAYERS $HOTFIXES"
         fi
 
         # Extra layers handling
-        if [ -e "$layerdir/../xlayers.conf" ] ; then
-            EXTRALAYERS=`cat $layerdir/../xlayers.conf | sed -e '/^[ 	]*#/d'`
-            EXTRALAYERS=`echo $EXTRALAYERS | sed -e 's/\n//g'`
+        if [ -e "$layerdir/../xlayers.conf" ]; then
+            EXTRALAYERS=$(cat $layerdir/../xlayers.conf | sed -e '/^[ 	]*#/d')
+            EXTRALAYERS=$(echo $EXTRALAYERS | sed -e 's/\n//g')
             OPTIONALLAYERS="$OPTIONALLAYERS $EXTRALAYERS"
         fi
 
@@ -94,21 +84,21 @@ else
     if [ $mel_setup_ret -eq 0 ] && [ -n "$BUILDDIR" ] && [ -e "$BUILDDIR" ]; then
         . $BUILDDIR/setup-environment
 
-        configured_layers () {
-            tac $BUILDDIR/conf/bblayers.conf | \
-                sed -n -e '/^"/,/^BBLAYERS = /{ /^BBLAYERS =/d; /^"/d; p;}' | \
-                awk {'print $1'} | sed -e "s#\${TOPDIR}/#$BUILDDIR/#"
+        configured_layers() {
+            tac $BUILDDIR/conf/bblayers.conf \
+                | sed -n -e '/^"/,/^BBLAYERS = /{ /^BBLAYERS =/d; /^"/d; p;}' \
+                | awk {'print $1'} | sed -e "s#\${TOPDIR}/#$BUILDDIR/#"
         }
 
-        load_lconf_snippet () {
+        load_lconf_snippet() {
             if [ ! -e "$1/$2" ]; then
                 return
             fi
             (
-            lheadername="${1#${layerdir%/*}/}/$2"
-            printf '\n## Begin %s\n\n' "$lheadername"
-            cat "$1/$2"
-            printf '\n## End %s\n' "$lheadername"
+                lheadername="${1#${layerdir%/*}/}/$2"
+                printf '\n## Begin %s\n\n' "$lheadername"
+                cat "$1/$2"
+                printf '\n## End %s\n' "$lheadername"
             ) >>conf/local.conf
         }
 
