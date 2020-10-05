@@ -168,7 +168,7 @@ mkdir -p "$project"
 cd "$project"
 echo "$installdir" >"$project/.installpath"
 
-for install_subdir in ../../codebench ../../codebench-lite ../../tools; do
+for install_subdir in ../../codebench ../../tools; do
     if [ -d "$installdir/$install_subdir" ]; then
         ln -sf "$installdir/$install_subdir" .
     fi
