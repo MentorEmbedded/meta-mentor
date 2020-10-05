@@ -312,20 +312,15 @@ setup_builddir () {
         echo "You had no local.conf file. This configuration file has therefore been"
         echo "created for you with some default values."
 
-        if [ -h "$MELDIR/codebench" ]; then
-            codebench_path="$(cd "$MELDIR" && cd "$(readlink codebench)" && pwd -P)" || codebench_path="$MELDIR/../../codebench"
-            sedexpr="\${MELDIR}/codebench"
+        if [ -h "$MELDIR/toolchains" ]; then
+            toolchains_path="$MELDIR/toolchains"
+            sedexpr='${MELDIR}/toolchains'
         else
-            codebench_path="$MELDIR/../../codebench"
-            sedexpr="\${MELDIR}/../../codebench"
+            toolchains_path="$MELDIR/../../toolchains"
+            sedexpr='${MELDIR}/../../toolchains'
         fi
-
-        if [ -d "$codebench_path" ]; then
-            if [ -d "$codebench_path/../toolchains" ]; then
-                sed -i -e "s,^#\?EXTERNAL_TOOLCHAIN.*,CODEBENCH_PATH ?= \"$sedexpr\"," "$BUILDDIR/conf/local.conf"
-            else
-                sed -i -e "s,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= \"$sedexpr\"," "$BUILDDIR/conf/local.conf"
-            fi
+        if [ -d "$toolchains_path" ]; then
+            sed -i -e "s,^#\?EXTERNAL_TOOLCHAIN.*,TOOLCHAINS_PATH ?= \"$toolchains_path\"," "$BUILDDIR/conf/local.conf"
         fi
     else
         if [ -n "$MACHINE" ]; then
