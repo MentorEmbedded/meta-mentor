@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2007-2016 Mentor Graphics Corporation
+# Copyright 2007-2020 Mentor, a Siemens Business
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -16,7 +16,7 @@ if [ $(id -u) -ne 0 ]; then
     fi
 fi
 
-PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release python python3 xvfb x11-utils"
+PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release python python3 xvfb x11-utils rsync"
 
 # These are needed for the qemu-native build
 PKGS="$PKGS libgl1-mesa-dev libglu1-mesa-dev libsdl1.2-dev"
@@ -27,7 +27,7 @@ PKGS="$PKGS bmap-tools"
 # This is needed for Windows ADE
 PKGS="$PKGS zip"
 
-echo "Installing packages required to build Mentor Embedded Linux"
+echo "Installing packages required to build Mentor Embedded Linux Flex OS"
 apt-get update
 apt-get -y install $PKGS
 

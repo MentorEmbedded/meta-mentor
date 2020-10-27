@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2007-2013 Mentor Graphics Corporation
+# Copyright 2007-2020 Mentor, a Siemens Business
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -8,9 +8,7 @@
 
 DISTRO="${DISTRO:-mel}"
 CORELAYERS="${CORELAYERS:-core mel-support mentor-staging}"
-if [ "${DISTRO}" != "mel-lite" ]; then
-    OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
-fi
+OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
 EXTRAMELLAYERS="${EXTRAMELLAYERS-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery gplv2}"
 layer_priority_overrides="openembedded-layer=1"
 
@@ -49,8 +47,6 @@ Options:
                want to be included in the configuration. This argument is
                cumulative. Both '-l "meta-foo meta-bar"' and
                '-l meta-foo -l meta-bar' are valid and include both layers.
-  -t           Create toaster configuration file in the build directory with layers
-               configured
   -f           Force overwrite of existing configuration files in the build
                directory. This includes local.conf and bblayers.conf, but not
                site.conf
@@ -172,7 +168,6 @@ process_arguments () {
     extrasearchpaths=
     extralayers=
     force_overwrite=0
-    toasterconfig=0
     verbose=0
     while getopts b:o:p:l:tfvh opt; do
         case "$opt" in
@@ -187,9 +182,6 @@ process_arguments () {
                 ;;
             l)
                 extralayers="$extralayers $OPTARG"
-                ;;
-            t)
-                toasterconfig=1
                 ;;
             f)
                 force_overwrite=1
@@ -320,25 +312,15 @@ setup_builddir () {
         echo "You had no local.conf file. This configuration file has therefore been"
         echo "created for you with some default values."
 
-        codebench_type="codebench"
-        if [ "$DISTRO" = "mel-lite" ]; then
-            codebench_type="codebench-lite"
-        fi
-
-        if [ -h "$MELDIR/$codebench_type" ]; then
-            codebench_path="$(cd "$MELDIR" && cd "$(readlink $codebench_type)" && pwd -P)" || codebench_path="$MELDIR/../../$codebench_type"
-            sedexpr="\${MELDIR}/$codebench_type"
+        if [ -h "$MELDIR/toolchains" ]; then
+            toolchains_path="$MELDIR/toolchains"
+            sedexpr='${MELDIR}/toolchains'
         else
-            codebench_path="$MELDIR/../../$codebench_type"
-            sedexpr="\${MELDIR}/../../$codebench_type"
+            toolchains_path="$MELDIR/../../toolchains"
+            sedexpr='${MELDIR}/../../toolchains'
         fi
-
-        if [ -d "$codebench_path" ]; then
-            if [ -d "$codebench_path/../toolchains" ]; then
-                sed -i -e "s,^#\?EXTERNAL_TOOLCHAIN.*,CODEBENCH_PATH ?= \"$sedexpr\"," "$BUILDDIR/conf/local.conf"
-            else
-                sed -i -e "s,^#\?EXTERNAL_TOOLCHAIN.*,EXTERNAL_TOOLCHAIN ?= \"$sedexpr\"," "$BUILDDIR/conf/local.conf"
-            fi
+        if [ -d "$toolchains_path" ]; then
+            sed -i -e "s,^#\?EXTERNAL_TOOLCHAIN.*,TOOLCHAINS_PATH ?= \"$toolchains_path\"," "$BUILDDIR/conf/local.conf"
         fi
     else
         if [ -n "$MACHINE" ]; then
@@ -392,36 +374,3 @@ if [ -e $BUILDDIR/conf/local.conf ]; then
     sed -i -e "s/^DISTRO.*/DISTRO = \'$DISTRO\'/" $BUILDDIR/conf/local.conf
 fi
 
-if [ $toasterconfig -eq 1 ]; then
-    machine=$(echo "$@" | awk -F" " {'print $NF'})
-    cmdline_string="$MELDIR/meta-mentor/setup-environment "
-    check_layer_option=0
-    for i in "$@"; do
-       if [ "$i" = "-t" ]; then
-          continue
-       fi
-       if [ "$i" = "-l" ]; then
-          check_layer_option=1
-          cmdline_string="$cmdline_string $i"
-          continue
-       fi
-       if [ $check_layer_option -eq 1 ]; then
-            check_layer_option=0
-            i="\"$i\""
-            cmdline_string="$cmdline_string $i"
-            continue
-       fi
-       if [ "$i" = "$machine" ]; then
-           cmdline_string="$cmdline_string -b \"%BUILDDIR%\" $machine"
-           continue
-       fi
-       cmdline_string="$cmdline_string $i"
-    done
-    CMD_LINE="$cmdline_string"
-    cd "${MELDIR}"
-    if [ ! -e "${BUILDDIR}/conf/recipes-list.txt" ] && [ -e "${MACHINE}/recipes-list.txt" ]; then
-        cp -f "${MACHINE}/recipes-list.txt" "${BUILDDIR}/conf/recipes-list.txt"
-    fi
-    ${MELDIR}/meta-mentor/scripts/list-recipes "$BUILDDIR/conf/recipes-list.txt"
-    $layerdir/scripts/toaster_configuration "$BUILDDIR" "$MELDIR" "$BITBAKEDIR" "$CMD_LINE"
-fi

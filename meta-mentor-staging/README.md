@@ -1,7 +1,7 @@
 Mentor Graphics Staging Layer for Yocto/OE
 ==========================================
 
-This layer holds the bits we need for Mentor Embedded Linux, but which we
+This layer holds the bits we need for Mentor Embedded Linux Flex OS, but which we
 intend to get merged upstream. This is our staging area. Nothing should be in
 this layer permanently, other than layer.conf and associated bits.
 

@@ -80,36 +80,51 @@ class MELUtilsPlugin(LayerPlugin):
         return depgraph, None
 
     def _localpaths_by_layer(self, data, layer_for_file, mirrortarballs=False):
-        src_uri = data.getVar('SRC_URI').split()
-        fetcher = bb.fetch.Fetch(src_uri, data)
-        urldata = fetcher.ud
+        def ud_localpaths(u, layer_name, dldir, d):
+            if hasattr(u.method, 'process_submodules'):
+                def archive_submodule(ud, url, module, modpath, workdir, d):
+                    url += ";bareclone=1;nobranch=1"
+                    newfetch = bb.fetch2.Fetch([url], d)
+                    for subud in newfetch.ud.values():
+                        return ud_localpaths(subud, layer_name, dldir, d)
 
-        items_by_layer = defaultdict(set)
-        items_files = data.varhistory.get_variable_items_files('SRC_URI', data)
-        for item, filename in items_files.items():
-            ud = urldata[item]
-            decoded = bb.fetch.decodeurl(item)
+                # If we're using a shallow mirror tarball it needs to be unpacked
+                # temporarily so that we can examine the .gitmodules file
+                if u.shallow and os.path.exists(u.fullshallow) and u.method.need_update(u, d):
+                    import tempfile
+                    with tempfile.TemporaryDirectory(dir=dldir) as tmpdir:
+                        bb.fetch2.runfetchcmd("tar -xzf %s" % u.fullshallow, d, workdir=tmpdir)
+                        u.method.process_submodules(u, tmpdir, archive_submodule, d)
+                else:
+                    u.method.process_submodules(u, u.clonedir, archive_submodule, d)
+
+            decoded = bb.fetch.decodeurl(u.url)
             if decoded[0] == 'file':
-                continue
+                return
 
-            ud.setup_localpath(data)
-            localpath = ud.localpath
+            u.setup_localpath(data)
+            localpath = u.localpath
 
-            if mirrortarballs and hasattr(ud, 'mirrortarballs'):
-                dldir = data.getVar('DL_DIR')
-                for mt in ud.mirrortarballs:
+            if mirrortarballs and hasattr(u, 'mirrortarballs'):
+                for mt in u.mirrortarballs:
                     mt_abs = os.path.join(dldir, mt)
                     if os.path.exists(mt_abs):
                         localpath = mt_abs
                         break
 
-            layer_name = layer_for_file(filename)
-            if not layer_name:
-                # Possibly it referred to a .inc or similar, but the layer
-                # inclusion pattern was too specific to pick it up, in
-                # that case just use the layer for the recipe itself
-                layer_name = recipe_layer
             items_by_layer[layer_name].add(os.path.normpath(localpath))
+
+        src_uri = data.getVar('SRC_URI').split()
+        fetcher = bb.fetch.Fetch(src_uri, data)
+        urldata = fetcher.ud
+        dldir = data.getVar('DL_DIR')
+
+        items_by_layer = defaultdict(set)
+        items_files = data.varhistory.get_variable_items_files('SRC_URI')
+        for item, filename in items_files.items():
+            ud = urldata[item]
+            layer_name = layer_for_file(filename)
+            ud_localpaths(ud, layer_name, dldir, data)
 
         return items_by_layer
 
