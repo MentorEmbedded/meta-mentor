@@ -9,7 +9,7 @@
 packages="python38 \
           patch diffstat git bzip2 tar \
           gzip gawk chrpath wget cpio perl file which \
-          make gcc gcc-c++ rsync"
+          make gcc gcc-c++ rsync rpcgen"
 
 set -e
 
