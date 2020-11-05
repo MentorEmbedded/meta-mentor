@@ -11,7 +11,7 @@ MACHINE ??= "qemux86"
 #EXTERNAL_TOOLCHAIN ?= "/path/to/toolchain"
 
 # Uncomment to use the oe/yocto-built toolchain rather than the external
-#TCMODE = "default"
+#TCMODE_mel = "default"
 
 # The CORE_IMAGE_EXTRA_INSTALL variable allows extra individual packages to be
 # added to any of the images inheriting core-image.bbclass, including the
