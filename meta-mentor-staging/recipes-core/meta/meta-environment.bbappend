@@ -1,4 +1,4 @@
-create_sdk_files_append () {
+create_sdk_files_append_feature-mentor-staging () {
     script=${SDK_OUTPUT}/${SDKPATH}/environment-setup-${REAL_MULTIMACH_TARGET_SYS}
     cat >"${script}.new" <<END
 if [ -n "\$BASH_SOURCE" ] || [ -n "\$ZSH_NAME" ]; then

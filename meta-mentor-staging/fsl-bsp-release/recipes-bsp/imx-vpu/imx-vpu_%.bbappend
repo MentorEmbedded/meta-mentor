@@ -1,4 +1,4 @@
-do_install_append () {
+do_install_append_feature-mentor-staging () {
     if [ "${libdir}" != "/usr/lib" ]; then
         install -d "$(dirname "${D}${libdir}")"
         mv "${D}/usr/lib" "${D}${libdir}"
