@@ -42,7 +42,7 @@ else
             fi
         done
 
-        OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
+        OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private tracing-layer}"
         # Customer directory layers handling (e.g. <customername>-custom)
         for layercheck in . $layerdir/..; do
             if [ -e "$layercheck/customer.conf" ]; then
