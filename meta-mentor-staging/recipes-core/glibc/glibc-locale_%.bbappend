@@ -5,7 +5,7 @@
 # on the oe-core mailing list for discussion. This should be dropped when
 # a real fix is implemented.
 
-do_prep_locale_tree_append () {
+do_prep_locale_tree_append_feature-mentor-staging () {
     chown -R root:root $treedir
 }
 
@@ -13,4 +13,4 @@ do_prep_locale_tree_append () {
 # pseudo bug. With pseudo acting up, even if the ownership is correct,
 # it may well think it is not, so just sidestep the issue until upstream
 # fixes the root cause.
-ERROR_QA_remove = "host-user-contaminated"
+ERROR_QA_remove_feature-mentor-staging = " host-user-contaminated"
