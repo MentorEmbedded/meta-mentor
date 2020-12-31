@@ -32,7 +32,7 @@ MACHINE ??= "qemux86"
 #  "tools-sdk"       - add development tools (gcc, make, pkgconfig etc.)
 #  "tools-debug"     - add debugging tools (gdb, strace)
 #  "tools-profile"   - add profiling tools (oprofile, exmap, lttng valgrind (x86 only))
-#  "tools-benchmark" - add benchmarking tools (bonnie++, netperfc, lmbench, etc)
+#  "tools-benchmark" - add benchmarking tools (bonnie++, lmbench, etc)
 #  "tools-testapps"  - add useful testing tools (ts_print, aplay, arecord etc.)
 #  "codebench-debug" - core debug tools for use with codebench. this is
 #                      a subset of tools-debug (gdbserver, strace, sftp server)
