@@ -183,11 +183,11 @@ TOOLCHAIN_HOST_TASK_remove = "${TOOLCHAIN_HOST_REMOVE}"
 
 # TOOLCHAIN_HOST_TASK is used to add host packages to the ADE/SDK, for
 # example, to add bash:
-#TOOLCHAIN_HOST_TASK_append = " nativesdk-bash"
+#TOOLCHAIN_HOST_TASK_EXTRA += " nativesdk-bash"
 
 # TOOLCHAIN_TARGET_TASK is used to add target packages to the ADE/SDK, for
 # example, to add libncurses:
-#TOOLCHAIN_TARGET_TASK_append = " ncurses-libncurses"
+#TOOLCHAIN_TARGET_TASK_EXTRA += " ncurses-libncurses"
 
 # Uncomment to set a site name (shown in CodeBench) for the ADE
 # Default: ADE for ${ADE_IDENTIFIER}
