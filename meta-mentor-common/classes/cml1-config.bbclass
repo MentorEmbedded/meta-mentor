@@ -46,5 +46,53 @@ END
 }
 
 def src_config_fragments(d):
-    sources = src_patches(d, True)
-    return [s for s in sources if s.endswith('.cfg')]
+    workdir = d.getVar('WORKDIR')
+    fetch = bb.fetch2.Fetch([], d)
+    for url in fetch.urls:
+        urldata = fetch.ud[url]
+        urldata.setup_localpath(d)
+
+        unpacked_path = unpack_path(urldata, workdir, lambda f: f.endswith('cfg'))
+        if unpacked_path:
+            yield unpacked_path
+
+# This is directly from bitbake's fetch2 unpack() method
+def unpack_path(urldata, rootdir, filter_path=None):
+    localpath = urldata.localpath
+
+    # Localpath can't deal with 'dir/*' entries, so it converts them to '.',
+    # but it must be corrected back for local files copying
+    if urldata.basename == '*' and localpath.endswith('/.'):
+        localpath = '%s/%s' % (file.rstrip('/.'), urldata.path)
+
+    base, ext = os.path.splitext(localpath)
+    if ext in ['.gz', '.bz2', '.Z', '.xz', '.lz']:
+        efile = os.path.join(rootdir, os.path.basename(base))
+    else:
+        efile = localpath
+
+    if not filter_path or not filter_path(efile):
+        return
+
+    if 'subdir' in urldata.parm:
+        subdir = urldata.parm.get('subdir')
+        if os.path.isabs(subdir):
+            if not os.path.realpath(subdir).startswith(os.path.realpath(rootdir)):
+                bb.fatal("subdir argument isn't a subdirectory of unpack root %s" % rootdir, urldata.url)
+            unpackdir = subdir
+        else:
+            unpackdir = os.path.join(rootdir, subdir)
+    else:
+        unpackdir = rootdir
+
+    destdir = '.'
+    # For file:// entries all intermediate dirs in path must be created at destination
+    if urldata.type == "file":
+        # Trailing '/' does a copying to wrong place
+        urlpath = urldata.path.rstrip('/')
+        # Want files places relative to cwd so no leading '/'
+        urlpath = urlpath.lstrip('/')
+        if urlpath.find("/") != -1:
+            destdir = urlpath.rsplit("/", 1)[0] + '/'
+
+    return os.path.join(unpackdir, destdir, os.path.basename(efile))
