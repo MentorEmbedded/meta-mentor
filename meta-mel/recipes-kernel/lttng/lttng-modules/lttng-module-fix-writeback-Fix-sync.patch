@@ -1,0 +1,131 @@
+From 8d03e86005444ddfe977de959b1e48df1294d9e3 Mon Sep 17 00:00:00 2001
+From: Syeda Shagufta Naaz <SyedaShagufta_Naaz@mentor.com>
+Date: Mon, 21 Dec 2020 16:18:30 +0530
+Subject: [PATCH] From 817e02f9e256b8f2cbb9e3125eb061757b83bd4a Mon Sep 17
+ 00:00:00 2001 From: Michael Jeanson <mjeanson@efficios.com> Date: Mon, 31 Aug
+ 2020 14:16:01 -0400 Subject: [PATCH] fix: writeback: Fix sync livelock due to
+ b_dirty_time processing (v5.9)
+
+See upstream commit:
+
+  commit f9cae926f35e8230330f28c7b743ad088611a8de
+  Author: Jan Kara <jack@suse.cz>
+  Date:   Fri May 29 16:08:58 2020 +0200
+
+    writeback: Fix sync livelock due to b_dirty_time processing
+
+    When we are processing writeback for sync(2), move_expired_inodes()
+    didn't set any inode expiry value (older_than_this). This can result in
+    writeback never completing if there's steady stream of inodes added to
+    b_dirty_time list as writeback rechecks dirty lists after each writeback
+    round whether there's more work to be done. Fix the problem by using
+    sync(2) start time is inode expiry value when processing b_dirty_time
+    list similarly as for ordinarily dirtied inodes. This requires some
+    refactoring of older_than_this handling which simplifies the code
+    noticeably as a bonus.
+
+Change-Id: I8b894b13ccc14d9b8983ee4c2810a927c319560b
+Signed-off-by: Michael Jeanson <mjeanson@efficios.com>
+Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+
+Upstream-Status: Backport from
+https://github.com/MentorEmbedded/industrial-core/commit/
+3d5d218d98fd96a438d3240d9efcf4f9778827b9#diff-
+77ae834db9452efc759f2aab39d2754a61d9ba3a6271037f65135040f62a4cd8
+
+Signed-off-by: Syeda Shagufta Naaz <SyedaShagufta_Naaz@mentor.com>
+---
+ .../events/lttng-module/writeback.h           | 46 +++++++++++++------
+ 1 file changed, 33 insertions(+), 13 deletions(-)
+
+diff --git a/instrumentation/events/lttng-module/writeback.h b/instrumentation/events/lttng-module/writeback.h
+index c472b33..353d58a 100644
+--- a/instrumentation/events/lttng-module/writeback.h
++++ b/instrumentation/events/lttng-module/writeback.h
+@@ -371,34 +371,55 @@ LTTNG_TRACEPOINT_EVENT_WBC_INSTANCE(wbc_balance_dirty_wait, writeback_wbc_balanc
+ #endif
+ LTTNG_TRACEPOINT_EVENT_WBC_INSTANCE(wbc_writepage, writeback_wbc_writepage)
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,1,0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0) || \
++	LTTNG_KERNEL_RANGE(5,8,6, 5,9,0) || \
++	LTTNG_KERNEL_RANGE(5,4,62, 5,5,0) || \
++	LTTNG_KERNEL_RANGE(4,19,143, 4,20,0) || \
++	LTTNG_KERNEL_RANGE(4,14,196, 4,15,0) || \
++	LTTNG_KERNEL_RANGE(4,9,235, 4,10,0) || \
++	LTTNG_KERNEL_RANGE(4,4,235, 4,5,0) || \
++	LTTNG_UBUNTU_KERNEL_RANGE(4,15,18,119, 4,16,0,0))
++LTTNG_TRACEPOINT_EVENT(writeback_queue_io,
++	TP_PROTO(struct bdi_writeback *wb,
++		 struct wb_writeback_work *work,
++		 unsigned long dirtied_before,
++		 int moved),
++	TP_ARGS(wb, work, dirtied_before, moved),
++	TP_FIELDS(
++		ctf_array_text(char, name, dev_name(wb->bdi->dev), 32)
++		ctf_integer(unsigned long, older, dirtied_before)
++		ctf_integer(int, moved, moved)
++	)
++)
++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+ LTTNG_TRACEPOINT_EVENT(writeback_queue_io,
+ 	TP_PROTO(struct bdi_writeback *wb,
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+ 		 struct wb_writeback_work *work,
+-#else
+-		 unsigned long *older_than_this,
+-#endif
+ 		 int moved),
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+ 	TP_ARGS(wb, work, moved),
+-#else
++	TP_FIELDS(
++		ctf_array_text(char, name, dev_name(wb->bdi->dev), 32)
++		ctf_integer(int, moved, moved)
++	)
++)
++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3,1,0))
++LTTNG_TRACEPOINT_EVENT(writeback_queue_io,
++	TP_PROTO(struct bdi_writeback *wb,
++		 unsigned long *older_than_this,
++		 int moved),
+ 	TP_ARGS(wb, older_than_this, moved),
+-#endif
+ 	TP_FIELDS(
+ 		ctf_array_text(char, name, dev_name(wb->bdi->dev), 32)
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+-#else
+ 		ctf_integer(unsigned long, older,
+ 			older_than_this ? *older_than_this : 0)
+ 		ctf_integer(long, age,
+ 			older_than_this ?
+ 				(jiffies - *older_than_this) * 1000 / HZ
+ 				: -1)
+-#endif
+ 		ctf_integer(int, moved, moved)
+ 	)
+ )
++#endif
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0))
+ LTTNG_TRACEPOINT_EVENT_MAP(global_dirty_state,
+@@ -424,7 +445,7 @@ LTTNG_TRACEPOINT_EVENT_MAP(global_dirty_state,
+ 		ctf_integer(unsigned long, dirty_limit, global_dirty_limit)
+ 	)
+ )
+-#else
++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3,1,0))
+ LTTNG_TRACEPOINT_EVENT_MAP(global_dirty_state,
+ 
+ 	writeback_global_dirty_state,
+@@ -449,7 +470,6 @@ LTTNG_TRACEPOINT_EVENT_MAP(global_dirty_state,
+ 	)
+ )
+ #endif
+-#endif
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+ 
+-- 
+2.17.1
+
