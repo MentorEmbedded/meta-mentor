@@ -169,7 +169,7 @@ process_arguments () {
     extralayers=
     force_overwrite=0
     verbose=0
-    while getopts b:o:p:l:tfvh opt; do
+    while getopts b:o:p:l:fvh opt; do
         case "$opt" in
             b)
                 BUILDDIR="$(abspath $OPTARG)"
