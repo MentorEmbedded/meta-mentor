@@ -169,7 +169,7 @@ process_arguments () {
     extralayers=
     force_overwrite=0
     verbose=0
-    while getopts b:o:p:l:tfvh opt; do
+    while getopts b:o:p:l:fvh opt; do
         case "$opt" in
             b)
                 BUILDDIR="$(abspath $OPTARG)"
@@ -365,7 +365,7 @@ tmpdir="$(mktemp -d -t "${0##*/}.XXXXX")" || exit 1
 trap 'rm -rf "$tmpdir"' EXIT INT TERM
 
 setup_builddir "$@" || {
-    if [ $existing_builddir -eq 0 ]; then
+    if [ "$existing_builddir" = 0 ]; then
         rm -rf "$BUILDDIR"
     fi
     exit $?
