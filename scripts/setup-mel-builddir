@@ -274,7 +274,7 @@ setup_builddir () {
             fi
         fi
     fi
-    OPTIONALLAYERS="$OPTIONALLAYERS mentor-bsp mentor-bsp-$MACHINE"
+    OPTIONALLAYERS="$OPTIONALLAYERS mentor-bsp-$MACHINE"
 
     if [ $force_overwrite -eq 1 ]; then
         rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
