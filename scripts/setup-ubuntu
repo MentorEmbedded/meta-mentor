@@ -18,7 +18,7 @@ else
     SUDO=
 fi
 
-PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release python python3 xvfb x11-utils rsync"
+PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release python3 xvfb x11-utils rsync"
 
 # These are needed for the qemu-native build
 PKGS="$PKGS libgl1-mesa-dev libglu1-mesa-dev libsdl1.2-dev"
