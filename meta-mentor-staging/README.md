@@ -1,4 +1,4 @@
-Mentor Graphics Staging Layer for Yocto/OE
+Siemens Digital Industries Software Staging Layer for Yocto/OE
 ==========================================
 
 This layer holds the bits we need for Mentor Embedded Linux Flex OS, but which we
