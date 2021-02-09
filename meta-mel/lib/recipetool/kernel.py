@@ -17,7 +17,7 @@
 #     $ recipetool kernel_add_dts meta-mylayer *.dts
 #
 #
-# Copyright (C) 2015-2021 Mentor, a Siemens Business
+# Copyright (C) 2015-2021 Siemens Digital Industries Software
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
