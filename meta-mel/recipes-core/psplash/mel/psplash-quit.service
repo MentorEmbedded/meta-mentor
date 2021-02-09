@@ -1,6 +1,7 @@
 [Unit]
 Description=Terminate Psplash Boot Screen
 After=psplash-start.service
+ConditionPathExists=/run/psplash_fifo
 
 [Service]
 Environment=TMPDIR=/run
