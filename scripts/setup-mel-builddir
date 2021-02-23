@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2007-2020 Mentor, a Siemens Business
+# Copyright 2007-2021 Siemens Digital Industries Software
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -169,7 +169,7 @@ process_arguments () {
     extralayers=
     force_overwrite=0
     verbose=0
-    while getopts b:o:p:l:tfvh opt; do
+    while getopts b:o:p:l:fvh opt; do
         case "$opt" in
             b)
                 BUILDDIR="$(abspath $OPTARG)"
@@ -274,7 +274,7 @@ setup_builddir () {
             fi
         fi
     fi
-    OPTIONALLAYERS="$OPTIONALLAYERS mentor-bsp mentor-bsp-$MACHINE"
+    OPTIONALLAYERS="$OPTIONALLAYERS mentor-bsp-$MACHINE"
 
     if [ $force_overwrite -eq 1 ]; then
         rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
@@ -365,7 +365,7 @@ tmpdir="$(mktemp -d -t "${0##*/}.XXXXX")" || exit 1
 trap 'rm -rf "$tmpdir"' EXIT INT TERM
 
 setup_builddir "$@" || {
-    if [ $existing_builddir -eq 0 ]; then
+    if [ "$existing_builddir" = 0 ]; then
         rm -rf "$BUILDDIR"
     fi
     exit $?

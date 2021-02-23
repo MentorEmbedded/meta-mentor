@@ -1,22 +1,24 @@
 #!/bin/sh
 #
-# Copyright 2007-2020 Mentor, a Siemens Business
+# Copyright 2007-2021 Siemens Digital Industries Software
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
 # kind, whether express or implied.
 
 echo "Verifying access to sudo, please enter your password if prompted."
-if [ $(id -u) -ne 0 ]; then
-    alias apt-get="sudo apt-get"
-    sudo -v
+if [ "$(id -u)" -ne 0 ]; then
+    SUDO=sudo
+    $SUDO -v
     if [ $? -ne 0 ]; then
         echo >&2 "Could not use sudo, exiting"
         exit 1
     fi
+else
+    SUDO=
 fi
 
-PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release python python3 xvfb x11-utils rsync"
+PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release python3 xvfb x11-utils rsync"
 
 # These are needed for the qemu-native build
 PKGS="$PKGS libgl1-mesa-dev libglu1-mesa-dev libsdl1.2-dev"
@@ -28,43 +30,16 @@ PKGS="$PKGS bmap-tools"
 PKGS="$PKGS zip"
 
 echo "Installing packages required to build Mentor Embedded Linux Flex OS"
-apt-get update
-apt-get -y install $PKGS
+$SUDO apt-get update
+$SUDO apt-get -y install $PKGS
 
 if [ "$(uname -m)" = "x86_64" ]; then
-    sudo dpkg --add-architecture i386
-    apt-get -y install libc6-dev-i386
-    apt-get -y install libncurses5:i386
-fi
-
-PYTHONUSERBASE="${PYTHONUSERBASE:-$(python -c 'import site; print(site.USER_BASE)')}"
-PATH="$PYTHONUSERBASE/bin:$PATH"
-if ! which pip >/dev/null 2>&1; then
-    if ! apt-get -y install python-pip 2>/dev/null; then
-        # Install pip & deps into PYTHONUSERBASE if we can't via apt
-        if which curl >/dev/null 2>&1; then
-            curl https://bootstrap.pypa.io/get-pip.py | python - --user
-        else
-            wget -O- https://bootstrap.pypa.io/get-pip.py | python - --user
-        fi
-    fi
-    if ! which pip >/dev/null 2>&1; then
-        echo >&2 "Error: after installing pip, we are not able to execute it"
-        exit 2
-    fi
-fi
-
-if ! which virtualenv >/dev/null 2>&1; then
-    if ! apt-get -y install python-virtualenv 2>/dev/null; then
-        pip install --user virtualenv
-    fi
-    if ! which virtualenv >/dev/null 2>&1; then
-        echo >&2 "Error: after installing virtualenv, we are not able to execute it"
-        exit 2
-    fi
+    $SUDO dpkg --add-architecture i386
+    $SUDO apt-get -y install libc6-dev-i386
+    $SUDO apt-get -y install libncurses5:i386
 fi
 
 echo "Generating the en_US.UTF-8 locale"
-locale-gen en_US.UTF-8
+$SUDO locale-gen en_US.UTF-8
 
 echo "Setup complete"

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2007-2020 Mentor, a Siemens Business
+# Copyright 2007-2021 Siemens Digital Industries Software
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -9,7 +9,7 @@
 packages="python38 \
           patch diffstat git bzip2 tar \
           gzip gawk chrpath wget cpio perl file which \
-          make gcc gcc-c++ rsync"
+          make gcc gcc-c++ rsync rpcgen"
 
 set -e
 
@@ -23,10 +23,7 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 echo "Enabling any required repos"
-if grep -q "^Red Hat Enterprise Linux release 8" /etc/redhat-release 2>/dev/null; then
-    ARCH=$(/bin/arch)
-    subscription-manager repos --enable "codeready-builder-for-rhel-8-${ARCH}-rpms"
-elif grep -q "^CentOS" /etc/redhat-release 2>/dev/null; then
+if grep -q "^CentOS" /etc/redhat-release 2>/dev/null; then
     dnf config-manager --set-enabled PowerTools
 fi
 

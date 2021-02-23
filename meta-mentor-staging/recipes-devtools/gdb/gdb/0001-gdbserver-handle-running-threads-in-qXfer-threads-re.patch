@@ -1,0 +1,162 @@
+From d2559d77265739fe32b83bbfdcb48697d064ccba Mon Sep 17 00:00:00 2001
+From: Umair Sair <umair_sair@mentor.com>
+Date: Tue, 12 Jan 2021 13:50:32 +0500
+Subject: [PATCH] gdbserver: handle running threads in qXfer:threads:read
+
+This is a backport of
+https://sourceware.org/git/?p=binutils-gdb.git;a=patch;h=028a46039a22842e41030a94848d086d5db05617
+
+Upstream-Status: Backport
+
+Signed-off-by: Umair Sair <umair_sair@mentor.com>
+---
+ gdb/gdbserver/inferiors.c | 10 ++++++++
+ gdb/gdbserver/inferiors.h |  3 +++
+ gdb/gdbserver/server.c    | 49 +++++++++++++++++++++++++++++++++++----
+ gdb/gdbserver/thread-db.c |  8 -------
+ 4 files changed, 57 insertions(+), 13 deletions(-)
+
+diff --git a/gdb/gdbserver/inferiors.c b/gdb/gdbserver/inferiors.c
+index fe7161c..539994a 100644
+--- a/gdb/gdbserver/inferiors.c
++++ b/gdb/gdbserver/inferiors.c
+@@ -222,6 +222,16 @@ switch_to_thread (ptid_t ptid)
+   current_thread = find_thread_ptid (ptid);
+ }
+ 
++/* See inferiors.h.  */
++
++void
++switch_to_process (process_info *proc)
++{
++  int pid = pid_of (proc);
++
++  current_thread = find_any_thread_of_pid (pid);
++}
++
+ /* See gdbsupport/common-inferior.h.  */
+ 
+ const char *
+diff --git a/gdb/gdbserver/inferiors.h b/gdb/gdbserver/inferiors.h
+index 4e24b2c..bf2a16f 100644
+--- a/gdb/gdbserver/inferiors.h
++++ b/gdb/gdbserver/inferiors.h
+@@ -138,6 +138,9 @@ struct process_info *find_process_pid (int pid);
+ int have_started_inferiors_p (void);
+ int have_attached_inferiors_p (void);
+ 
++/* Switch to a thread of PROC.  */
++void switch_to_process (process_info *proc);
++
+ void clear_inferiors (void);
+ 
+ void *thread_target_data (struct thread_info *);
+diff --git a/gdb/gdbserver/server.c b/gdb/gdbserver/server.c
+index dec41f8..5be5ac5 100644
+--- a/gdb/gdbserver/server.c
++++ b/gdb/gdbserver/server.c
+@@ -47,6 +47,7 @@
+ 
+ #include "gdbsupport/selftest.h"
+ #include "gdbsupport/scope-exit.h"
++#include "gdbsupport/scoped_restore.h"
+ 
+ #define require_running_or_return(BUF)		\
+   if (!target_running ())			\
+@@ -1670,19 +1671,54 @@ handle_qxfer_threads_worker (thread_info *thread, struct buffer *buffer)
+   buffer_xml_printf (buffer, "/>\n");
+ }
+ 
+-/* Helper for handle_qxfer_threads.  */
++/* Helper for handle_qxfer_threads.  Return true on success, false
++   otherwise.  */
+ 
+-static void
++static bool
+ handle_qxfer_threads_proper (struct buffer *buffer)
+ {
++  client_state &cs = get_client_state ();
++
++  scoped_restore save_current_thread
++    = make_scoped_restore (&current_thread);
++  scoped_restore save_current_general_thread
++    = make_scoped_restore (&cs.general_thread);
++
+   buffer_grow_str (buffer, "<threads>\n");
+ 
+-  for_each_thread ([&] (thread_info *thread)
++  process_info *error_proc = find_process ([&] (process_info *process)
+     {
+-      handle_qxfer_threads_worker (thread, buffer);
++      /* The target may need to access memory and registers (e.g. via
++	 libthread_db) to fetch thread properties.  Prepare for memory
++	 access here, so that we potentially pause threads just once
++	 for all accesses.  Note that even if someday we stop needing
++	 to pause threads to access memory, we will need to be able to
++	 access registers, or other ptrace accesses like
++	 PTRACE_GET_THREAD_AREA.  */
++
++      /* Need to switch to each process in turn, because
++	 prepare_to_access_memory prepares for an access in the
++	 current process pointed to by general_thread.  */
++      switch_to_process (process);
++      cs.general_thread = current_thread->id;
++
++      int res = prepare_to_access_memory ();
++      if (res == 0)
++	{
++	  for_each_thread (process->pid, [&] (thread_info *thread)
++	    {
++	      handle_qxfer_threads_worker (thread, buffer);
++	    });
++
++	  done_accessing_memory ();
++	  return false;
++	}
++      else
++	return true;
+     });
+ 
+   buffer_grow_str0 (buffer, "</threads>\n");
++  return error_proc == nullptr;
+ }
+ 
+ /* Handle qXfer:threads:read.  */
+@@ -1711,11 +1747,14 @@ handle_qxfer_threads (const char *annex,
+ 
+       buffer_init (&buffer);
+ 
+-      handle_qxfer_threads_proper (&buffer);
++      bool res = handle_qxfer_threads_proper (&buffer);
+ 
+       result = buffer_finish (&buffer);
+       result_length = strlen (result);
+       buffer_free (&buffer);
++
++      if (!res)
++	return -1;
+     }
+ 
+   if (offset >= result_length)
+diff --git a/gdb/gdbserver/thread-db.c b/gdb/gdbserver/thread-db.c
+index 2bb6d28..6b41eae 100644
+--- a/gdb/gdbserver/thread-db.c
++++ b/gdb/gdbserver/thread-db.c
+@@ -767,14 +767,6 @@ thread_db_init (void)
+   return 0;
+ }
+ 
+-static void
+-switch_to_process (struct process_info *proc)
+-{
+-  int pid = pid_of (proc);
+-
+-  current_thread = find_any_thread_of_pid (pid);
+-}
+-
+ /* Disconnect from libthread_db and free resources.  */
+ 
+ static void
+-- 
+2.17.1
+
