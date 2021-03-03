@@ -442,6 +442,7 @@ def get_layers_for(all_layers, value, varname, cfgpath, verbose=False):
 
 def determine_layers(cmdline_opts):
     args = process_arguments(cmdline_opts)
+    args.layers.append('core')
 
     with status('Locating layers and bitbake'):
         layer_paths, bitbake_path = get_layerpaths_bitbake(args.globs, args.paths)
@@ -477,19 +478,18 @@ def determine_layers(cmdline_opts):
                 layer.priority = priority_override
 
     configured_layers = Layers()
-    if args.layers:
-        with LayerStatus('Checking for base layers', verbose=args.verbose) as s:
-            found = set()
-            for name in args.layers:
-                if name in all_layers.by_name:
-                    layers, missing_layers = all_layers.get_by_name_recursive(name)
-                    if missing_layers:
-                        sys.exit("Layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
-                    else:
-                        found.update(layers)
+    with LayerStatus('Checking for base layers', verbose=args.verbose) as s:
+        found = set()
+        for name in args.layers:
+            if name in all_layers.by_name:
+                layers, missing_layers = all_layers.get_by_name_recursive(name)
+                if missing_layers:
+                    sys.exit("Layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
+                else:
+                    found.update(layers)
 
-            s.set_layer_status(found)
-            configured_layers |= found
+        s.set_layer_status(found)
+        configured_layers |= found
 
     if args.distro and args.distro != 'nodistro':
         configured_layers |= get_layers_for(all_layers, args.distro, 'DISTRO', 'distro', args.verbose)
