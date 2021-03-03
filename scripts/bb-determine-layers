@@ -432,7 +432,9 @@ def get_layers_for(all_layers, value, varname, cfgpath, verbose=False):
         for name in set(l.name for l in layers):
             layers, missing_layers = all_layers.get_by_name_recursive(name)
             found_layers |= layers
-            if missing_layers:
+            if name in missing_layers:
+                sys.exit('Layer `{0}` was not found'.format(name))
+            elif missing_layers:
                 sys.exit("Layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
         s.set_layer_status(found_layers)
         return found_layers
