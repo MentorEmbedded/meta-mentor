@@ -60,10 +60,6 @@ IMAGE_FEATURES_DISABLED_PRODUCTION ?= "${IMAGE_FEATURES_DEVELOPMENT} ssh-server-
 # Install tzdata with systemd when building read only images
 CORE_IMAGE_EXTRA_INSTALL += "${@bb.utils.contains('IMAGE_FEATURES', 'read-only-rootfs', 'tzdata' if d.getVar('VIRTUAL-RUNTIME_init_manager') == 'systemd' else '', '', d)}"
 
-# Uncomment the following to enable BSP specific patches and configurations for
-# kernel debugging
-#MACHINE_FEATURES_append = " mel-debugging"
-
 # Uncomment to enable runtime testing with ptest
 #USER_FEATURES += "ptest"
 #EXTRA_IMAGE_FEATURES += "ptest-pkgs"
