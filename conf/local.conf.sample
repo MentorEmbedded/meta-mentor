@@ -50,7 +50,7 @@ MACHINE ??= "qemux86"
 # details.
 
 IMAGE_FEATURES_DEVELOPMENT ?= "debug-tweaks"
-IMAGE_FEATURES_DEVELOPMENT += "${@bb.utils.contains('MACHINE_FEATURES', 'mel-bsp', 'codebench-debug ssh-server-openssh tools-profile', '', d)}"
+IMAGE_FEATURES_DEVELOPMENT_append_feature-mel-bsp = " codebench-debug ssh-server-openssh tools-profile"
 EXTRA_IMAGE_FEATURES = "${IMAGE_FEATURES_DEVELOPMENT} multilib-runtime"
 
 # Image features for production-image
