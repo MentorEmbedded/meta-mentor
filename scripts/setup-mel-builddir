@@ -274,7 +274,15 @@ setup_builddir () {
             fi
         fi
     fi
-    OPTIONALLAYERS="$OPTIONALLAYERS mentor-bsp-$MACHINE"
+
+    # Pick up qemu layers from meta-mentor-bsp as we do
+    # not create separate machines for them
+    case ${MACHINE} in
+        qemu*)
+            OPTIONALLAYERS="$OPTIONALLAYERS mentor-bsp-$MACHINE"
+            ;;
+    esac
+
 
     if [ $force_overwrite -eq 1 ]; then
         rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf
