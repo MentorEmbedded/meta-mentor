@@ -254,6 +254,10 @@ class Rootfs(object, metaclass=ABCMeta):
                 self._exec_shell_cmd(["update-rc.d", "-f", "-r",
                                       self.d.getVar('IMAGE_ROOTFS'),
                                       "run-postinsts", "remove"])
+            if os.path.exists(self.d.expand("${IMAGE_ROOTFS}${systemd_unitdir}/system/run-postinsts.service")):
+                self._exec_shell_cmd(["systemctl",
+                                        "--root", self.d.getVar('IMAGE_ROOTFS'),
+                                        "mask", "run-postinsts.service"])
 
         image_rorfs = bb.utils.contains("IMAGE_FEATURES", "read-only-rootfs",
                                         True, False, self.d)
