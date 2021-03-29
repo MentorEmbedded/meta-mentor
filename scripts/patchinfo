@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+
+import itertools
+import json
+import re
+import subprocess
+import sys
+import traceback
+from email.parser import Parser
+from email.policy import default
+from pathlib import Path
+
+import unidiff
+
+patchnum = re.compile(r'^[0-9]*-')
+prefix = re.compile(r'(\[.*\] *)*')
+fieldline = re.compile(r'^(?P<field>[a-zA-Z]+(-[a-zA-Z]+)*): (?P<value>.*)$')
+multifields = ['CVE', 'Signed-off-by']
+modified_file_prefixes = ['a', 'b']
+
+
+class PatchError(Exception):
+    pass
+
+
+class PatchParseError(PatchError):
+    def __init__(self, filename, message=None):
+        super().__init__(message)
+        self.filename = filename
+
+    def __str__(self):
+        message = f'Failed to parse {self.filename}'
+        while self.__cause__:
+            message = message + ": " + str(self.__cause__)
+            self = self.__cause__
+        return message
+
+
+def parse(patchfile):
+    try:
+        return unidiff.PatchSet(patchfile, metadata_only=True)
+    except (UnicodeDecodeError, unidiff.errors.UnidiffParseError) as exc:
+        raise PatchParseError(patchfile.name) from exc
+
+
+def addinfo(info, key, value):
+    if key in multifields:
+        if key in info:
+            info[key].append(value)
+        else:
+            info[key] = [value]
+    else:
+        info[key] = value
+        
+def patchinfo(patchfile):
+    """Print patch information."""
+
+    errors = []
+    patchpath = Path(patchfile.name)
+    patchinfo = {'Filename': patchpath.name}
+    patched_files = []
+    subject = patchnum.sub('', patchpath.stem, 1)
+    subject = subject.replace(
+        '-', ' ').replace('_', ' ')
+    subject = subject[0].upper() + subject[1:]
+
+    try:
+        patch = parse(patchfile)
+    except PatchError as exc:
+        errors.append(traceback.TracebackException.from_exception(exc))
+
+        try:
+            diffstat_l = subprocess.check_output(['diffstat', '-l', patchpath])
+        except subprocess.CalledProcessError:
+            pass
+        else:
+            patched_files = diffstat_l.decode('utf-8').splitlines()
+    else:
+        if patch:
+            patch_info = patch[0].patch_info
+            if not patch_info[0].startswith('diff '):
+                filtered = list(itertools.takewhile(lambda l: l.strip()
+                                                    != '---' and not l.startswith('diff '), patch_info))
+                info = ''.join(filtered[1:])
+                if info:
+                    headers = Parser(policy=default).parsestr(info)
+                    for key, value in headers.items():
+                        addinfo(patchinfo, key, value)
+
+                    if headers['subject']:
+                        subject = headers['subject']
+
+                    matches = [fieldline.match(l.rstrip()) for l in filtered[1:]]
+                    extrafields = dict((m.group('field'), m.group('value')) for m in matches if m)
+                    for key, value in extrafields.items():
+                        if key not in headers:
+                            addinfo(patchinfo, key, value)
+
+            for patchedfile in patch:
+                fn = Path(patchedfile.target_file)
+                first = fn.parts[0]
+                if first in modified_file_prefixes:
+                    fn = fn.relative_to(first)
+
+                patched_files.append(str(fn))
+
+    if subject:
+        subject = prefix.sub('', subject, 1)
+        addinfo(patchinfo, 'Summary', subject)
+
+    if patched_files:
+        addinfo(patchinfo, 'Files', sorted(patched_files))
+
+    return patchinfo, errors
+
+
+def main(argv=sys.argv):
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='Print information about the specified patches')
+    parser.add_argument('patchfiles', metavar='PATCHFILE', nargs='*',
+                        help='Patch filename')
+
+    args = parser.parse_args()
+
+    ret = 0
+    for filename in args.patchfiles:
+        with open(filename) as patchfile:
+            info, errors = patchinfo(patchfile)
+            if errors:
+                for error in errors:
+                    sys.stderr.write(str(error) + '\n')
+                    ret = 1
+
+        print(json.dumps(info, indent=4))
+
+    return ret
+
+
+if __name__ == '__main__':
+    sys.exit(main() or 0)
