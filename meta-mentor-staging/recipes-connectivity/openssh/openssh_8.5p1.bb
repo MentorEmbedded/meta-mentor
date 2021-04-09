@@ -13,7 +13,7 @@ DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'pam', 'libpam', '', d)}"
 
 FILESEXTRAPATHS_prepend := "${LAYERDIR_core}/recipes-connectivity/${PN}/${PN}:"
 
-SRC_URI = "http://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-${PV}.tar.gz \
+SRC_URI = "https://cloudflare.cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-8.5p1.tar.gz \
            file://sshd_config \
            file://ssh_config \
            file://init \
