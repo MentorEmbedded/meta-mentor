@@ -226,7 +226,13 @@ class MELUtilsPlugin(LayerPlugin):
                 pn = data.getVar('PN')
                 pv = data.getVar('PV')
                 lc = data.getVar('LICENSE')
-                f.write('%s,%s,%s\n' % (pn, pv, lc))
+                # For SRC_URI we need to drop the local sources i.e. file:// entries
+                # then for further filtering we pick up only the initial part of the archive/git src i.e. dropping out
+                # bitbake specifics like protocol, branch, name etc.
+                su = " ".join([x.split(';')[0] for x in data.getVar('SRC_URI').split() if not x.startswith('file://')])
+                hp = data.getVar('HOMEPAGE')
+
+                f.write('%s,%s,%s,%s,%s\n' % (pn, pv, lc, su, hp))
 
     def register_commands(self, sp):
         common = argparse.ArgumentParser(add_help=False)
