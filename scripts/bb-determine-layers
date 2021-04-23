@@ -173,19 +173,20 @@ class LayerError(Exception):
 
 
 class Layer(object):
-    def __init__(self, path, confpath, name, version, priority, pattern, depends):
+    def __init__(self, path, confpath, name, version, priority, pattern, depends, recommends):
         self.path = os.path.realpath(path)
         self.confpath = os.path.realpath(confpath)
         self.name = name
         self.version = version
         self.priority = priority
         self.depends = depends
+        self.recommends = recommends
         self.missingdeps = set()
         self.pattern = pattern
 
     def __repr__(self):
         return '{0.__class__.__name__}({0.path!r}, {0.confpath!r},' \
-               '{0.name!r}, {0.version!r}, {0.priority!r}, {0.pattern!r}, {0.depends!r})'.format(self)
+               '{0.name!r}, {0.version!r}, {0.priority!r}, {0.pattern!r}, {0.depends!r}, {0.recommends!r})'.format(self)
 
     def __hash__(self):
         return hash(repr(self))
@@ -219,8 +220,10 @@ class Layer(object):
             depends = ldata.getVar('LAYERDEPENDS_%s' % name, True) or ''
             version = ldata.getVar('LAYERVERSION_%s' % name, True)
             depends = bb.utils.explode_dep_versions2(depends)
+            recommends = ldata.getVar('LAYERRECOMMENDS_%s' % name, True) or ''
+            recommends = bb.utils.explode_dep_versions2(recommends)
 
-            l = Layer(layer_path, lconf, name, version, int(priority), pattern, depends)
+            l = Layer(layer_path, lconf, name, version, int(priority), pattern, depends, recommends)
             layers.append(l)
 
         if layers:
@@ -296,13 +299,16 @@ class Layers(collections.abc.MutableSet):
                 layers.append(layer)
         return layers
 
-    def get_by_name_recursive(self, name):
+    def get_by_name_recursive(self, name, include_recs=True, indirect_recs=False):
         """Get a layer by name and its dependencies, recursively.
 
         Returns a Layers() collection, and a list of missing dependencies."""
 
         missing = set()
         found_layers = Layers()
+
+        if not include_recs:
+            indirect_recs = False
 
         if name in self.duplicates:
             raise DuplicateLayers(name, self.duplicates[name])
@@ -315,7 +321,7 @@ class Layers(collections.abc.MutableSet):
             found_layers.add(layer)
             for dep, oplist in layer.depends.items():
                 try:
-                    dep_found, dep_missing = self.get_by_name_recursive(dep)
+                    dep_found, dep_missing = self.get_by_name_recursive(dep, indirect_recs, indirect_recs)
                 except KeyError:
                     missing.add(dep)
                     continue
@@ -335,6 +341,30 @@ class Layers(collections.abc.MutableSet):
                 if dep not in missing:
                     found_layers |= dep_found
                     missing |= dep_missing
+
+            if include_recs:
+                for rec, oplist in layer.recommends.items():
+                    found = True
+
+                    try:
+                        rec_found, _ = self.get_by_name_recursive(rec, indirect_recs, indirect_recs)
+                    except KeyError:
+                        continue
+
+                    for _rec in rec_found:
+                        for opstr in oplist:
+                            op, recver = opstr.split()
+                            if _rec.version:
+                                try:
+                                    res = bb.utils.vercmp_string_op(_rec.version, recver, op)
+                                except bb.utils.VersionStringException as vse:
+                                    found = False
+                                else:
+                                    if not res:
+                                        found = False
+
+                    if found and rec not in missing:
+                        found_layers |= rec_found
 
         return found_layers, missing
 
@@ -391,8 +421,28 @@ def get_layerpaths_bitbake(globs=None, paths=None):
     return layer_paths, bitbake_path
 
 
+
+def get_layers_for(all_layers, value, varname, cfgpath, verbose=False):
+    with LayerStatus("Determining layers to include for {0} '{1}'".format(varname, value), verbose=verbose) as s:
+        layers = all_layers.which('conf/{0}/{1}.conf'.format(cfgpath, value))
+        if not layers:
+            sys.exit("No layer found for {0} `{1}`".format(varname, value))
+
+        found_layers = Layers()
+        for name in set(l.name for l in layers):
+            layers, missing_layers = all_layers.get_by_name_recursive(name)
+            found_layers |= layers
+            if name in missing_layers:
+                sys.exit('Layer `{0}` was not found'.format(name))
+            elif missing_layers:
+                sys.exit("Layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
+        s.set_layer_status(found_layers)
+        return found_layers
+
+
 def determine_layers(cmdline_opts):
     args = process_arguments(cmdline_opts)
+    args.layers.append('core')
 
     with status('Locating layers and bitbake'):
         layer_paths, bitbake_path = get_layerpaths_bitbake(args.globs, args.paths)
@@ -427,37 +477,28 @@ def determine_layers(cmdline_opts):
             if priority_override is not None:
                 layer.priority = priority_override
 
-    def get_layers_for(value, varname, cfgpath):
-        with LayerStatus("Determining layers to include for {0} '{1}'".format(varname, value), verbose=args.verbose) as s:
-            layers = all_layers.which('conf/{0}/{1}.conf'.format(cfgpath, value))
-            if not layers:
-                sys.exit("No layer found for {0} `{1}`".format(varname, value))
+    configured_layers = Layers()
+    with LayerStatus('Checking for base layers', verbose=args.verbose) as s:
+        found = set()
+        for name in args.layers:
+            if name in all_layers.by_name:
+                layers, missing_layers = all_layers.get_by_name_recursive(name)
+                if missing_layers:
+                    sys.exit("Layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
+                else:
+                    found.update(layers)
 
-            s.set_layer_status(layers)
-            layer_names = set(l.name for l in layers)
-            return layer_names
-
-    configured_layer_names = set(args.layers)
+        s.set_layer_status(found)
+        configured_layers |= found
 
     if args.distro and args.distro != 'nodistro':
-        configured_layer_names |= get_layers_for(args.distro, 'DISTRO', 'distro')
+        configured_layers |= get_layers_for(all_layers, args.distro, 'DISTRO', 'distro', args.verbose)
 
     if args.machine:
-        configured_layer_names |= get_layers_for(args.machine, 'MACHINE', 'machine')
+        configured_layers |= get_layers_for(all_layers, args.machine, 'MACHINE', 'machine', args.verbose)
 
     if args.sdkmachine:
-        configured_layer_names |= get_layers_for(args.sdkmachine, 'SDKMACHINE', 'machine-sdk')
-
-    with status('Processing layer dependencies'):
-        configured_layers = Layers()
-        for name in configured_layer_names:
-            if name not in all_layers.by_name:
-                sys.exit("Layer '{0}' not found".format(name))
-
-            layers, missing_layers = all_layers.get_by_name_recursive(name)
-            if missing_layers:
-                sys.exit("Dependent layers `{0}` not found for requested layer `{1}`".format(', '.join(missing_layers), name))
-            configured_layers |= layers
+        configured_layers |= get_layers_for(all_layers, args.sdkmachine, 'SDKMACHINE', 'machine-sdk', args.verbose)
 
     if args.optional_layers:
         with LayerStatus('Checking for optional layers', verbose=args.verbose) as s:

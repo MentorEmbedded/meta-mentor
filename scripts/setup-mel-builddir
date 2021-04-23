@@ -7,9 +7,9 @@
 # kind, whether express or implied.
 
 DISTRO="${DISTRO:-mel}"
-CORELAYERS="${CORELAYERS:-core mel-support mentor-staging}"
-OPTIONALLAYERS="${OPTIONALLAYERS-mentor-private}"
-EXTRAMELLAYERS="${EXTRAMELLAYERS-openembedded-layer filesystems-layer networking-layer multimedia-layer sourcery gplv2}"
+CORELAYERS="${CORELAYERS:-}"
+OPTIONALLAYERS="${OPTIONALLAYERS-}"
+EXTRAMELLAYERS="${EXTRAMELLAYERS-}"
 layer_priority_overrides="openembedded-layer=1"
 
 
@@ -226,7 +226,7 @@ setup_builddir () {
     process_arguments "$@" || return $?
     shift $(expr $OPTIND - 1)
 
-    OEROOT="$($layerdir/scripts/bb-determine-layers -g "$layerpaths" -l core)/.." || {
+    OEROOT="$($layerdir/scripts/bb-determine-layers -g "$layerpaths" -l core 2>/dev/null)/.." || {
         echo >&2 "Error: unable to locate core layer (oe-core) in $MELDIR, aborting"
         return 3
     }
