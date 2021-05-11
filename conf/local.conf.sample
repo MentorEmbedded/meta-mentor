@@ -67,7 +67,6 @@ CORE_IMAGE_EXTRA_INSTALL += "${@bb.utils.contains('IMAGE_FEATURES', 'read-only-r
 # Uncomment to enable runtime testing with ptest
 #USER_FEATURES += "ptest"
 #EXTRA_IMAGE_FEATURES += "ptest-pkgs"
-#CORE_IMAGE_EXTRA_INSTALL += "ptest-runner"
 
 # Example of how to add additional image types beyond the default. If the
 # machine doesn't define them, the default types are tar.bz2 and ext3.
