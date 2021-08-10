@@ -1,1 +1,1 @@
-FILESEXTRAPATHS_prepend_mel := "${THISDIR}/files:"
+FILESEXTRAPATHS:prepend:mel := "${THISDIR}/files:"

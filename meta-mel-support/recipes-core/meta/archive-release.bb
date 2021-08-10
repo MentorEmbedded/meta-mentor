@@ -8,7 +8,7 @@ SRC_URI += "${@' '.join(uninative_urls(d)) if 'downloads' in '${RELEASE_ARTIFACT
 SRC_URI += "https://github.com/01org/bmap-tools/releases/download/v3.4/bmaptool;name=bmaptool"
 SRC_URI[bmaptool.md5sum] = "7bc226c2b15aff58af31e421fa381d34"
 SRC_URI[bmaptool.sha256sum] = "8cedbb7a525dd4026b6cafe11f496de11dbda0f0e76a5b4938d2687df67bab7f"
-SRC_URI_append_qemuall = " file://runqemu.in"
+SRC_URI:append:qemuall = " file://runqemu.in"
 
 # We're using image fstypes data, inherit the class in case variables from it
 # are needed for IMAGE_FSTYPES
@@ -84,7 +84,7 @@ DEPLOY_IMAGES ?= "\
     ${IMAGE_LINK_NAME}.license_manifest.csv \
     ${EXTRA_IMAGES_ARCHIVE_RELEASE} \
 "
-DEPLOY_IMAGES_append_qemuall = "${@' ' + d.getVar('KERNEL_IMAGETYPE') if 'wic' not in d.getVar('IMAGE_EXTENSIONS') else ''}"
+DEPLOY_IMAGES:append:qemuall = "${@' ' + d.getVar('KERNEL_IMAGETYPE') if 'wic' not in d.getVar('IMAGE_EXTENSIONS') else ''}"
 DEPLOY_IMAGES[doc] = "List of files from DEPLOY_DIR_IMAGE which will be archived"
 
 # Use IMAGE_EXTENSION_xxx to map image type 'xxx' with real image file
@@ -124,7 +124,7 @@ python () {
             bb.fatal('do_archive_release: no such task "%s" for component "%s" listed in RELEASE_ARTIFACTS' % (ctask, component))
 
         bb.build.addtask(ctask, 'do_prepare_release', 'do_patch do_prepare_recipe_sysroot', d)
-        d.setVar('SSTATE_SKIP_CREATION_task-archive-%s' % component.replace('_', '-'), '1')
+        d.setVar('SSTATE_SKIP_CREATION:task-archive-%s' % component.replace('_', '-'), '1')
         d.setVarFlag(ctask, 'umask', '022')
         d.setVarFlag(ctask, 'dirs', '${S}/%s' % ctask)
         d.setVarFlag(ctask, 'cleandirs', '${S}/%s' % ctask)
@@ -441,7 +441,7 @@ SSTATETASKS += "do_prepare_release ${@' '.join('do_archive_%s' % i for i in "${R
 
 do_prepare_release[dirs] = "${S}/deploy"
 do_prepare_release[umask] = "022"
-SSTATE_SKIP_CREATION_task-prepare-release = "1"
+SSTATE_SKIP_CREATION:task-prepare-release = "1"
 do_prepare_release[sstate-inputdirs] = "${S}/deploy"
 do_prepare_release[sstate-outputdirs] = "${DEPLOY_DIR_RELEASE}"
 do_prepare_release[stamp-extra-info] = "${MACHINE}"

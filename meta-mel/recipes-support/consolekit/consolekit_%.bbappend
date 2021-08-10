@@ -1,5 +1,5 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-SRC_URI_append_mel = " \
+SRC_URI:append:mel = " \
     file://0001-Ensure-filesystems-are-still-mounted-when-consolekit.patch \
 "

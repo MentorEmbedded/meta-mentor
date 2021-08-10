@@ -1,5 +1,5 @@
 BT_PKGCONF = ""
-BT_PKGCONF_mel = "--enable-bluetooth,--disable-bluetooth,,${VIRTUAL-RUNTIME_bluetooth-stack}"
+BT_PKGCONF:mel = "--enable-bluetooth,--disable-bluetooth,,${VIRTUAL-RUNTIME_bluetooth-stack}"
 
 python () {
     """While this is rather indirect, it's better to leverage OVERRIDES than to
@@ -11,7 +11,7 @@ python () {
 
 # do not use connman as a DNs
 # proxy because both dnsmasq and connman try to bind to same port 53.
-do_install_append_mel () {
+do_install:append:mel () {
     sed -i '/^ExecStart=/ s@-n@--nodnsproxy -n@g' ${D}${systemd_unitdir}/system/connman.service
 }
 

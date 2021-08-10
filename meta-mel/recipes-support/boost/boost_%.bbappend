@@ -1,1 +1,1 @@
-PARALLEL_MAKE_mel = "-j 4"
+PARALLEL_MAKE:mel = "-j 4"

@@ -8,6 +8,6 @@ python () {
         tcmode = d.getVar('TCMODE', True)
         packagegroup = d.expand('packagegroup-cross-canadian-${MACHINE}')
         if packagegroup in host_task.split() and tcmode.startswith('external'):
-            d.setVar('TOOLCHAIN_HOST_TASK_remove', 'packagegroup-cross-canadian-${MACHINE}')
-            d.setVar('TOOLCHAIN_HOST_TASK_append', ' meta-environment-${MACHINE}')
+            d.setVar('TOOLCHAIN_HOST_TASK:remove', 'packagegroup-cross-canadian-${MACHINE}')
+            d.setVar('TOOLCHAIN_HOST_TASK:append', ' meta-environment-${MACHINE}')
 }

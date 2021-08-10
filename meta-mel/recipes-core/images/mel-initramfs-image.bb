@@ -14,11 +14,11 @@ IMAGE_ROOTFS_SIZE = "8192"
 IMAGE_ROOTFS_EXTRA_SPACE = "0"
 
 # We don't care about root password for login on initramfs images
-IMAGE_QA_COMMANDS_remove = "image_check_zapped_root_password"
+IMAGE_QA_COMMANDS:remove = "image_check_zapped_root_password"
 
 BAD_RECOMMENDATIONS += "busybox-syslog"
 
 # We don't need selinux labels in initramfs
-IMAGE_PREPROCESS_COMMAND_remove = "selinux_set_labels ;"
+IMAGE_PREPROCESS_COMMAND:remove = "selinux_set_labels ;"
 
-COMPATIBLE_HOST_mel = "(arm|aarch64|i.86|x86_64).*-linux"
+COMPATIBLE_HOST:mel = "(arm|aarch64|i.86|x86_64).*-linux"

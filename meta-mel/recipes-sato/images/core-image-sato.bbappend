@@ -1,2 +1,2 @@
-IMAGE_FEATURES_append_mel = "${@bb.utils.contains('COMBINED_FEATURES', 'alsa', ' tools-audio', '', d)}"
-IMAGE_INSTALL_append_mel = " quota"
+IMAGE_FEATURES:append:mel = "${@bb.utils.contains('COMBINED_FEATURES', 'alsa', ' tools-audio', '', d)}"
+IMAGE_INSTALL:append:mel = " quota"

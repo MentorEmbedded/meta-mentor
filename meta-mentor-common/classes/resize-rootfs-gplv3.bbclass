@@ -19,7 +19,7 @@ python resize_gpl_check () {
         wks_file = d.getVar('WKS_FILE', True)
         if wks_file.endswith('-sd.wks.in') or wks_file.endswith('.wks'):
             d.setVar('WARN_RESIZE_GPL', '1')
-        d.setVar('MACHINE_EXTRA_RRECOMMENDS_remove', '96boards-tools')
+        d.setVar('MACHINE_EXTRA_RRECOMMENDS:remove', '96boards-tools')
 }
 resize_gpl_check[eventmask] = "bb.event.ConfigParsed"
 addhandler resize_gpl_check

@@ -1,1 +1,1 @@
-DISTRO_FEATURES_remove_mel = "opengl"
+DISTRO_FEATURES:remove:mel = "opengl"

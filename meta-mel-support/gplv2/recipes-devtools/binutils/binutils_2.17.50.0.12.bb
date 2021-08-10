@@ -27,8 +27,8 @@ DEPENDS += "flex texinfo-native"
 #
 # we need chrpath > 0.14 and some distros like centos 7 still have older chrpath
 #
-DEPENDS_append_class-target = " chrpath-replacement-native"
-EXTRANATIVEPATH_append_class-target = " chrpath-native"
+DEPENDS:append:class-target = " chrpath-replacement-native"
+EXTRANATIVEPATH:append:class-target = " chrpath-native"
 
 EXTRA_OECONF += "\
     --with-sysroot=/ \
@@ -45,19 +45,19 @@ do_configure () {
 	oe_runconf
 }
 
-do_install_append () {
+do_install:append () {
 	rm -rf ${D}${prefix}/${TARGET_SYS}/lib
 }
 
 # Kill redundant rpaths
-do_install_append_class-target () {
+do_install:append:class-target () {
 	for i in ${D}${bindir}/*; do
 		chrpath -d "$i"
 	done
 }
 
 # This version doesn't provide these
-USE_ALTERNATIVES_FOR_remove = "ld.bfd elfedit ld.gold dwp"
+USE_ALTERNATIVES_FOR:remove = "ld.bfd elfedit ld.gold dwp"
 
 python () {
     '''This binutils version has no elfedit.'''
