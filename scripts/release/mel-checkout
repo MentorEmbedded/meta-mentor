@@ -51,15 +51,12 @@ set_machine () {
 }
 
 prompt_choice () {
-    choice_non_interactive=0
-    while getopts n opt; do
-        case "$opt" in
-            n)
-                choice_non_interactive=1
-                ;;
-        esac
-    done
-    shift $((OPTIND - 1))
+    if [ "$1" = "-n" ]; then
+        choice_non_interactive=1
+        shift
+    else
+        choice_non_interactive=0
+    fi
 
     prompt_message="$1"
     prompt_default="${2:-}"
