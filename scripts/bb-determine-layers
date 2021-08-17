@@ -467,7 +467,7 @@ def determine_layers(cmdline_opts):
             try:
                 all_layers.add_from_path(layer_path, data)
             except LayerError as exc:
-                sys.exit(str(exc))
+                sys.stderr.write('Warning: error parsing layer at {}\n'.format(layer_path))
 
     for layer in list(all_layers):
         if layer.name in args.excluded_layers:
