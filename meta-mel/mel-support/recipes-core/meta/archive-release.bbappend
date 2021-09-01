@@ -1,4 +1,4 @@
-FILESEXTRAPATHS_append = ":${@':'.join('%s/../scripts/release:%s/../scripts' % (l, l) for l in '${BBPATH}'.split(':'))}"
+FILESEXTRAPATHS:append = ":${@':'.join('%s/../scripts/release:%s/../scripts' % (l, l) for l in '${BBPATH}'.split(':'))}"
 MEL_SCRIPTS_FILES = "mel-checkout version-sort setup-mel setup-workspace setup-ubuntu setup-rh setup-debian"
 SRC_URI += "${@' '.join(uninative_urls(d)) if 'mel_downloads' in '${RELEASE_ARTIFACTS}'.split() else ''}"
 SRC_URI += "${@' '.join('file://%s' % s for s in d.getVar('MEL_SCRIPTS_FILES').split())}"
@@ -59,7 +59,7 @@ def mel_get_remotes(subdir, d):
     remotes['origin'] = url
     return remotes
 
-GET_REMOTES_HOOK_mel ?= "mel_get_remotes"
+GET_REMOTES_HOOK:mel ?= "mel_get_remotes"
 
 GIT_ROOT_TOO_FAR_PATHS = "${OEDIR} ${TOPDIR} ${HOME}"
 

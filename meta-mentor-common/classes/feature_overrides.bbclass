@@ -4,7 +4,7 @@
 #
 # Example usage, in conf/layer.conf:
 #
-#   INHERIT_append = " feature_overrides"
+#   INHERIT:append = " feature_overrides"
 #   FEATUREOVERRIDES .= "${@bb.utils.contains('DISTRO_FEATURES', 'some-feature', ':feature-some-feature', '', d)}"
 #   FEATUREOVERRIDES .= "${@bb.utils.contains('MACHINE_FEATURES', 'some-bsp-feature', ':feature-some-bsp-feature', '', d)}"
 

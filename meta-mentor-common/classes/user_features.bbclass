@@ -7,5 +7,5 @@
 
 USER_FEATURES ?= ""
 USER_FEATURES_REMOVE ?= "${@' '.join(l[1:] for l in '${USER_FEATURES}'.split() if l.startswith('~'))}"
-DISTRO_FEATURES_append = " ${@' '.join(l for l in '${USER_FEATURES}'.split() if not l.startswith('~'))}"
-DISTRO_FEATURES_remove = "${USER_FEATURES_REMOVE}"
+DISTRO_FEATURES:append = " ${@' '.join(l for l in '${USER_FEATURES}'.split() if not l.startswith('~'))}"
+DISTRO_FEATURES:remove = "${USER_FEATURES_REMOVE}"

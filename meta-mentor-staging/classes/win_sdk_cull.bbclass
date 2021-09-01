@@ -1,4 +1,4 @@
-SDK_POSTPROCESS_COMMAND_prepend_sdkmingw32 = "cull_win_files;"
+SDK_POSTPROCESS_COMMAND:prepend:sdkmingw32 = "cull_win_files;"
 
 cull_win_files () {
     # Cull duplicates caused by case insensitive filesytems, e.g. NTFS

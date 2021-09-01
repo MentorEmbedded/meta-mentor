@@ -16,7 +16,7 @@ DEPENDS += "kern-tools-native"
 DEFCONFIG ?= "${WORKDIR}/defconfig"
 merge_fragment_pipeline = "cat"
 
-do_configure_prepend () {
+do_configure:prepend () {
     DEFCONFIG="${DEFCONFIG}"
     if [ "${DEFCONFIG#/}" = "${DEFCONFIG}" ]; then
         DEFCONFIG="${S}/${DEFCONFIG}"

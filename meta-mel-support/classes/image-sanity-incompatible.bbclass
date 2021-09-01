@@ -58,12 +58,12 @@ python image_check_incompatible_packages () {
         pkgdata.update(oe.packagedata.read_pkgdatafile(pkginfo))
 
         for k, v in pkgdata.items():
-            if k.startswith('PKG_') and v == pkgname:
+            if k.startswith('PKG:') and v == pkgname:
                 # Renamed (i.e. debian.bbclass), get the original name
                 pkgname = k[4:]
 
-        if 'LICENSE' not in pkgdata and 'LICENSE_' + pkgname in pkgdata:
-            pkgdata['LICENSE'] = pkgdata['LICENSE_' + pkgname]
+        if 'LICENSE' not in pkgdata and 'LICENSE:' + pkgname in pkgdata:
+            pkgdata['LICENSE'] = pkgdata['LICENSE:' + pkgname]
         license = pkgdata['LICENSE']
 
         l = d.createCopy()

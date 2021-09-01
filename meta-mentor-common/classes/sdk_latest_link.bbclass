@@ -1,6 +1,6 @@
 TOOLCHAIN_LINKNAME ?= "${@'${TOOLCHAIN_OUTPUTNAME}'.replace('-${SDK_VERSION}', '')}"
 
-SDK_POSTPROCESS_COMMAND_append = "create_sdk_link;"
+SDK_POSTPROCESS_COMMAND:append = "create_sdk_link;"
 
 create_sdk_link () {
     if [ "${TOOLCHAIN_OUTPUTNAME}" != "${TOOLCHAIN_LINKNAME}" ]; then

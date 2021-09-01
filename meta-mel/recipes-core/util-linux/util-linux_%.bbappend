@@ -1,1 +1,1 @@
-EXTRA_OECONF_append_class-native_mel = " --disable-schedutils"
+EXTRA_OECONF:append:class-native:mel = " --disable-schedutils"

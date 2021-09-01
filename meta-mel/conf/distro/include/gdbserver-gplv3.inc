@@ -6,6 +6,6 @@ WHITELIST_LGPL-3.0 += "${@'gdb' if '${ALLOW_GPLV3_GDBSERVER}' else ''}"
 # If GPL-3.0 is in INCOMPATIBLE_LICENSE, and gdbserver/gdb isn't whitelisted,
 # then remove gdbserver from the codebench-debug image feature, otherwise the
 # build will fail.
-FEATURE_PACKAGES_codebench-debug_remove = "${@'gdbserver' if is_incompatible(d, ['gdbserver-external', 'gdb'], 'GPL-3.0') else ''}"
+FEATURE_PACKAGES_codebench-debug:remove = "${@'gdbserver' if is_incompatible(d, ['gdbserver-external', 'gdb'], 'GPL-3.0') else ''}"
 
 INHERIT += "incompatible-recipe-check"

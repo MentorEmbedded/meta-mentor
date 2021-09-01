@@ -11,7 +11,7 @@ MACHINE ??= "qemux86"
 #EXTERNAL_TOOLCHAIN ?= "/path/to/toolchain"
 
 # Uncomment to use the oe/yocto-built toolchain rather than the external
-#TCMODE_mel = "default"
+#TCMODE:mel = "default"
 
 # The CORE_IMAGE_EXTRA_INSTALL variable allows extra individual packages to be
 # added to any of the images inheriting core-image.bbclass, including the
@@ -62,7 +62,7 @@ CORE_IMAGE_EXTRA_INSTALL += "${@bb.utils.contains('IMAGE_FEATURES', 'read-only-r
 
 # Uncomment the following to enable BSP specific patches and configurations for
 # kernel debugging
-#MACHINE_FEATURES_append = " mel-debugging"
+#MACHINE_FEATURES:append = " mel-debugging"
 
 # Uncomment to enable runtime testing with ptest
 #USER_FEATURES += "ptest"
@@ -70,13 +70,13 @@ CORE_IMAGE_EXTRA_INSTALL += "${@bb.utils.contains('IMAGE_FEATURES', 'read-only-r
 
 # Example of how to add additional image types beyond the default. If the
 # machine doesn't define them, the default types are tar.bz2 and ext3.
-#IMAGE_FSTYPES_append = " jffs2"
+#IMAGE_FSTYPES:append = " jffs2"
 
 # Uncomment and alter to set the root password. Set to '0' to explicitly allow
 # the empty root password even in production-image. Set to '*' to explicitly
 # disable root login.
 #ROOT_PASSWORD = "0"
-IMAGE_CLASSES_append = " image-root-password"
+IMAGE_CLASSES:append = " image-root-password"
 
 # User features lets you manipulate the distro features. To add a distro
 # feature, simply add it to USER_FEATURES. To remove, prefix it with ~.
@@ -109,7 +109,7 @@ PARALLEL_MAKE ?= "-j ${@oe.utils.cpu_count() * 2}"
 # non-gplv3 build. To disable this, you may comment this out, comment out line
 # which installs binutils, or remove tools-profile from EXTRA_IMAGE_FEATURES.
 WHITELIST_BINUTILS = "${@'binutils' if d.getVar('PN') == 'binutils' or (bb.data.inherits_class('image', d) and bb.utils.filter('IMAGE_FEATURES', 'tools-profile', d) == 'tools-profile') else ''}"
-WHITELIST_GPL-3.0_append_aarch64 = " ${WHITELIST_BINUTILS}"
+WHITELIST_GPL-3.0:append:aarch64 = " ${WHITELIST_BINUTILS}"
 
 # Download files from a mirror
 # Uncomment this INHERIT, and define SOURCE_MIRROR_URL
@@ -122,7 +122,7 @@ WHITELIST_GPL-3.0_append_aarch64 = " ${WHITELIST_BINUTILS}"
 DL_DIR ?= "${MELDIR}/downloads"
 
 # Continue to pull downloads from the build dir if available
-PREMIRRORS_prepend = "\
+PREMIRRORS:prepend = "\
     .*://.*/.* file://${MELDIR}/${MACHINE}/downloads/ \n \
     .*://.*/.* file://${TOPDIR}/downloads/ \n \
 "
@@ -179,7 +179,7 @@ include conf/include/drop-toolchain-from-sdk.inc
 # SDKMACHINE while setting TOOLCHAIN_HOST_TASK, if you're building a Windows
 # SDK/ADE.
 TOOLCHAIN_HOST_REMOVE ??= "nativesdk-packagegroup-sdk-host"
-TOOLCHAIN_HOST_TASK_remove = "${TOOLCHAIN_HOST_REMOVE}"
+TOOLCHAIN_HOST_TASK:remove = "${TOOLCHAIN_HOST_REMOVE}"
 
 # TOOLCHAIN_HOST_TASK is used to add host packages to the ADE/SDK, for
 # example, to add bash:
@@ -323,4 +323,4 @@ BB_DISKMON_DIRS = "\
 # CONF_VERSION is increased each time build/conf/ changes incompatibly and is used to
 # track the version of this file when it was generated. This can safely be ignored if
 # this doesn't mean anything to you.
-CONF_VERSION = "1"
+CONF_VERSION = "2"

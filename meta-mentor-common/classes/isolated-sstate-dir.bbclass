@@ -16,7 +16,7 @@ sstate_write_isolated () {
     fi
 }
 
-sstate_create_package_append () {
+sstate_create_package:append () {
     sstate_write_isolated
 }
 # Work around missing vardep bug in bitbake
@@ -27,7 +27,7 @@ sstate_write_isolated_preinst () {
     sstate_write_isolated
 }
 
-SSTATEPREINSTFUNCS_append = " sstate_write_isolated_preinst"
+SSTATEPREINSTFUNCS:append = " sstate_write_isolated_preinst"
 
 def cleansstate_isolated(d):
     if d.getVar('ISOLATED_SSTATE_DIR', True) != d.getVar('SSTATE_DIR', True):
@@ -35,7 +35,7 @@ def cleansstate_isolated(d):
         l.setVar('SSTATE_PATHSPEC', d.getVar('ISOLATED_SSTATE_PATHSPEC', True))
         sstate_clean_cachefiles(l)
 
-python do_cleansstate_append() {
+python do_cleansstate:append() {
         cleansstate_isolated(d)
 }
 

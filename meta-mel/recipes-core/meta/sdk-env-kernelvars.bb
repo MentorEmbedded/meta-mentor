@@ -14,4 +14,4 @@ KERNEL_AR="${KERNEL_AR}"
 END
 }
 
-FILES_${PN} += "/environment-setup.d/*"
+FILES:${PN} += "/environment-setup.d/*"

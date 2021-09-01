@@ -22,7 +22,7 @@ inherit extrausers
 # generating the root password, if so desired, without mucking up bitbake's
 # variable checksums.
 ACTUAL_ROOT_PASSWORD = "${ROOT_PASSWORD}"
-EXTRA_USERS_PARAMS_prepend = "${@'usermod -P \'${ACTUAL_ROOT_PASSWORD}\' root;' if d.getVar('ACTUAL_ROOT_PASSWORD') not in ['', '0', '*'] else ''}"
+EXTRA_USERS_PARAMS:prepend = "${@'usermod -P \'${ACTUAL_ROOT_PASSWORD}\' root;' if d.getVar('ACTUAL_ROOT_PASSWORD') not in ['', '0', '*'] else ''}"
 
 # Change the default behavior when the root password is empty. If the image
 # lacks empty-root-password and debug-tweaks, rather than defaulting to
@@ -38,4 +38,4 @@ python image_check_zapped_root_password () {
 }
 
 # Skip the QA check for initramfs images
-IMAGE_QA_COMMANDS_remove = "${@'image_check_zapped_root_password' if d.getVar('IMAGE_FSTYPES') == d.getVar('INITRAMFS_FSTYPES') != '' else ''}"
+IMAGE_QA_COMMANDS:remove = "${@'image_check_zapped_root_password' if d.getVar('IMAGE_FSTYPES') == d.getVar('INITRAMFS_FSTYPES') != '' else ''}"

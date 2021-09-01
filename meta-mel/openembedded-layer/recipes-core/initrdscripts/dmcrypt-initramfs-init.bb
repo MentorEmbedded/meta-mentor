@@ -3,10 +3,10 @@ LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
 
 DEPENDS = "virtual/kernel"
-RDEPENDS_${PN} += "cryptsetup"
-RDEPENDS_${PN} += "lvm2"
-RDEPENDS_${PN} += "lvm2-udevrules"
-RDEPENDS_${PN} += "udev"
+RDEPENDS:${PN} += "cryptsetup"
+RDEPENDS:${PN} += "lvm2"
+RDEPENDS:${PN} += "lvm2-udevrules"
+RDEPENDS:${PN} += "udev"
 
 PR = "r0"
 
@@ -20,7 +20,7 @@ do_install() {
         mknod -m 622 ${D}/dev/console c 5 1
 }
 
-FILES_${PN} += "/init /dev"
+FILES:${PN} += "/init /dev"
 
 # Due to kernel dependency
 PACKAGE_ARCH = "${MACHINE_ARCH}"

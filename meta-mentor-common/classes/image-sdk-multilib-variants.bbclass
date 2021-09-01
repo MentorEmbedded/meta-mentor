@@ -11,4 +11,4 @@ SDK_DEFAULT_TARGET_PKGS ?= "packagegroup-core-standalone-sdk-target packagegroup
 
 SDK_MULTILIB_VARIANTS_REMOVE = "${@' '.join(set('${MULTILIB_VARIANTS}'.split()) - set('${SDK_MULTILIB_VARIANTS}'.split()))}"
 SDK_TARGET_REMOVE = "${@' '.join(v + '-' + p for p in '${SDK_DEFAULT_TARGET_PKGS}'.split() for v in '${SDK_MULTILIB_VARIANTS_REMOVE}'.split())}"
-TOOLCHAIN_TARGET_TASK_remove = "${SDK_TARGET_REMOVE}"
+TOOLCHAIN_TARGET_TASK:remove = "${SDK_TARGET_REMOVE}"

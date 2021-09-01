@@ -1,4 +1,4 @@
-PREMIRRORS_append = " \
+PREMIRRORS:append = " \
 git://sources.redhat.com/ git://sourceware.org/ \n\
 "
 
