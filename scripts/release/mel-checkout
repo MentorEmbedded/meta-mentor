@@ -51,15 +51,12 @@ set_machine () {
 }
 
 prompt_choice () {
-    choice_non_interactive=0
-    while getopts n opt; do
-        case "$opt" in
-            n)
-                choice_non_interactive=1
-                ;;
-        esac
-    done
-    shift $((OPTIND - 1))
+    if [ "$1" = "-n" ]; then
+        choice_non_interactive=1
+        shift
+    else
+        choice_non_interactive=0
+    fi
 
     prompt_message="$1"
     prompt_default="${2:-}"
@@ -116,22 +113,42 @@ prompt_choice () {
     rm -f "$prompt_options"
 }
 
+remove_old_versions () {
+    while IFS=- read -r product version machine; do
+        printf '%s\t%s\t%s\n' "$product" "$version" "$machine"
+    done \
+    | uniq -f2 \
+    | tr "$(printf '\t')" -
+}
+
+sort_manifests () {
+    "$scriptdir/version-sort" \
+    | tac \
+    | sort -s -t- -k3 \
+    | if [ $all_versions -eq 0 ]; then remove_old_versions; else cat; fi \
+    | sed '/qemu/!s/^/1 /; /qemu/s/^/0 /;' | sort -srn | sed 's/^[01] //'
+}
+
 prompt_manifest () {
     find "$1" -maxdepth 1 -type f -name \*.manifest | \
-        sed 's,^.*/,,' | sed '/qemu/!s/^/1 /; /qemu/s/^/0 /;' | sort -rn | sed 's/^[01] //' | \
+        sed 's,^.*/,,' | sort_manifests | \
         ( set +u; prompt_choice $prompt_non_interactive "$2" 1; ) | sed "s,^,$1/,"
 }
 
 process_arguments () {
     no_extra_manifests=0
     non_interactive=0
-    while getopts Xnh opt; do
+    all_versions=0
+    while getopts Xnah opt; do
         case "$opt" in
             X)
                 no_extra_manifests=1
                 ;;
             n)
                 non_interactive=1
+                ;;
+            a)
+                all_versions=1
                 ;;
             \?|h)
                 usage
