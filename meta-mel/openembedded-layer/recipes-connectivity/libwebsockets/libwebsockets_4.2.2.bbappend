@@ -1,2 +1,2 @@
-SRCREV:mel = "ac45ee08baceed7c46a75b0776d898f0383f6430"
+SRCREV:mel = "7e4482075d30bd276c66b9f8daa1f9b8871c8743"
 SRC_URI:mel = "git://github.com/MentorEmbedded/libwebsockets.git;protocol=https;branch=v4.2-stable"
