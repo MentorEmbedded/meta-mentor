@@ -23,7 +23,10 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 echo "Enabling any required repos"
-if grep -q "^CentOS" /etc/redhat-release 2>/dev/null; then
+if grep -q "^Red Hat Enterprise Linux release 8" /etc/redhat-release 2>/dev/null; then
+    ARCH=$(/bin/arch)
+    subscription-manager repos --enable "codeready-builder-for-rhel-8-${ARCH}-rpms"
+elif grep -q "^CentOS" /etc/redhat-release 2>/dev/null; then
     dnf config-manager --set-enabled PowerTools
 fi
 
