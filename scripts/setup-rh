@@ -32,7 +32,7 @@ elif grep -q "^CentOS" /etc/redhat-release 2>/dev/null; then
 fi
 
 echo "Installing packages required to build Mentor Embedded Linux Flex OS"
-dnf install "$@" $packages || {
+dnf install --assumeyes "$@" $packages || {
     echo >&2 "Error installing our required packages, aborting"
     exit 1
 }
