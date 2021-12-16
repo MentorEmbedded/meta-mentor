@@ -231,7 +231,8 @@ class MELUtilsPlugin(LayerPlugin):
 
         fetch_recipes = self._collect_fetch_recipes(args.targets, args.task, depgraph)
 
-        with open(filename, 'w') as f:
+        omode = 'a' if args.append else 'w'
+        with open(filename, omode) as f:
             for recipe in fetch_recipes:
                 fn = depgraph['pn'][recipe]['filename']
                 real_fn, cls, mc = bb.cache.virtualfn2realfn(fn)
@@ -242,6 +243,11 @@ class MELUtilsPlugin(LayerPlugin):
                 pv = data.getVar('PV')
                 lc = data.getVar('LICENSE')
                 f.write('%s,%s,%s\n' % (pn, pv, lc))
+
+        # remove any duplicates added due to append flag
+        uniqlines = set(open(filename).readlines())
+        with open(filename, 'w') as f:
+            f.writelines(uniqlines)
 
     def register_commands(self, sp):
         common = argparse.ArgumentParser(add_help=False)
@@ -255,3 +261,4 @@ class MELUtilsPlugin(LayerPlugin):
         dump.add_argument('--filename', '-f', help='filename to dump to', default='${TMPDIR}/downloads-by-layer.txt')
         license = self.add_command(sp, 'dump-licenses', self.do_dump_licenses, parents=[common], parserecipes=True)
         license.add_argument('--filename', '-f', help='filename to dump to', default='${TMPDIR}/pn-buildlist-licenses.txt')
+        license.add_argument('--append', '-a', help='append to output filename', action='store_true')
