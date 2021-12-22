@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # TODO: add an argument to enable/disable dependency traversal vs just the
 # specified recipes
 import argparse

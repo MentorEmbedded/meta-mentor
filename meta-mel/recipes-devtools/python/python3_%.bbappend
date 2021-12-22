@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # Needed by patchinfo
 PATCHINFO_PYTHONPATH = "${COMPONENTS_DIR}/${BUILD_ARCH}/python3-unidiff-native/${libdir}/python${PYTHON_MAJMIN}/site-packages"
 DEPENDS_UNIDIFF = ""

@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # Populate an isolated SSTATE_DIR while still populating the default shared
 # sstate directory. This is useful if SSTATE_DIR is shared, so we have access
 # to the set of cached binaries which were used in this build.

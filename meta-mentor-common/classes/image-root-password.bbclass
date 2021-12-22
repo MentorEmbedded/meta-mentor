@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # Enable use of the 'ROOT_PASSWORD' variable to set the root password for your
 # image or images. In addition to setting to a specific password, it also
 # handles special cases. If set to '0', empty root password is explicitly

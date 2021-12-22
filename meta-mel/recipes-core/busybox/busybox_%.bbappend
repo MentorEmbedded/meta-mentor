@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 FILESEXTRAPATHS_prepend := "${THISDIR}/busybox:"
 
 # fancy-head.cfg is enabled so we have head -c, which we need for our tracing

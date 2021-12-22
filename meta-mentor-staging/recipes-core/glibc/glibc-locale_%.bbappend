@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # Work around long standing periodic host-user-contaminated QA failure by
 # explicitly correcting the ownership.
 #

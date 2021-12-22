@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 do_compile_append_mel () {
     # Work around a toolchain issue with the default resampler (speex-float-N)
     # by using speex-fixed-N.

@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 def is_incompatible(d, recipes, license='GPL-3.0'):
     '''Return True if license is incompatible and none of the specified recipes are whitelisted.'''
     return incompatible_license_contains(license, not any_whitelisted(d, recipes, license), False, d)
