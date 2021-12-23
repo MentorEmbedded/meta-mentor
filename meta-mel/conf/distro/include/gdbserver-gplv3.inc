@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # If ALLOW_GPLV3_GDBSERVER is set, whitelist {L,}GPLv3 for the gdb recipes
 ALLOW_GPLV3_GDBSERVER ?= ""
 WHITELIST_GPL-3.0 += "${@'gdbserver-external gdb' if '${ALLOW_GPLV3_GDBSERVER}' else ''}"

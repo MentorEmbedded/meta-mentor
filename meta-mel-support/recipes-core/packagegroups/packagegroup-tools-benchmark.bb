@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 inherit packagegroup incompatible-recipe-check
 
 DESCRIPTION = "Package group for benchmarking the target"

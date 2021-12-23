@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 SDK_MULTILIB_VARIANTS ?= "${MULTILIB_VARIANTS}"
 python set_multilib_variants () {
     variants = d.getVar('SDK_MULTILIB_VARIANTS', True)

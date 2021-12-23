@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 SRC_URI +=  "file://0001-udev-extraconf-mount.sh-add-LABELs-to-mountpoints.patch \
              ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'file://systemd-udevd.service', '', d)} \

@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 SUMMARY = "Unified diff parsing/metadata extraction library"
 HOMEPAGE = "http://github.com/matiasb/python-unidiff"
 LICENSE = "MIT"

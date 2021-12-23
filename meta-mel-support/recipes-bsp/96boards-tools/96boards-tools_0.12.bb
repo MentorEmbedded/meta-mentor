@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 SUMMARY = "Useful bits an pieces to make 96Boards more standard across the board"
 HOMEPAGE = "https://github.com/96boards/96boards-tools"
 SECTION = "devel"

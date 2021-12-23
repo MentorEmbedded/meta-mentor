@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # Consistent handling of the defconfig -> .config, with merge of config
 # fragments using the same mechanism as busybox and linux-yocto.
 #

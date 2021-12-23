@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # USER_FEATURES is an explicitly supported mechanism to exert control over
 # DISTRO_FEATURES from local.conf without directly poking at it. At this point
 # it's just a convenience wrapper around _append and _remove.

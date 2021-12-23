@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # Add an image QA check which fails if any packages were installed which have
 # incompatible licenses, with a variable to control whether whitelisted
 # recipes/packages are allowed in the image.
