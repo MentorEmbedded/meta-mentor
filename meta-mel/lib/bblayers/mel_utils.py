@@ -235,7 +235,8 @@ class MELUtilsPlugin(LayerPlugin):
 
         fetch_recipes = self._collect_fetch_recipes(args.targets, args.task, depgraph)
 
-        with open(filename, 'w') as f:
+        omode = 'a' if args.append else 'w'
+        with open(filename, omode) as f:
             for recipe in fetch_recipes:
                 fn = depgraph['pn'][recipe]['filename']
                 real_fn, cls, mc = bb.cache.virtualfn2realfn(fn)
@@ -245,7 +246,22 @@ class MELUtilsPlugin(LayerPlugin):
                 pn = data.getVar('PN')
                 pv = data.getVar('PV')
                 lc = data.getVar('LICENSE')
-                f.write('%s,%s,%s\n' % (pn, pv, lc))
+
+                if not args.sourceinfo:
+                    f.write('%s,%s,%s\n' % (pn, pv, lc))
+                else:
+                    for url in data.getVar('SRC_URI').split():
+                        scheme, host, path, user, passwd, param = bb.fetch.decodeurl(url)
+                        if scheme != 'file':
+                            su = bb.fetch.encodeurl((scheme, host, path, '', '', ''))
+                    hp = data.getVar('HOMEPAGE')
+
+                    f.write('%s,%s,%s,%s,%s\n' % (pn, pv, lc, su, hp))
+
+        # remove any duplicates added due to append flag
+        uniqlines = set(open(filename).readlines())
+        with open(filename, 'w') as f:
+            f.writelines(uniqlines)
 
     def register_commands(self, sp):
         common = argparse.ArgumentParser(add_help=False)
@@ -259,3 +275,5 @@ class MELUtilsPlugin(LayerPlugin):
         dump.add_argument('--filename', '-f', help='filename to dump to', default='${TMPDIR}/downloads-by-layer.txt')
         license = self.add_command(sp, 'dump-licenses', self.do_dump_licenses, parents=[common], parserecipes=True)
         license.add_argument('--filename', '-f', help='filename to dump to', default='${TMPDIR}/pn-buildlist-licenses.txt')
+        license.add_argument('--append', '-a', help='append to output filename', action='store_true')
+        license.add_argument('--sourceinfo', '-s', help='additionally dump SRC_URI and HOMEPAGE variables too', action='store_true')
