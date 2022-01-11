@@ -38,7 +38,7 @@ do_install () {
         install -d ${D}${sysconfdir}/init.d
         install -m 0755 ${WORKDIR}/resize-helper.sh.in ${D}${sysconfdir}/init.d/resize-helper.sh
         sed -i -e "s:@bindir@:${bindir}:; s:@sbindir@:${sbindir}:; s:@sysconfdir@:${sysconfdir}:" \
-            ${D}${sysconfdir}/init.d/resize-helper.sh}
+            ${D}${sysconfdir}/init.d/resize-helper.sh
     fi
 }
 
