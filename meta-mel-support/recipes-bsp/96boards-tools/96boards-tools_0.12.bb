@@ -17,11 +17,6 @@ S = "${WORKDIR}/git"
 
 inherit systemd allarch update-rc.d
 
-do_compile () {
-    # The parted version we're using doesn't want this argument
-    sed -i -e "/PARTED/s/ Yes / /" ${S}/resize-helper
-}
-
 do_install () {
     install -d ${D}${sysconfdir}/udev/rules.d
     install -m 0755 ${S}/*.rules ${D}${sysconfdir}/udev/rules.d/
