@@ -418,7 +418,9 @@ do_archive_images () {
 }
 
 do_archive_templates () {
-    prepare_templates
+    if ! echo "${RELEASE_ARTIFACTS}" | grep -qw images; then
+        prepare_templates
+    fi
 }
 
 do_prepare_release () {
