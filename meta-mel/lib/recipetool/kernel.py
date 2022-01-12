@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------------------------------------------------
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-2.0
 # ---------------------------------------------------------------------------------------------------------------------
 
 # Recipe creation tool - kernel plugin
@@ -21,7 +21,7 @@
 #     $ recipetool kernel_add_dts meta-mylayer *.dts
 #
 #
-# Copyright 2021 Siemens
+# Copyright 2022 Siemens
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as

@@ -1,10 +1,10 @@
 #!/bin/sh
 #
 # ---------------------------------------------------------------------------------------------------------------------
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-2.0
 # ---------------------------------------------------------------------------------------------------------------------
 #
-# Copyright 2021 Siemens
+# Copyright 2022 Siemens
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
