@@ -250,6 +250,8 @@ class MELUtilsPlugin(LayerPlugin):
                 if not args.sourceinfo:
                     f.write('%s,%s,%s\n' % (pn, pv, lc))
                 else:
+                    # unset su, otherwise we get previous value if there is no current
+                    su = ''
                     for url in data.getVar('SRC_URI').split():
                         scheme, host, path, user, passwd, param = bb.fetch.decodeurl(url)
                         if scheme != 'file':
