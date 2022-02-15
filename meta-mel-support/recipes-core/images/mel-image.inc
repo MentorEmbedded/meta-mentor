@@ -2,6 +2,10 @@
 # SPDX-License-Identifier: MIT
 # ---------------------------------------------------------------------------------------------------------------------
 
+inherit features_check
+
+REQUIRED_DISTRO_FEATURES = "pam"
+
 # We want a package manager in our base images
 IMAGE_FEATURES += "package-management"
 
