@@ -97,10 +97,10 @@ BB_NUMBER_THREADS ?= "${@int(oe.utils.cpu_count() * 1.5)}"
 PARALLEL_MAKE ?= "-j ${@oe.utils.cpu_count() * 2}"
 
 # Uncomment to exclude GPLv3 software from the build
-#INCOMPATIBLE_LICENSE = "GPLv3"
+#INCOMPATIBLE_LICENSE = "GPL-3.0* LGPL-3.0*"
 
 # Uncomment this to enable inclusion of gdbserver in the codebench-debug
-# packagegroup / image feature even when GPLv3 is in INCOMPATIBLE_LICENSE, or
+# packagegroup / image feature even when GPL-3.0 is in INCOMPATIBLE_LICENSE, or
 # using a distro which sets it that way (atp).
 #ALLOW_GPLV3_GDBSERVER = "1"
 
@@ -108,8 +108,8 @@ PARALLEL_MAKE ?= "-j ${@oe.utils.cpu_count() * 2}"
 # installed with tools-profile on that architecture by default, even in a
 # non-gplv3 build. To disable this, you may comment this out, comment out line
 # which installs binutils, or remove tools-profile from EXTRA_IMAGE_FEATURES.
-WHITELIST_BINUTILS = "${@'binutils' if d.getVar('PN') == 'binutils' or (bb.data.inherits_class('image', d) and bb.utils.filter('IMAGE_FEATURES', 'tools-profile', d) == 'tools-profile') else ''}"
-WHITELIST_GPL-3.0:append:aarch64 = " ${WHITELIST_BINUTILS}"
+INCOMPATIBLE_LICENSE_EXCEPTIONS:append:aarch64 = " ${BINUTILS_EXCEPTION}"
+BINUTILS_EXCEPTION = "${@'binutils:GPL-3.0-only' if d.getVar('PN') == 'binutils' or (bb.data.inherits_class('image', d) and bb.utils.filter('IMAGE_FEATURES', 'tools-profile', d) == 'tools-profile') else ''}"
 
 # Download files from a mirror
 # Uncomment this INHERIT, and define SOURCE_MIRROR_URL
