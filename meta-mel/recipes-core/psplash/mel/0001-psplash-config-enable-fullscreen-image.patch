@@ -1,17 +1,18 @@
-From cf96ae293674f4e0b46ae88a739be72d81c5bcf9 Mon Sep 17 00:00:00 2001
+From 524a1568d8acd54c72bda67916831df2d8312b9a Mon Sep 17 00:00:00 2001
 From: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
 Date: Thu, 13 Oct 2016 17:06:31 +0530
 Subject: [PATCH] psplash-config: enable fullscreen image
 
 Signed-off-by: Srikanth Krishnakar <Srikanth_Krishnakar@mentor.com>
+
 ---
  psplash-config.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-Index: git/psplash-config.h
-===================================================================
---- git.orig/psplash-config.h
-+++ git/psplash-config.h
+diff --git a/psplash-config.h b/psplash-config.h
+index eb90ef3..d928248 100644
+--- a/psplash-config.h
++++ b/psplash-config.h
 @@ -18,7 +18,7 @@
  
  /* Bool indicating if the image is fullscreen, as opposed to split screen */
@@ -20,4 +21,4 @@ Index: git/psplash-config.h
 +#define PSPLASH_IMG_FULLSCREEN 1
  #endif
  
- /* Position of the image split from top edge, numerator of fraction */
+ /* Bool indicated if the progress bar should be disabled */
