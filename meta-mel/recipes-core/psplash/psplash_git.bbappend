@@ -7,10 +7,11 @@ SRC_URI:append:mel = " ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', '\
                    ', '', d)}"
 
 # Change background color and splash image with no progress bar
-SRC_URI:append:mel = " file://0001-psplash-disable-progress-bar-for-systemd.patch \
-		  file://0001-psplash-config-enable-fullscreen-image.patch \
+SRC_URI:append:mel = " file://0001-psplash-config-enable-fullscreen-image.patch \
 		  file://0001-plash-colors.h-color-change.patch \
 		 "
+EXTRA_OECONF:append:mel = " --disable-progress-bar"
+
 # # Update to latest version of psplash
 # SRCREV:mel = "5b3c1cc28f5abdc2c33830150b48b278cc4f7bca"
 

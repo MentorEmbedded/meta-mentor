@@ -3,7 +3,7 @@
 # We use two events, as it seems ConfigParsed is firing multiple times in
 # a build at the moment.
 
-inherit incompatible-recipe-check
+inherit incompatible-packages-check
 
 python resize_gpl_warn () {
     if d.getVar('WARN_RESIZE_GPL', True):
@@ -14,7 +14,7 @@ addhandler resize_gpl_warn
 
 python resize_gpl_check () {
     rrecs = d.getVar('MACHINE_EXTRA_RRECOMMENDS', True).split()
-    if (is_incompatible(d, ['96boards-tools'], 'GPL-3.0') and
+    if (any_incompatible(d, ['96boards-tools'], 'GPL-3.0-only') and
             '96boards-tools' in rrecs):
         wks_file = d.getVar('WKS_FILE', True)
         if wks_file.endswith('-sd.wks.in') or wks_file.endswith('.wks'):

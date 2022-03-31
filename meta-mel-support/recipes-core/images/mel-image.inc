@@ -7,7 +7,8 @@ IMAGE_INSTALL:append:mel = " libgcc"
 
 LICENSE = "MIT"
 
-inherit core-image image-sanity-incompatible
+inherit core-image
 
 IMAGE_FEATURES:append:mel = " splash ${@bb.utils.contains('COMBINED_FEATURES', 'alsa', ' tools-audio', '', d)}"
-IMAGE_INSTALL:append:mel = " util-linux-mkfs connman ${@bb.utils.contains("INCOMPATIBLE_LICENSE", "GPLv3", "", bb.utils.contains("BBFILE_COLLECTIONS", "openembedded-layer", "haveged", "", d), d)}"
+IMAGE_INSTALL:append:mel = " util-linux-mkfs connman"
+IMAGE_INSTALL:append:mel = " ${@bb.utils.contains('BBFILE_COLLECTIONS', 'openembedded-layer', 'haveged' if not any_incompatible(d, ['haveged'], 'GPL-3.0-only') else '', '', d)}"
