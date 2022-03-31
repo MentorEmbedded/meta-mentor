@@ -223,6 +223,11 @@ if [ -e "$infofn" ]; then
     if [ -n "$bspfiles_path" ] && [ -e "$installdir/$bspfiles_path" ]; then
         rm -f "${bspfiles_path%/*}"
         ln -s "$installdir/$bspfiles_path" "${bspfiles_path%/*}"
+        for i in xlayers.conf customer.conf; do
+            if [ -e "$installdir/$bspfiles_path/$i" ]; then
+                ln -s "$installdir/$bspfiles_path/$i" .
+            fi
+        done
     fi
 fi
 

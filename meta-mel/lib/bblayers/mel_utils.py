@@ -178,6 +178,9 @@ class MELUtilsPlugin(LayerPlugin):
 
         items_by_layer = defaultdict(set)
         for recipe in fetch_recipes:
+            if recipe not in depgraph['pn']:
+                continue
+
             fn = depgraph['pn'][recipe]['filename']
             real_fn, cls, mc = bb.cache.virtualfn2realfn(fn)
             recipe_layer = layer_for_file(real_fn)

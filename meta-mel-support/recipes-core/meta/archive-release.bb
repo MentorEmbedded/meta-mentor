@@ -411,6 +411,17 @@ do_archive_images () {
         echo "${WORKDIR}/qemuboot.conf" >>include
     fi
 
+    if [ -n "${XLAYERS}" ]; then
+        for layer in ${XLAYERS}; do
+            echo "$layer"
+        done \
+            | sort -u >"${WORKDIR}/xlayers.conf"
+    fi
+    if [ -e "${WORKDIR}/xlayers.conf" ]; then
+        echo "--transform=s,${WORKDIR}/xlayers.conf,${BSPFILES_INSTALL_PATH}/xlayers.conf," >>include
+        echo "${WORKDIR}/xlayers.conf" >>include
+    fi
+
     chmod +x "${WORKDIR}/bmaptool"
     echo "--transform=s,${WORKDIR}/bmaptool,${BINARY_INSTALL_PATH}/bmaptool," >>include
     echo "${WORKDIR}/bmaptool" >>include
@@ -418,7 +429,9 @@ do_archive_images () {
 }
 
 do_archive_templates () {
-    prepare_templates
+    if ! echo "${RELEASE_ARTIFACTS}" | grep -qw images; then
+        prepare_templates
+    fi
 }
 
 do_prepare_release () {

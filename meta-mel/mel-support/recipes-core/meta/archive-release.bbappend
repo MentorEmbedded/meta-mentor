@@ -29,9 +29,13 @@ def mel_get_remotes(subdir, d):
     """Any non-public github repo or url including a mentor domain
     are considered private, so no remote is included.
     """
-    url = bb.process.run(['git', 'config', 'remote.origin.url'], cwd=subdir)[0].rstrip()
-    if not url:
+    try:
+        url = bb.process.run(['git', 'config', 'remote.origin.url'], cwd=subdir)[0].rstrip()
+    except bb.process.ExecutionError:
         return None
+    else:
+        if not url:
+            return None
 
     remotes = {}
     test_url = url.replace('.git', '')
