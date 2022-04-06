@@ -39,7 +39,7 @@ else
         setup_mel_arg="$(eval printf "%s" "\$$i")"
         case "$setup_mel_arg" in
             -b)
-                BUILDDIR="$(eval printf "%s" "\$$(expr $i + 1)")"
+                BUILDDIR="$(eval printf "%s" "\$$((i + 1))")"
                 if [ -z "$BUILDDIR" ]; then
                     echo >&2 "-b requires an argument"
                 fi
