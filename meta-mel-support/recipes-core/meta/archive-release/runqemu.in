@@ -5,7 +5,7 @@ meldir="$(cd "$scriptdir/../../.." && pwd)"
 
 if ! which bitbake >/dev/null 2>&1; then
     if [ -e "$meldir/manifests" ] && ! [ -e "$meldir/meta-mentor" ]; then
-        echo >&2 "Unable to run bitbake, please create a workspace by sourcing $meldir/setup-mel and then source the setup script: . <workspacedir>/meta-mentor/setup-environment"
+        echo >&2 "Unable to run bitbake, please create a workspace by running $meldir/setup-mel and then sourcing the setup script: . <workspacedir>/meta-mentor/setup-environment"
     else
         echo >&2 "Unable to run bitbake, please source the setup script: . $meldir/meta-mentor/setup-environment"
     fi
