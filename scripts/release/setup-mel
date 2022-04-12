@@ -6,7 +6,7 @@ mel_sourced=0
 if [ -n "$ZSH_EVAL_CONTEXT" ]; then
     case $ZSH_EVAL_CONTEXT in *:file) mel_sourced=1 ;; esac
 elif [ -n "$BASH_VERSION" ]; then
-    (return 0 2>/dev/null) && mel_sourced=1 
+    (return 0 2>/dev/null) && mel_sourced=1
 else
     echo >&2 "Error: This shell is unsupported. Please use bash or zsh"
     false
@@ -16,31 +16,32 @@ if [ "$mel_sourced" -eq 0 ]; then
     echo >&2 "Error: This script needs to be sourced. Please run as '. \"$0\"'"
     false
 else
+    # shellcheck disable=SC2128
     if [ -n "$BASH_SOURCE" ]; then
-        meldir="`dirname "$BASH_SOURCE"`"
+        meldir="$(dirname "$BASH_SOURCE")"
     elif [ -n "$ZSH_NAME" ]; then
-        meldir="`dirname "$0"`"
+        meldir="$(dirname "$0")"
     else
-        meldir="`pwd`"
+        meldir="$(pwd)"
     fi
-    meldir=`readlink -f "$meldir"`
+    meldir=$(readlink -f "$meldir")
 
     WORKSPACEDIR="$PWD/workspace"
     for i in $(seq $#); do
         mel_arg="$(eval printf "%s" "\$$i")"
         case "$mel_arg" in
-            -w)
-                WORKSPACEDIR="$(eval printf "%s" "\$$(expr $i + 1)")"
-                if [ -z "$WORKSPACEDIR" ]; then
-                    echo >&2 "-w requires an argument"
-                fi
-                ;;
+        -w)
+            WORKSPACEDIR="$(eval printf "%s" "\$$((i + 1))")"
+            if [ -z "$WORKSPACEDIR" ]; then
+                echo >&2 "-w requires an argument"
+            fi
+            ;;
         esac
     done
     unset mel_arg
-    "$meldir/scripts/setup-workspace" "$@" && \
-    cd "$WORKSPACEDIR" && \
-    echo >&2 "MEL setup complete in $WORKSPACEDIR" && \
-    echo >&2 "You can now source "$WORKSPACEDIR"/meta-mentor/setup-environment for setting up a build."
+    "$meldir/scripts/setup-workspace" "$@" &&
+        cd "$WORKSPACEDIR" &&
+        echo >&2 "MEL setup complete in $WORKSPACEDIR" &&
+        echo >&2 "You can now source \"$WORKSPACEDIR/meta-mentor/setup-environment\" for setting up a build."
 fi
 # vim: set ft=sh :
