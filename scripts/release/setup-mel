@@ -2,8 +2,19 @@
 # SPDX-License-Identifier: MIT
 # ---------------------------------------------------------------------------------------------------------------------
 
-if [ -z "$ZSH_NAME" ] && [ "x$0" = "x./setup-mel" ]; then
-    echo >&2 "Error: This script needs to be sourced. Please run as '. $0'"
+mel_sourced=0
+if [ -n "$ZSH_EVAL_CONTEXT" ]; then
+    case $ZSH_EVAL_CONTEXT in *:file) mel_sourced=1 ;; esac
+elif [ -n "$BASH_VERSION" ]; then
+    (return 0 2>/dev/null) && mel_sourced=1 
+else
+    echo >&2 "Error: This shell is unsupported. Please use bash or zsh"
+    false
+fi
+
+if [ "$mel_sourced" -eq 0 ]; then
+    echo >&2 "Error: This script needs to be sourced. Please run as '. \"$0\"'"
+    false
 else
     if [ -n "$BASH_SOURCE" ]; then
         meldir="`dirname "$BASH_SOURCE"`"
