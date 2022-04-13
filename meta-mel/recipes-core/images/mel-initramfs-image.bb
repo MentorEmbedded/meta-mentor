@@ -2,7 +2,11 @@ DESCRIPTION = "MEL Image initramfs"
 
 PACKAGE_INSTALL = "initramfs-framework-base ${VIRTUAL-RUNTIME_base-utils} initramfs-module-udev udev base-passwd ${ROOTFS_BOOTSTRAP_INSTALL}"
 
-export IMAGE_BASENAME = "mel-initramfs-image"
+# Do not pollute the initrd image with rootfs features
+IMAGE_FEATURES = ""
+
+export IMAGE_BASENAME = "${MLPREFIX}mel-initramfs-image"
+IMAGE_NAME_SUFFIX ?= ""
 IMAGE_LINGUAS = ""
 
 LICENSE = "MIT"
