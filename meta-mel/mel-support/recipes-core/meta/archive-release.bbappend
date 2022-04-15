@@ -112,6 +112,7 @@ python do_archive_mel_layers () {
     """Archive the layers used to build, as git pack files, with a manifest."""
     import collections
     import configparser
+    import oe.reproducible
 
     if 'layerdirs' not in d.getVar('INHERIT').split():
         save_layerdirs(d)
@@ -178,9 +179,37 @@ python do_archive_mel_layers () {
     manifests = [manifestfn]
     message = '%s %s' % (d.getVar('DISTRO_NAME') or d.getVar('DISTRO'), d.getVar('DISTRO_VERSION'))
 
+    l = d.createCopy()
+    l.setVar('SRC_URI', 'git://')
+    l.setVar('WORKDIR', '/invalid')
+
     manifestdata = collections.defaultdict(list)
     for subdir, path, keep_paths in sorted(to_archive):
-        pack_base, head = git_archive(subdir, objdir, message, keep_paths)
+        parent = None
+        if os.path.exists(os.path.join(subdir, '.git')):
+            parent = subdir
+        else:
+            try:
+                git_topdir = bb.process.run(['git', 'rev-parse', '--show-toplevel'], cwd=subdir)[0].rstrip()
+            except bb.process.CmdError:
+                pass
+            else:
+                if git_topdir != subdir:
+                    subdir_relpath = os.path.relpath(subdir, git_topdir)
+                    try:
+                        ls = bb.process.run(['git', 'ls-tree', '-d', 'HEAD', subdir_relpath], cwd=subdir)
+                    except bb.process.CmdError as exc:
+                        pass
+                    else:
+                        if ls:
+                            parent = git_topdir
+
+        if not parent:
+            bb.fatal('Unable to archive non-git directory: %s' % subdir)
+
+        l.setVar('S', subdir)
+        source_date_epoch = oe.reproducible.get_source_date_epoch(l, parent or subdir)
+        pack_base, head = git_archive(subdir, objdir, parent, message, keep_paths, source_date_epoch)
         if get_remotes:
             remotes = get_remotes(subdir, d) or {}
         else:
@@ -223,7 +252,7 @@ do_archive_mel_layers[vardeps] += "${GET_REMOTES_HOOK}"
 do_archive_mel_layers[vardepsexclude] += "DATE TIME"
 addtask archive_mel_layers after do_patch
 
-def git_archive(subdir, outdir, message=None, keep_paths=None):
+def git_archive(subdir, outdir, parent=None, message=None, keep_paths=None, source_date_epoch=None):
     """Create an archive for the specified subdir, holding a single git object
 
     1. Clone or create the repo to a temporary location
@@ -234,30 +263,9 @@ def git_archive(subdir, outdir, message=None, keep_paths=None):
     """
     import glob
     import tempfile
+
     if message is None:
         message = 'Release of %s' % os.path.basename(subdir)
-
-    parent = None
-    if os.path.exists(os.path.join(subdir, '.git')):
-        parent = subdir
-    else:
-        try:
-            git_topdir = bb.process.run(['git', 'rev-parse', '--show-toplevel'], cwd=subdir)[0].rstrip()
-        except bb.process.CmdError:
-            pass
-        else:
-            if git_topdir != subdir:
-                subdir_relpath = os.path.relpath(subdir, git_topdir)
-                try:
-                    ls = bb.process.run(['git', 'ls-tree', '-d', 'HEAD', subdir_relpath], cwd=subdir)
-                except bb.process.CmdError as exc:
-                    pass
-                else:
-                    if ls:
-                        parent = git_topdir
-
-    if not parent:
-        bb.fatal('Unable to archive non-git directory: %s' % subdir)
 
     if parent:
         parent_git = os.path.join(parent, bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip())
@@ -278,12 +286,6 @@ def git_archive(subdir, outdir, message=None, keep_paths=None):
             bb.process.run(gitcmd + ['read-tree', parent_head])
             commitcmd.extend(['-p', parent_head])
 
-            try:
-                cdate, adate = bb.process.run(['git', 'log', '--pretty=%ct\t%at', '-1', '--', os.path.relpath(subdir, parent)], cwd=parent)[0].rstrip().split('\t')
-            except bb.process.CmdError:
-                bb.warn('Error determining commit dates for %s' % subdir)
-                cdate, adate = None, None
-
         bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
         if keep_paths and parent:
             files = bb.process.run(gitcmd + ['ls-tree', '-r', '--name-only', parent_head])[0].splitlines()
@@ -295,18 +297,15 @@ def git_archive(subdir, outdir, message=None, keep_paths=None):
         tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
         commitcmd.append(tree)
 
-        if not parent or not cdate:
-            st = os.stat(os.path.join(subdir, 'conf', 'layer.conf'))
-            cdate = adate = st.st_mtime
-
         env = {
             'GIT_AUTHOR_NAME': 'Build User',
             'GIT_AUTHOR_EMAIL': 'build_user@build_host',
-            'GIT_AUTHOR_DATE': str(adate),
             'GIT_COMMITTER_NAME': 'Build User',
             'GIT_COMMITTER_EMAIL': 'build_user@build_host',
-            'GIT_COMMITTER_DATE': str(cdate),
         }
+        if source_date_epoch:
+            env['GIT_AUTHOR_DATE'] = str(source_date_epoch)
+            env['GIT_COMMITTER_DATE'] = str(source_date_epoch)
 
         head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
         with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
