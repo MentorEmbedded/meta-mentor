@@ -172,7 +172,7 @@ python do_archive_mel_layers () {
     mandir = os.path.join(outdir, 'manifests')
     bb.utils.mkdirhier(mandir)
     bb.utils.mkdirhier(os.path.join(mandir, 'extra'))
-    objdir = os.path.join(outdir, 'objects', 'pack')
+    objdir = os.path.join(outdir, 'git-bundles')
     bb.utils.mkdirhier(objdir)
     manifestfn = d.expand('%s/${MANIFEST_NAME}.manifest' % mandir)
     manifests = [manifestfn]
@@ -180,7 +180,7 @@ python do_archive_mel_layers () {
 
     manifestdata = collections.defaultdict(list)
     for subdir, path, keep_paths in sorted(to_archive):
-        pack_base, head = git_archive(subdir, objdir, message, keep_paths)
+        head = git_archive(subdir, objdir, message, keep_paths)
         if get_remotes:
             remotes = get_remotes(subdir, d) or {}
         else:
@@ -196,7 +196,10 @@ python do_archive_mel_layers () {
         else:
             fn = manifestfn
         manifestdata[fn].append('\t'.join([path, head] + ['%s=%s' % (k,v) for k,v in remotes.items()]) + '\n')
-        bb.process.run(['tar', '-cf', '%s.tar' % pack_base, 'objects/pack/%s.pack' % pack_base, 'objects/pack/%s.idx' % pack_base], cwd=outdir)
+        bb.process.run(['tar', '-cf', '%s.tar' % head, 'git-bundles/%s.bundle' % head], cwd=outdir)
+        os.unlink(os.path.join(objdir, '%s.bundle' % head))
+
+    os.rmdir(objdir)
 
     infofn = d.expand('%s/${MANIFEST_NAME}.info' % mandir)
     with open(infofn, 'w') as infofile:
@@ -213,7 +216,6 @@ python do_archive_mel_layers () {
         bb.process.run(['tar', '-cf', os.path.basename(fn) + '.tar'] + files, cwd=outdir)
 
     scripts = d.getVar('MEL_SCRIPTS_FILES').split()
-    bb.process.run(['rm', '-r', 'objects'], cwd=outdir)
     bb.process.run(['tar', '--transform=s,^,scripts/,', '--transform=s,^scripts/setup-mel,setup-mel,', '-cvf', d.expand('%s/${SCRIPTS_ARTIFACT_NAME}.tar' % outdir)] + scripts, cwd=d.getVar('WORKDIR'))
 }
 do_archive_mel_layers[dirs] = "${S}/do_archive_mel_layers ${S}"
@@ -319,11 +321,8 @@ def git_archive(subdir, outdir, message=None, keep_paths=None):
         bb.process.run(['git', 'repack', '-a', '-d'], cwd=tmpdir)
         bb.process.run(['git', 'prune-packed'], cwd=tmpdir)
 
-        packdir = os.path.join(tmpdir, 'objects', 'pack')
-        packfiles = glob.glob(os.path.join(packdir, 'pack-*'))
-        base, ext = os.path.splitext(os.path.basename(packfiles[0]))
-        bb.process.run(['cp', '-f'] + packfiles + [outdir])
-        return base, head
+        bb.process.run(['git', 'bundle', 'create', os.path.join(outdir, '%s.bundle' % head), 'refs/packing'], cwd=tmpdir)
+        return head
 
 def checksummed_downloads(dl_by_layer_fn, dl_by_layer_dl_dir, dl_dir):
     with open(dl_by_layer_fn, 'r') as f:
