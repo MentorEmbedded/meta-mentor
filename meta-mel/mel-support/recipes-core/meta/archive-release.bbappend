@@ -176,7 +176,7 @@ python do_archive_mel_layers () {
     bb.utils.mkdirhier(objdir)
     manifestfn = d.expand('%s/${MANIFEST_NAME}.manifest' % mandir)
     manifests = [manifestfn]
-    message = '%s release' % d.getVar('DISTRO')
+    message = '%s %s' % (d.getVar('DISTRO_NAME') or d.getVar('DISTRO'), d.getVar('DISTRO_VERSION'))
 
     manifestdata = collections.defaultdict(list)
     for subdir, path, keep_paths in sorted(to_archive):
