@@ -255,7 +255,7 @@ do_archive_mel_layers[vardeps] += "${GET_REMOTES_HOOK}"
 do_archive_mel_layers[vardepsexclude] += "DATE TIME"
 addtask archive_mel_layers after do_patch
 
-def git_archive(subdir, outdir, parent=None, message=None, keep_paths=None, source_date_epoch=None):
+def git_archive(subdir, outdir, parent, message=None, keep_paths=None, source_date_epoch=None):
     """Create an archive for the specified subdir, holding a single git object
 
     1. Clone or create the repo to a temporary location
@@ -270,32 +270,33 @@ def git_archive(subdir, outdir, parent=None, message=None, keep_paths=None, sour
     if message is None:
         message = 'Release of %s' % os.path.basename(subdir)
 
-    if parent:
-        parent_git = os.path.join(parent, bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip())
-        # Handle git worktrees
-        _commondir = os.path.join(parent_git, 'commondir')
-        if os.path.exists(_commondir):
-            with open(_commondir, 'r') as f:
-                parent_git = os.path.join(parent_git, f.read().rstrip())
+    parent_git = os.path.join(parent, bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip())
+    # Handle git worktrees
+    _commondir = os.path.join(parent_git, 'commondir')
+    if os.path.exists(_commondir):
+        with open(_commondir, 'r') as f:
+            parent_git = os.path.join(parent_git, f.read().rstrip())
 
     with tempfile.TemporaryDirectory() as tmpdir:
         gitcmd = ['git', '--git-dir', tmpdir, '--work-tree', subdir]
         commitcmd = ['commit-tree', '-m', message]
         bb.process.run(gitcmd + ['init'])
-        if parent:
-            with open(os.path.join(tmpdir, 'objects', 'info', 'alternates'), 'w') as f:
-                f.write(os.path.join(parent_git, 'objects') + '\n')
-            parent_head = bb.process.run(['git', 'rev-parse', 'HEAD'], cwd=subdir)[0].rstrip()
-            bb.process.run(gitcmd + ['read-tree', parent_head])
-            commitcmd.extend(['-p', parent_head])
+
+        with open(os.path.join(tmpdir, 'objects', 'info', 'alternates'), 'w') as f:
+            f.write(os.path.join(parent_git, 'objects') + '\n')
+
+        parent_head = bb.process.run(['git', 'rev-parse', 'HEAD'], cwd=subdir)[0].rstrip()
+        bb.process.run(gitcmd + ['read-tree', parent_head])
+        commitcmd.extend(['-p', parent_head])
 
         bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
-        if keep_paths and parent:
+        if keep_paths:
             files = bb.process.run(gitcmd + ['ls-tree', '-r', '--name-only', parent_head])[0].splitlines()
             kill_files = [f for f in files if f not in keep_paths and not any(f.startswith(p + '/') for p in keep_paths)]
             keep_files = set(files) - set(kill_files)
             if not keep_files:
                 bb.fatal('No files kept for %s' % parent)
+
             bb.process.run(gitcmd + ['update-index', '--force-remove', '--'] + kill_files, cwd=subdir)
         tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
         commitcmd.append(tree)
