@@ -210,7 +210,6 @@ python do_archive_mel_layers () {
         l.setVar('S', subdir)
         source_date_epoch = oe.reproducible.get_source_date_epoch(l, parent or subdir)
 
-        head = git_archive(subdir, objdir, parent, message, keep_paths, source_date_epoch)
         if get_remotes:
             remotes = get_remotes(subdir, d) or {}
         else:
@@ -218,6 +217,8 @@ python do_archive_mel_layers () {
 
         if not remotes:
             bb.note('Skipping remotes for %s' % path)
+
+        head = git_archive(subdir, objdir, parent, message, keep_paths, source_date_epoch, is_public=bool(remotes))
 
         if subdir in indiv_manifest_dirs:
             name = path.replace('/', '_')
@@ -255,7 +256,7 @@ do_archive_mel_layers[vardeps] += "${GET_REMOTES_HOOK}"
 do_archive_mel_layers[vardepsexclude] += "DATE TIME"
 addtask archive_mel_layers after do_patch
 
-def git_archive(subdir, outdir, parent, message=None, keep_paths=None, source_date_epoch=None):
+def git_archive(subdir, outdir, parent, message=None, keep_paths=None, source_date_epoch=None, is_public=False):
     """Create an archive for the specified subdir, holding a single git object
 
     1. Clone or create the repo to a temporary location
@@ -267,9 +268,6 @@ def git_archive(subdir, outdir, parent, message=None, keep_paths=None, source_da
     import glob
     import tempfile
 
-    if message is None:
-        message = 'Release of %s' % os.path.basename(subdir)
-
     parent_git = os.path.join(parent, bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip())
     # Handle git worktrees
     _commondir = os.path.join(parent_git, 'commondir')
@@ -277,41 +275,50 @@ def git_archive(subdir, outdir, parent, message=None, keep_paths=None, source_da
         with open(_commondir, 'r') as f:
             parent_git = os.path.join(parent_git, f.read().rstrip())
 
+    parent_head = bb.process.run(['git', 'rev-parse', 'HEAD'], cwd=subdir)[0].rstrip()
+
     with tempfile.TemporaryDirectory() as tmpdir:
         gitcmd = ['git', '--git-dir', tmpdir, '--work-tree', subdir]
-        commitcmd = ['commit-tree', '-m', message]
         bb.process.run(gitcmd + ['init'])
 
         with open(os.path.join(tmpdir, 'objects', 'info', 'alternates'), 'w') as f:
             f.write(os.path.join(parent_git, 'objects') + '\n')
 
-        parent_head = bb.process.run(['git', 'rev-parse', 'HEAD'], cwd=subdir)[0].rstrip()
-        bb.process.run(gitcmd + ['read-tree', parent_head])
-        commitcmd.extend(['-p', parent_head])
+        if is_public and not keep_paths:
+            head = parent_head
+        else:
+            bb.process.run(gitcmd + ['read-tree', parent_head])
 
-        bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
-        if keep_paths:
-            files = bb.process.run(gitcmd + ['ls-tree', '-r', '--name-only', parent_head])[0].splitlines()
-            kill_files = [f for f in files if f not in keep_paths and not any(f.startswith(p + '/') for p in keep_paths)]
-            keep_files = set(files) - set(kill_files)
-            if not keep_files:
-                bb.fatal('No files kept for %s' % parent)
+            if message is None:
+                message = 'Release of %s' % os.path.basename(subdir)
+            commitcmd = ['commit-tree', '-m', message]
+            commitcmd.extend(['-p', parent_head])
 
-            bb.process.run(gitcmd + ['update-index', '--force-remove', '--'] + kill_files, cwd=subdir)
-        tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
-        commitcmd.append(tree)
+            bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
+            if keep_paths:
+                files = bb.process.run(gitcmd + ['ls-tree', '-r', '--name-only', parent_head])[0].splitlines()
+                kill_files = [f for f in files if f not in keep_paths and not any(f.startswith(p + '/') for p in keep_paths)]
+                keep_files = set(files) - set(kill_files)
+                if not keep_files:
+                    bb.fatal('No files kept for %s' % parent)
 
-        env = {
-            'GIT_AUTHOR_NAME': 'Build User',
-            'GIT_AUTHOR_EMAIL': 'build_user@build_host',
-            'GIT_COMMITTER_NAME': 'Build User',
-            'GIT_COMMITTER_EMAIL': 'build_user@build_host',
-        }
-        if source_date_epoch:
-            env['GIT_AUTHOR_DATE'] = str(source_date_epoch)
-            env['GIT_COMMITTER_DATE'] = str(source_date_epoch)
+                bb.process.run(gitcmd + ['update-index', '--force-remove', '--'] + kill_files, cwd=subdir)
 
-        head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
+            tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
+            commitcmd.append(tree)
+
+            env = {
+                'GIT_AUTHOR_NAME': 'Build User',
+                'GIT_AUTHOR_EMAIL': 'build_user@build_host',
+                'GIT_COMMITTER_NAME': 'Build User',
+                'GIT_COMMITTER_EMAIL': 'build_user@build_host',
+            }
+            if source_date_epoch:
+                env['GIT_AUTHOR_DATE'] = str(source_date_epoch)
+                env['GIT_COMMITTER_DATE'] = str(source_date_epoch)
+
+            head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
+
         with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
             f.write(head + '\n')
 
