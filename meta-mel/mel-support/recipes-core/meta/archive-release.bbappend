@@ -150,6 +150,7 @@ python do_archive_mel_layers () {
         subdir = os.path.realpath(subdir)
         layername = layernames.get(subdir)
         if layername in excluded_layers:
+            bb.note('Skipping excluded layer %s' % layername)
             continue
 
         parent = os.path.dirname(subdir)
