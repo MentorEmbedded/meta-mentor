@@ -237,9 +237,6 @@ def git_archive(subdir, outdir, message=None, keep_paths=None, remotes=None):
     import glob
     import tempfile
 
-    if message is None:
-        message = 'Release of %s' % os.path.basename(subdir)
-
     parent = None
     if os.path.exists(os.path.join(subdir, '.git')):
         parent = subdir
@@ -283,6 +280,9 @@ def git_archive(subdir, outdir, message=None, keep_paths=None, remotes=None):
             # Public git layer with no need to filter paths, skip commit
             head = parent_head
         else:
+            if message is None:
+                message = 'Release of %s' % os.path.basename(subdir)
+
             commitcmd = ['commit-tree', '-m', message]
             if parent:
                 bb.process.run(gitcmd + ['read-tree', parent_head])
@@ -319,8 +319,9 @@ def git_archive(subdir, outdir, message=None, keep_paths=None, remotes=None):
             }
             head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
 
-        with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
-            f.write(head + '\n')
+        if not remotes:
+            with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
+                f.write(head + '\n')
 
         # We need a ref to ensure repack includes the new commit, as it
         # does not include dangling objects in the pack.
