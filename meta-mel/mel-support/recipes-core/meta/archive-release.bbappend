@@ -180,11 +180,11 @@ python do_archive_mel_layers () {
 
     manifestdata = collections.defaultdict(list)
     for subdir, path, keep_paths in sorted(to_archive):
-        head = git_archive(subdir, objdir, message, keep_paths)
         if get_remotes:
             remotes = get_remotes(subdir, d) or {}
         else:
             remotes = {}
+        head = git_archive(subdir, objdir, message, keep_paths, remotes)
 
         if not remotes:
             bb.note('Skipping remotes for %s' % path)
@@ -225,7 +225,7 @@ do_archive_mel_layers[vardeps] += "${GET_REMOTES_HOOK}"
 do_archive_mel_layers[vardepsexclude] += "DATE TIME"
 addtask archive_mel_layers after do_patch
 
-def git_archive(subdir, outdir, message=None, keep_paths=None):
+def git_archive(subdir, outdir, message=None, keep_paths=None, remotes=None):
     """Create an archive for the specified subdir, holding a single git object
 
     1. Clone or create the repo to a temporary location
@@ -236,6 +236,7 @@ def git_archive(subdir, outdir, message=None, keep_paths=None):
     """
     import glob
     import tempfile
+
     if message is None:
         message = 'Release of %s' % os.path.basename(subdir)
 
@@ -271,46 +272,53 @@ def git_archive(subdir, outdir, message=None, keep_paths=None):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         gitcmd = ['git', '--git-dir', tmpdir, '--work-tree', subdir]
-        commitcmd = ['commit-tree', '-m', message]
         bb.process.run(gitcmd + ['init'])
+
         if parent:
             with open(os.path.join(tmpdir, 'objects', 'info', 'alternates'), 'w') as f:
                 f.write(os.path.join(parent_git, 'objects') + '\n')
             parent_head = bb.process.run(['git', 'rev-parse', 'HEAD'], cwd=subdir)[0].rstrip()
-            bb.process.run(gitcmd + ['read-tree', parent_head])
-            commitcmd.extend(['-p', parent_head])
 
-            try:
-                cdate, adate = bb.process.run(['git', 'log', '--pretty=%ct\t%at', '-1', '--', os.path.relpath(subdir, parent)], cwd=parent)[0].rstrip().split('\t')
-            except bb.process.CmdError:
-                bb.warn('Error determining commit dates for %s' % subdir)
-                cdate, adate = None, None
+        if parent and remotes and not keep_paths:
+            # Public git layer with no need to filter paths, skip commit
+            head = parent_head
+        else:
+            commitcmd = ['commit-tree', '-m', message]
+            if parent:
+                bb.process.run(gitcmd + ['read-tree', parent_head])
+                commitcmd.extend(['-p', parent_head])
 
-        bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
-        if keep_paths and parent:
-            files = bb.process.run(gitcmd + ['ls-tree', '-r', '--name-only', parent_head])[0].splitlines()
-            kill_files = [f for f in files if f not in keep_paths and not any(f.startswith(p + '/') for p in keep_paths)]
-            keep_files = set(files) - set(kill_files)
-            if not keep_files:
-                bb.fatal('No files kept for %s' % parent)
-            bb.process.run(gitcmd + ['update-index', '--force-remove', '--'] + kill_files, cwd=subdir)
-        tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
-        commitcmd.append(tree)
+                try:
+                    cdate, adate = bb.process.run(['git', 'log', '--pretty=%ct\t%at', '-1', '--', os.path.relpath(subdir, parent)], cwd=parent)[0].rstrip().split('\t')
+                except bb.process.CmdError:
+                    bb.warn('Error determining commit dates for %s' % subdir)
+                    cdate, adate = None, None
 
-        if not parent or not cdate:
-            st = os.stat(os.path.join(subdir, 'conf', 'layer.conf'))
-            cdate = adate = st.st_mtime
+            bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
+            if parent and keep_paths:
+                files = bb.process.run(gitcmd + ['ls-tree', '-r', '--name-only', parent_head])[0].splitlines()
+                kill_files = [f for f in files if f not in keep_paths and not any(f.startswith(p + '/') for p in keep_paths)]
+                keep_files = set(files) - set(kill_files)
+                if not keep_files:
+                    bb.fatal('No files kept for %s' % parent)
+                bb.process.run(gitcmd + ['update-index', '--force-remove', '--'] + kill_files, cwd=subdir)
+            tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
+            commitcmd.append(tree)
 
-        env = {
-            'GIT_AUTHOR_NAME': 'Build User',
-            'GIT_AUTHOR_EMAIL': 'build_user@build_host',
-            'GIT_AUTHOR_DATE': str(adate),
-            'GIT_COMMITTER_NAME': 'Build User',
-            'GIT_COMMITTER_EMAIL': 'build_user@build_host',
-            'GIT_COMMITTER_DATE': str(cdate),
-        }
+            if not parent or not cdate:
+                st = os.stat(os.path.join(subdir, 'conf', 'layer.conf'))
+                cdate = adate = st.st_mtime
 
-        head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
+            env = {
+                'GIT_AUTHOR_NAME': 'Build User',
+                'GIT_AUTHOR_EMAIL': 'build_user@build_host',
+                'GIT_AUTHOR_DATE': str(adate),
+                'GIT_COMMITTER_NAME': 'Build User',
+                'GIT_COMMITTER_EMAIL': 'build_user@build_host',
+                'GIT_COMMITTER_DATE': str(cdate),
+            }
+            head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
+
         with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
             f.write(head + '\n')
 
