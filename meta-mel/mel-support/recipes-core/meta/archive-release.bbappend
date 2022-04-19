@@ -20,7 +20,7 @@ INDIVIDUAL_MANIFEST_LAYERS ?= ""
 FORKED_REPOS ?= ""
 PUBLIC_REPOS ?= "${FORKED_REPOS}"
 
-RELEASE_EXCLUDED_LAYERNAMES ?= ""
+RELEASE_EXCLUDED_LAYERNAMES ?= "workspacelayer"
 
 ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
 ARCHIVE_RELEASE_DL_BY_LAYER_PATH = '${TMPDIR}/downloads-by-layer.txt'
@@ -150,6 +150,7 @@ python do_archive_mel_layers () {
         subdir = os.path.realpath(subdir)
         layername = layernames.get(subdir)
         if layername in excluded_layers:
+            bb.note('Skipping excluded layer %s' % layername)
             continue
 
         parent = os.path.dirname(subdir)
@@ -254,6 +255,9 @@ def git_archive(subdir, outdir, message=None, keep_paths=None):
                 else:
                     if ls:
                         parent = git_topdir
+
+    if not parent:
+        bb.fatal('Unable to archive non-git directory: %s' % subdir)
 
     if parent:
         parent_git = os.path.join(parent, bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip())
