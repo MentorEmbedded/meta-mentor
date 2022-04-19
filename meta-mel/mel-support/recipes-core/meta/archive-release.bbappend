@@ -319,8 +319,9 @@ def git_archive(subdir, outdir, parent, message=None, keep_paths=None, source_da
 
             head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
 
-        with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
-            f.write(head + '\n')
+        if not is_public:
+            with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
+                f.write(head + '\n')
 
         # We need a ref to ensure repack includes the new commit, as it
         # does not include dangling objects in the pack.
