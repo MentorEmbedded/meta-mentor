@@ -255,6 +255,9 @@ def git_archive(subdir, outdir, message=None, keep_paths=None):
                     if ls:
                         parent = git_topdir
 
+    if not parent:
+        bb.fatal('Unable to archive non-git directory: %s' % subdir)
+
     if parent:
         parent_git = os.path.join(parent, bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip())
         # Handle git worktrees
