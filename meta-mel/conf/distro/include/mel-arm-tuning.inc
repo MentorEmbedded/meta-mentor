@@ -22,7 +22,7 @@ def get_generic_tune(d):
         if 'neon' in features:
             tune += '-neon'
     else:
-        tune = None
+        tune = d.getVar('DEFAULTTUNE')
     return tune
 
 DEFAULTTUNE:mel := "${@get_generic_tune(d)}"
