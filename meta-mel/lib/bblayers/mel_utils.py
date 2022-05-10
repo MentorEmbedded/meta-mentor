@@ -182,7 +182,21 @@ class MELUtilsPlugin(LayerPlugin):
 
         items_by_layer = defaultdict(set)
         for recipe in fetch_recipes:
-            fn = depgraph['pn'][recipe]['filename']
+            try:
+                fn = depgraph['pn'][recipe]['filename']
+            except KeyError:
+                mc = self.tinfoil.config_data.getVar('BBMULTICONFIG')
+                if not mc:
+                    raise Exception("Could not find key '%s' in depgraph and no multiconfigs defined" % recipe)
+                for cfg in mc.split():
+                    try:
+                        nkey = f"mc:{cfg}:{recipe}"
+                        fn = depgraph['pn'][nkey]['filename']
+                    except KeyError:
+                        continue
+            if not fn:
+                raise Exception("Could not find recipe for '%s' in depgraph" % recipe)
+
             real_fn, cls, mc = bb.cache.virtualfn2realfn(fn)
             recipe_layer = layer_for_file(real_fn)
             appends = self.tinfoil.get_file_appends(fn)
