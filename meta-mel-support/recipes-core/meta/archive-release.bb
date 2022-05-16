@@ -58,7 +58,7 @@ def layers_by_name(d, *layers):
         if v:
             yield v
 
-SUBLAYERS_INDIVIDUAL_ONLY ?= "${@configured_mx6_layers(d)} ${@' '.join(layers_by_name(d, 'mentor-bsp', 'mentor-bsp-${MACHINE}'))}"
+SUBLAYERS_INDIVIDUAL_ONLY ?= "${@configured_mx6_layers(d)}"
 SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL ?= "${@configured_update_layers(d)}"
 
 DEPLOY_DIR_RELEASE ?= "${DEPLOY_DIR}/release-artifacts"
