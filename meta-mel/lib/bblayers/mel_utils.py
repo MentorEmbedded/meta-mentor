@@ -83,7 +83,7 @@ class MELUtilsPlugin(LayerPlugin):
                 logger.warning('Unhandled event %s: %s' % (event.__class__.__name__, event))
         return depgraph, None
 
-    def _localpaths_by_layer(self, data, layer_for_file, mirrortarballs=False):
+    def _localpaths_by_layer(self, data, recipe_filename, layer_for_file, mirrortarballs=False):
         def ud_localpaths(u, layer_name, dldir, d):
             if hasattr(u.method, 'process_submodules'):
                 def archive_submodule(ud, url, module, modpath, workdir, d):
@@ -129,6 +129,12 @@ class MELUtilsPlugin(LayerPlugin):
             ud = urldata[item]
             layer_name = layer_for_file(filename)
             ud_localpaths(ud, layer_name, dldir, data)
+
+        recipe_layer_name = layer_for_file(recipe_filename)
+        for extra_item in set(src_uri) - set(items_files.keys()):
+            logger.warning('Unable to determine correct layer for `%s`: this item is missing from variable history', extra_item)
+            ud = urldata[extra_item]
+            ud_localpaths(ud, recipe_layer_name, dldir, data)
 
         return items_by_layer
 
@@ -202,7 +208,7 @@ class MELUtilsPlugin(LayerPlugin):
             appends = self.tinfoil.get_file_appends(fn)
             data = self.tinfoil.parse_recipe_file(fn, appendlist=appends)
 
-            for layer, items in self._localpaths_by_layer(data, lambda f: layer_for_file(f) or recipe_layer, args.mirrortarballs).items():
+            for layer, items in self._localpaths_by_layer(data, real_fn, lambda f: layer_for_file(f) or recipe_layer, args.mirrortarballs).items():
                 items_by_layer[layer] |= items
 
         # If a given download is used by multiple layers, prefer the lowest
