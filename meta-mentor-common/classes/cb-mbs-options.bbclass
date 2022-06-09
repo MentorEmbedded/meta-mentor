@@ -23,10 +23,13 @@ CB_MBS_IGNORED_EXTRA_FLAGS[doc] = "Arguments we don't want to include in the ext
 CB_MBS_IGNORED_FLAGS ?= ""
 CB_MBS_IGNORED_FLAGS[doc] = "General flag arguments we don't want to include."
 
-def cb_mbs_flag_vars(d):
+def get_cb_options(d):
+    """Set default CodeBench metadata values based upon BitBake build flags."""
     import shlex
     import subprocess
     from fnmatch import fnmatchcase
+
+    options = d.getVarFlags('CB_MBS_OPTIONS') or {}
 
     l = d.createCopy()
     l.finalize()
@@ -42,8 +45,8 @@ def cb_mbs_flag_vars(d):
         if enabled:
             for setting in settings.split():
                 skey, svalue = setting.split('=', 1)
-                if setting and not d.getVarFlag('CB_MBS_OPTIONS', skey, False):
-                    d.setVarFlag('CB_MBS_OPTIONS', skey, svalue)
+                if setting and not options.get(skey):
+                    options[skey] = svalue
 
     cflags = shlex.split(l.getVar('TARGET_CFLAGS', True))
     cxxflags = shlex.split(l.getVar('TARGET_CXXFLAGS', True))
@@ -66,14 +69,14 @@ def cb_mbs_flag_vars(d):
             if flag in check_cflags:
                 if flag in cflags:
                     cflags.remove(flag)
-                if setting and not d.getVarFlag('CB_MBS_OPTIONS', skey, True):
-                    d.setVarFlag('CB_MBS_OPTIONS', skey, svalue)
+                if setting and not options.get(skey):
+                    options[skey] = svalue
 
             if flag in check_cxxflags:
                 if flag in cxxflags:
                     cxxflags.remove(flag)
-                if setting and not d.getVarFlag('CB_MBS_OPTIONS', skey, True):
-                    d.setVarFlag('CB_MBS_OPTIONS', skey, svalue)
+                if setting and not options.get(skey):
+                    options[skey] = svalue
 
     for flag, settings in (d.getVarFlags('CB_MBS_OPTIONS_FLAGS_VALUE_MAP') or {}).items():
         for setting in settings.split():
@@ -83,16 +86,16 @@ def cb_mbs_flag_vars(d):
                     _, check_value = check_flag.split('=', 1)
                     if check_flag in cflags:
                         cflags.remove(check_flag)
-                    if setting and not d.getVarFlag('CB_MBS_OPTIONS', skey, True):
-                        d.setVarFlag('CB_MBS_OPTIONS', skey, svalue + check_value)
+                    if setting and not options.get(skey):
+                        options[skey] = svalue + check_value
 
             for check_flag in check_cxxflags:
                 if check_flag.startswith(flag + '='):
                     _, check_value = check_flag.split('=', 1)
                     if check_flag in cxxflags:
                         cxxflags.remove(check_flag)
-                    if setting and not d.getVarFlag('CB_MBS_OPTIONS', skey, True):
-                        d.setVarFlag('CB_MBS_OPTIONS', skey, svalue + check_value)
+                    if setting and not options.get(skey):
+                        options[skey] = svalue + check_value
 
     for flag, settings in (d.getVarFlags('CB_MBS_OPTIONS_CC_FLAGS_MAP') or {}).items():
         for setting in settings.split():
@@ -103,8 +106,8 @@ def cb_mbs_flag_vars(d):
                     skey, svalue = setting.split('=', 1)
                     skey = 'gnu.c.' + skey
                     svalue = 'gnu.c.' + svalue
-                    if not d.getVarFlag('CB_MBS_OPTIONS', skey, True):
-                        d.setVarFlag('CB_MBS_OPTIONS', skey, svalue)
+                    if not options.get(skey):
+                        options[skey] = svalue
 
             if flag in check_cxxflags:
                 if flag in cxxflags:
@@ -113,8 +116,8 @@ def cb_mbs_flag_vars(d):
                     skey, svalue = setting.split('=', 1)
                     skey = 'gnu.cpp.' + skey
                     svalue = 'gnu.cpp.compiler.' + svalue
-                    if not d.getVarFlag('CB_MBS_OPTIONS', skey, True):
-                        d.setVarFlag('CB_MBS_OPTIONS', skey, svalue)
+                    if not options.get(skey):
+                        options[skey] = svalue
 
     ignored = d.getVar('CB_MBS_IGNORED_EXTRA_FLAGS', True).split()
     cflags = [a for a in cflags if not any(fnmatchcase(a, p) for p in ignored)]
@@ -122,18 +125,141 @@ def cb_mbs_flag_vars(d):
     ldflags = [a for a in ldflags if not any(fnmatchcase(a, p) for p in ignored)]
 
     if cflags:
-        d.setVarFlag('CB_MBS_OPTIONS', 'gnu.c.compiler*option.misc.other', subprocess.list2cmdline(cflags))
+        options['gnu.c.compiler*option.misc.other'] = subprocess.list2cmdline(cflags)
     if cxxflags:
-        d.setVarFlag('CB_MBS_OPTIONS', 'gnu.cpp.compiler*option.other.other', subprocess.list2cmdline(cxxflags))
+        options['gnu.cpp.compiler*option.other.other'] = subprocess.list2cmdline(cxxflags)
     if ldflags:
-        d.setVarFlag('CB_MBS_OPTIONS', 'gnu.c.link*option.ldflags', subprocess.list2cmdline(ldflags))
-        d.setVarFlag('CB_MBS_OPTIONS', 'gnu.cpp.link*option.flags', subprocess.list2cmdline(ldflags))
+        options['gnu.c.link*option.ldflags'] = subprocess.list2cmdline(ldflags)
+        options['gnu.cpp.link*option.flags'] = subprocess.list2cmdline(ldflags)
 
-    for option, value in d.getVarFlags('CB_MBS_OPTIONS').items():
+    for option, value in list(options.items()):
         value = d.expand(value)
         if not value:
-            d.delVarFlag('CB_MBS_OPTIONS', option)
+            del options[option]
         else:
             # Force immediate expansion, so we use target overrides regardless
             # of the context in which the flags are used
-            d.setVarFlag('CB_MBS_OPTIONS', option, value)
+            options[option] = value
+
+    return options
+
+def cb_get_options(d, flags=None):
+    options = cb_get_options_from_metadata(d)
+    return cb_set_options_from_flags(d, options, flags)
+
+def cb_mbs_flag_vars(d):
+    import shlex
+    import subprocess
+    from fnmatch import fnmatchcase
+
+    l = d.createCopy()
+    l.finalize()
+    l.setVar('DEBUG_PREFIX_MAP', '')
+    l.setVar('STAGING_DIR_TARGET', '$SDKTARGETSYSROOT')
+
+    features = d.getVar('TUNE_FEATURES').split()
+    for feature, settings in (d.getVarFlags('CB_MBS_OPTIONS_FEATURES_MAP') or {}).items():
+        if feature.startswith('-'):
+            enabled = feature[1:] not in features
+        else:
+            enabled = feature in features
+        if enabled:
+            for setting in settings.split():
+                skey, svalue = setting.split('=', 1)
+                if setting and not options.get(skey):
+                    options[skey] = svalue
+
+    cflags = shlex.split(l.getVar('TARGET_CFLAGS', True))
+    cxxflags = shlex.split(l.getVar('TARGET_CXXFLAGS', True))
+    ldflags = shlex.split(l.getVar('TARGET_LDFLAGS', True))
+
+    ccargs = shlex.split(l.getVar('TARGET_CC_ARCH', True))
+    cflags.extend(ccargs)
+    cxxflags.extend(ccargs)
+    ldflags.extend(ccargs)
+
+    ignored = d.getVar('CB_MBS_IGNORED_FLAGS', True).split()
+    cflags = [a for a in cflags if not any(fnmatchcase(a, p) for p in ignored)]
+    cxxflags = [a for a in cxxflags if not any(fnmatchcase(a, p) for p in ignored)]
+    ldflags = [a for a in ldflags if not any(fnmatchcase(a, p) for p in ignored)]
+
+    check_cflags, check_cxxflags = list(cflags), list(cxxflags)
+    for flag, settings in (d.getVarFlags('CB_MBS_OPTIONS_FLAGS_MAP') or {}).items():
+        for setting in settings.split():
+            skey, svalue = setting.split('=', 1)
+            if flag in check_cflags:
+                if flag in cflags:
+                    cflags.remove(flag)
+                if setting and not options.get(skey):
+                    options[skey] = svalue
+
+            if flag in check_cxxflags:
+                if flag in cxxflags:
+                    cxxflags.remove(flag)
+                if setting and not options.get(skey):
+                    options[skey] = svalue
+
+    for flag, settings in (d.getVarFlags('CB_MBS_OPTIONS_FLAGS_VALUE_MAP') or {}).items():
+        for setting in settings.split():
+            skey, svalue = setting.split('=', 1)
+            for check_flag in check_cflags:
+                if check_flag.startswith(flag + '='):
+                    _, check_value = check_flag.split('=', 1)
+                    if check_flag in cflags:
+                        cflags.remove(check_flag)
+                    if setting and not options.get(skey):
+                        options[skey] = svalue + check_value
+
+            for check_flag in check_cxxflags:
+                if check_flag.startswith(flag + '='):
+                    _, check_value = check_flag.split('=', 1)
+                    if check_flag in cxxflags:
+                        cxxflags.remove(check_flag)
+                    if setting and not options.get(skey):
+                        options[skey] = svalue + check_value
+
+    for flag, settings in (d.getVarFlags('CB_MBS_OPTIONS_CC_FLAGS_MAP') or {}).items():
+        for setting in settings.split():
+            if flag in check_cflags:
+                if flag in cflags:
+                    cflags.remove(flag)
+                if setting:
+                    skey, svalue = setting.split('=', 1)
+                    skey = 'gnu.c.' + skey
+                    svalue = 'gnu.c.' + svalue
+                    if not options.get(skey):
+                        options[skey] = svalue
+
+            if flag in check_cxxflags:
+                if flag in cxxflags:
+                    cxxflags.remove(flag)
+                if setting:
+                    skey, svalue = setting.split('=', 1)
+                    skey = 'gnu.cpp.' + skey
+                    svalue = 'gnu.cpp.compiler.' + svalue
+                    if not options.get(skey):
+                        options[skey] = svalue
+
+    ignored = d.getVar('CB_MBS_IGNORED_EXTRA_FLAGS', True).split()
+    cflags = [a for a in cflags if not any(fnmatchcase(a, p) for p in ignored)]
+    cxxflags = [a for a in cxxflags if not any(fnmatchcase(a, p) for p in ignored)]
+    ldflags = [a for a in ldflags if not any(fnmatchcase(a, p) for p in ignored)]
+
+    if cflags:
+        options['gnu.c.compiler*option.misc.other'] = subprocess.list2cmdline(cflags)
+    if cxxflags:
+        options['gnu.cpp.compiler*option.other.other'] = subprocess.list2cmdline(cxxflags)
+    if ldflags:
+        options['gnu.c.link*option.ldflags'] = subprocess.list2cmdline(ldflags)
+        options['gnu.cpp.link*option.flags'] = subprocess.list2cmdline(ldflags)
+
+    for option, value in list(options.items()):
+        value = d.expand(value)
+        if not value:
+            del options[option]
+        else:
+            # Force immediate expansion, so we use target overrides regardless
+            # of the context in which the flags are used
+            options[option] = value
+
+    return options
