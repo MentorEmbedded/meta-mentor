@@ -9,7 +9,7 @@ SECTION = "devel"
 LICENSE = "GPLv2+"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/GPL-2.0;md5=801f80980d171dd6425610833a22dbe6"
 
-SRCREV = "a999d655417bb19ce8a476ff8c811e957748b661"
+SRCREV = "52ad42bb74ba4b3fcece2483f0d496494d60715f"
 SRC_URI = "git://github.com/96boards/96boards-tools;branch=master;protocol=https\
            file://resize-helper.sh.in"
 
