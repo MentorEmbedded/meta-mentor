@@ -1,7 +1,7 @@
 # Write additiional metadata for CodeBench to the SDK when codebench-metadata is
 # in SDKIMAGE_FEATURES.
 
-inherit sdk_extra_vars cb-mbs-options
+inherit sdk_extra_vars cb-mbs-options codebench-environment-setup-d-hack
 
 OVERRIDES =. "${@bb.utils.contains('SDKIMAGE_FEATURES', 'codebench-metadata', 'sdk-codebench-metadata:', '', d)}"
 
