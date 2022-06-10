@@ -4,3 +4,6 @@ SRCREV:mel = "57b52a3f3cef3b6ba144c85fc62b3d3c8f83e4cf"
 S:mel = "${WORKDIR}/git"
 
 DEPENDS:append:mel = " bison-native"
+
+# Don't exclude autopoint
+EXTRA_AUTORECONF:mel = ""
