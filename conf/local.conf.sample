@@ -161,7 +161,7 @@ include conf/include/drop-toolchain-from-sdk.inc
 # We default to ipk:
 #PACKAGE_CLASSES ?= "package_ipk"
 
-# SDK/ADT target architecture
+# SDK target architecture
 #
 # Set to one of the mingw32 SDKMACHINEs to target Windows rather than Linux.
 # Warning: if you choose to add packages to TOOLCHAIN_HOST_TASK and target
@@ -173,31 +173,28 @@ include conf/include/drop-toolchain-from-sdk.inc
 # Uncomment to make populate_sdk write a tar file rather than a .sh installer
 #SDK_PACKAGING_FUNC = ""
 
-# By default, only include the target sysroot in the SDK/ADE, not host tools.
+# By default, only include the target sysroot in the SDK, not host tools.
 # Comment this line to change that. This packagegroup includes host tools like
-# autoconf, automake, etc. See the aforementioned warning about use of Windows
-# SDKMACHINE while setting TOOLCHAIN_HOST_TASK, if you're building a Windows
-# SDK/ADE.
+# autoconf, automake, etc.
 TOOLCHAIN_HOST_REMOVE ??= "nativesdk-packagegroup-sdk-host"
 TOOLCHAIN_HOST_TASK:remove = "${TOOLCHAIN_HOST_REMOVE}"
 
-# TOOLCHAIN_HOST_TASK is used to add host packages to the ADE/SDK, for
+# TOOLCHAIN_HOST_TASK is used to add host packages to the SDK, for
 # example, to add bash:
 #TOOLCHAIN_HOST_TASK_EXTRA += " nativesdk-bash"
 
-# TOOLCHAIN_TARGET_TASK is used to add target packages to the ADE/SDK, for
+# TOOLCHAIN_TARGET_TASK is used to add target packages to the SDK, for
 # example, to add libncurses:
 #TOOLCHAIN_TARGET_TASK_EXTRA += " ncurses-libncurses"
 
-# Uncomment to set a site name (shown in CodeBench) for the ADE
-# Default: ADE for ${ADE_IDENTIFIER}
-#ADE_SITENAME ?= "My Company's ADE for ${ADE_IDENTIFIER}"
+# Uncomment to set a title for the SDK
+# Default: SDK for ${SDK_IDENTIFIER}
+#SDK_TITLE ?= "My Company's SDK for ${SDK_IDENTIFIER}"
 
-# Uncomment to alter the identifier for the ADE. This mechanism is used to
-# support installation of multiple ADEs side-by-side. By default, every ADE
-# build gets its own identifier, so is self-contained already.
-# Default: ${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}
-#ADE_IDENTIFIER ?= "${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${ADE_VERSION}.customized"
+# Uncomment to alter the identifier for the SDK. This mechanism is used to
+# isolate the SDK on disk, as well as the installers.
+# Default: ${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${SDK_VERSION}
+#SDK_IDENTIFIER ?= "${SDKMACHINE}-${IMAGE_BASENAME}-${MACHINE}-${SDK_VERSION}.customized"
 
 # The following is a list of additional classes to use when building which
 # enable extra features. Some available options which can be included in this variable
