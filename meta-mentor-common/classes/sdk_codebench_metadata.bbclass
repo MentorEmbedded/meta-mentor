@@ -5,6 +5,11 @@ inherit sdk_extra_vars cb-mbs-options codebench-environment-setup-d-hack
 
 OVERRIDES =. "${@bb.utils.contains('SDKIMAGE_FEATURES', 'codebench-metadata', 'sdk-codebench-metadata:', '', d)}"
 
+SDK_POSTPROCESS_COMMAND:prepend:sdk-codebench-metadata = "adjust_sdk_script_codebench; write_codebench_metadata;"
+
+TOOLCHAIN_HOST_TASK:append:sdk-codebench-metadata = " ${@bb.utils.contains('BBFILE_COLLECTIONS', 'mel-support', 'nativesdk-relocate-makefile', '', d)}"
+TOOLCHAIN_TARGET_TASK:append:sdk-codebench-metadata = " ${@bb.utils.contains('BBFILE_COLLECTIONS', 'mel-support', 'codebench-makefile', '', d)}"
+
 SOURCERY_VERSION ?= ""
 CODEBENCH_SDK_VARS += "\
     MACHINE \
@@ -21,7 +26,7 @@ CODEBENCH_SDK_VARS:append:tcmode-external-sourcery = "\
     TOOLCHAIN_VERSION=${@d.getVar('SOURCERY_VERSION').split('-', 1)[0]} \
 "
 EXTRA_SDK_VARS:append:sdk-codebench-metadata = " ${CODEBENCH_SDK_VARS}"
-SDK_POSTPROCESS_COMMAND:prepend:sdk-codebench-metadata = "adjust_sdk_script_codebench; write_codebench_metadata;"
+
 
 adjust_sdk_script_codebench () {
     # Determine the script's location relative to itself rather than hardcoding it
