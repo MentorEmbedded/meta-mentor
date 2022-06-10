@@ -14,14 +14,14 @@ Signed-off-by: Awais Belal <awais_belal@mentor.com>
  mount.sh | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/mount.sh b/mount.sh
-index 3ee8558..e4ae816 100644
---- a/mount.sh
-+++ b/mount.sh
-@@ -55,7 +55,10 @@ automount() {
- 		rm_dir "$MOUNT_PREFIX/$name"
+Index: 1.1-r0/mount.sh
+===================================================================
+--- 1.1-r0.orig/mount.sh
++++ 1.1-r0/mount.sh
+@@ -130,7 +130,10 @@ automount() {
+ 		rm_dir "$MOUNT_BASE/$name"
  	else
- 		logger "mount.sh/automount" "Auto-mount of [$MOUNT_PREFIX/$name] successful"
+ 		logger "mount.sh/automount" "Auto-mount of [$MOUNT_BASE/$name] successful"
 -		touch "/tmp/.automount-$name"
 +		# The actual device might not be present in the remove event so blkid cannot
 +		# be used to calculate what name was generated here. Simply save the mount
@@ -30,6 +30,3 @@ index 3ee8558..e4ae816 100644
  	fi
  }
  	
--- 
-2.11.1
-
