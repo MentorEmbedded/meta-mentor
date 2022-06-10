@@ -27,7 +27,7 @@ Index: 1.1-r0/mount.sh
 ===================================================================
 --- 1.1-r0.orig/mount.sh
 +++ 1.1-r0/mount.sh
-@@ -85,6 +85,16 @@ automount() {
+@@ -94,6 +94,16 @@ automount() {
  	# configured in fstab
  	grep -q "^$DEVNAME " /proc/mounts && return
  
@@ -41,6 +41,6 @@ Index: 1.1-r0/mount.sh
 +		name="${LABEL}-${name}"
 +	fi
 +
- 	! test -d "/run/media/$name" && mkdir -p "/run/media/$name"
+ 	! test -d "$MOUNT_BASE/$name" && mkdir -p "$MOUNT_BASE/$name"
  	# Silent util-linux's version of mounting auto
  	if [ "x`readlink $MOUNT`" = "x/bin/mount.util-linux" ] ;
