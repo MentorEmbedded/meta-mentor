@@ -11,6 +11,9 @@ TOOLCHAIN_HOST_TASK:append:sdk-codebench-metadata = " ${@bb.utils.contains('BBFI
 TOOLCHAIN_TARGET_TASK:append:sdk-codebench-metadata = " ${@bb.utils.contains('BBFILE_COLLECTIONS', 'mel-support', 'codebench-makefile', '', d)}"
 
 SOURCERY_VERSION ?= ""
+SDK_IDENTIFIER ?= "${SDK_NAME}"
+ADE_IDENTIFIER ?= "${SDK_IDENTIFIER}"
+ADE_SITENAME ?= "${SDK_TITLE}"
 CODEBENCH_SDK_VARS += "\
     MACHINE \
     DISTRO \
@@ -18,7 +21,7 @@ CODEBENCH_SDK_VARS += "\
     DISTRO_VERSION \
     ADE_IDENTIFIER \
     ADE_SITENAME \
-    ADE_VERSION \
+    ADE_VERSION=${SDK_VERSION} \
     gdb_serverpath=${bindir}/gdbserver \
 "
 CODEBENCH_SDK_VARS:append:tcmode-external-sourcery = "\
