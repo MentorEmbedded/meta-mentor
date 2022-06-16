@@ -142,6 +142,7 @@ def process_arguments(cmdline_args):
     parser.add_argument('-m', '--machine', help='add layer(s) providing the specified MACHINE')
     parser.add_argument('-d', '--distro', help='add layer(s) providing the specified DISTRO')
     parser.add_argument('-s', '--sdkmachine', help='add layer(s) providing the specified SDKMACHINE')
+    parser.add_argument('-c', '--config-file', help='load a bitbake config file prior to the layer.conf')
     parser.add_argument('-v', '--verbose', help='increase verbosity', action='store_true')
 
     scriptdir = os.path.dirname(__file__)
@@ -460,6 +461,8 @@ def determine_layers(cmdline_opts):
 
     data = bb.data.init()
     bb.parse.init_parser(data)
+    if args.config_file:
+        data = bb.parse.handle(args.config_file, data, include=True)
 
     all_layers = Layers()
     with status('Parsing layer configuration files'):
