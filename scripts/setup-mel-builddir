@@ -120,7 +120,6 @@ configure_builddir () {
     sed -i -e"s/^#*MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
     sed -n -i -e "s|##COREBASE##|$OEROOT|g" -e '/^BBLAYERS /{ :start; /\\$/{n; b start}; d; }; p' -e "/BBFILE_PRIORITY/d" $BUILDDIR/conf/bblayers.conf
 
-    echo 'BBLAYERS ?= "\' >> $BUILDDIR/conf/bblayers.conf
     layersfile="$tmpdir/layers"
 
     # Convert layer paths to layer names for bb-determine-layers
@@ -142,13 +141,15 @@ configure_builddir () {
         updatelayernames="$updatelayernames $layer"
     done
 
-    $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "$CORELAYERS $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" -O "$layer_priority_overrides" -m "$MACHINE" -d "$DISTRO" "$@" >$layersfile
+    $layerdir/scripts/bb-determine-layers -g "$layerpaths" -l "$CORELAYERS $extralayernames" -o "$EXTRAMELLAYERS $OPTIONALLAYERS" -e "$updatelayernames" -O "$layer_priority_overrides" -m "$MACHINE" -d "$DISTRO" -c "$BUILDDIR/conf/bblayers.conf" "$@" >$layersfile
     if [ $? -ne 0 ]; then
         echo >&2 "Error in execution of bb-determine-layers, aborting"
         return 1
     fi
+
+    echo 'BBLAYERS ?= "\' >>$BUILDDIR/conf/bblayers.conf
     sed -e "s#^$BUILDDIR/#\${TOPDIR}/#g;" -e 's,^,    ,; s,$, \\,' <$layersfile >>$BUILDDIR/conf/bblayers.conf
-    echo '"' >> $BUILDDIR/conf/bblayers.conf
+    echo '"' >>$BUILDDIR/conf/bblayers.conf
     configured_layers="$(PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" $(dirname "$0")/bb-print-layer-data $(cat $layersfile) 2>/dev/null | cut -d: -f1 | xargs)"
 
     echo "$layer_priority_overrides" | tr " " "\n" | \
