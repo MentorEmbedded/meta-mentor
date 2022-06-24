@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2007-2021 Siemens Digital Industries Software
+# Copyright 2007-2022 Siemens Digital Industries Software
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -18,7 +18,7 @@ else
     SUDO=
 fi
 
-PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release python3 xvfb x11-utils rsync"
+PKGS="$PKGS ubuntu-minimal ubuntu-standard make gcc g++ patch diffstat texinfo texi2html cvs subversion bzip2 tar gzip gawk chrpath libncurses5-dev git-core lsb-release python3 xvfb x11-utils rsync zstd liblz4-tool"
 
 # These are needed for the qemu-native build
 PKGS="$PKGS libgl1-mesa-dev libglu1-mesa-dev libsdl1.2-dev"
