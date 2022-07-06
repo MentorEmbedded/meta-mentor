@@ -208,23 +208,33 @@ class Layer(object):
         return hash(repr(self))
 
     @staticmethod
-    def from_layerpath(layer_path, data=None):
-        layers = []
-
+    def parse_layerpath(layer_path, data=None):
         if data is None:
             data = bb.data.init()
             bb.parse.init_parser(data)
 
         lconf = os.path.join(layer_path, 'conf', 'layer.conf')
-        ldata = data.createCopy()
-        ldata.setVar('LAYERDIR', layer_path)
+        data.setVar('LAYERDIR', layer_path)
+        initial_collections = set((data.getVar('BBFILE_COLLECTIONS', True) or '').split())
         try:
-            ldata = bb.parse.handle(lconf, ldata, include=True)
+            data = bb.parse.handle(lconf, data, include=True)
         except BaseException as exc:
             raise LayerError(exc)
+
+        ldata = data.createCopy()
+        ldata.expandVarref('LAYERDIR')
+        bbfile_collections = set((ldata.getVar('BBFILE_COLLECTIONS', True) or '').split())
+        return data, bbfile_collections - initial_collections
+
+    @staticmethod
+    def from_parsed(layer_path, layer_data, bbfile_collections):
+        layers = []
+        lconf = os.path.join(layer_path, 'conf', 'layer.conf')
+
+        ldata = layer_data.createCopy()
+        ldata.setVar('LAYERDIR', layer_path)
         ldata.expandVarref('LAYERDIR')
 
-        bbfile_collections = (ldata.getVar('BBFILE_COLLECTIONS', True) or '').split()
         if not bbfile_collections:
             name = os.path.basename(layer_path)
             l = Layer(layer_path, lconf, name, 0, 0, None, {})
@@ -247,6 +257,11 @@ class Layer(object):
                 layers.append(l)
 
         return layers, errors
+
+    @classmethod
+    def from_layerpath(cls, layer_path, layer_data=None):
+        data, collections = cls.parse_layerpath(layer_path, layer_data)
+        return cls.from_parsed(layer_path, layer_data, collections)
 
 
 class Layers(collections.abc.MutableSet):
@@ -487,19 +502,34 @@ def determine_layers(cmdline_opts):
     bb.parse.init_parser(data)
 
     all_layers = Layers()
+    collections = {}
     with StatusDisplay('Parsing layer configuration files', quiet=args.quiet):
         for layer_path in layer_paths:
             try:
-                errors = all_layers.add_from_path(layer_path, data)
-                if errors and not args.quiet:
-                    for error in errors:
-                        if error.name in args.layers:
-                            sys.exit('Error parsing layer {} at {}: {}'.format(error.name, layer_path, error))
-                        else:
-                            sys.stderr.write('Warning: error parsing layer {} at {}\n'.format(error.name, layer_path))
+                data, names = Layer.parse_layerpath(layer_path, data)
+                collections[layer_path] = names
             except LayerError as exc:
                 if not args.quiet:
                     sys.stderr.write('Warning: error parsing layer at {}\n'.format(layer_path))
+
+    with StatusDisplay('Processing layers', quiet=args.quiet):
+        for layer_path in layer_paths:
+            if layer_path not in collections:
+                continue
+
+            names = collections[layer_path]
+            try:
+                layers, errors = Layer.from_parsed(layer_path, data, names)
+                all_layers |= layers
+                if errors and not args.quiet:
+                    for error in errors:
+                        if error.name in args.layers:
+                            sys.exit('Error processing layer {} at {}: {}'.format(error.name, layer_path, error))
+                        else:
+                            sys.stderr.write('Warning: error processing layer {} at {}\n'.format(error.name, layer_path))
+            except LayerError as exc:
+                if not args.quiet:
+                    sys.stderr.write('Warning: error processing layer at {}\n'.format(layer_path))
 
     for layer in list(all_layers):
         if layer.name in args.excluded_layers:
