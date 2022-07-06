@@ -57,16 +57,18 @@ def find(dir, dirfilter=None, **walkoptions):
 class StatusDisplay(object):
     """Show the user what we're doing, and whether we succeed"""
 
-    def __init__(self, message, output=None):
+    def __init__(self, message, output=None, quiet=False):
         self.message = message
         if output is None:
             output = sys.stderr
         self.output = output
+        self.quiet = quiet
         self.finished = False
 
     def __enter__(self):
-        self.output.write('{}..'.format(self.message))
-        self.output.flush()
+        if not self.quiet:
+            self.output.write('{}..'.format(self.message))
+            self.output.flush()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -75,21 +77,24 @@ class StatusDisplay(object):
 
         if not exc_type:
             self.set_status('done')
-        elif isinstance(exc_value, KeyboardInterrupt):
-            self.set_status('interrupted')
-        elif isinstance(exc_value, Terminate):
-            self.set_status('terminated')
         else:
-            self.set_status('failed')
+            if self.quiet:
+                self.quiet = False
+                self.__enter__()
+
+            if isinstance(exc_value, KeyboardInterrupt):
+                self.set_status('interrupted')
+            elif isinstance(exc_value, Terminate):
+                self.set_status('terminated')
+            else:
+                self.set_status('failed')
 
     def set_status(self, finishmessage):
         if self.finished:
             raise Exception("Status is already finished")
-        self.output.write('.' + finishmessage + '\n')
+        if not self.quiet:
+            self.output.write('.' + finishmessage + '\n')
         self.finished = True
-
-
-status = StatusDisplay
 
 
 class DictArgument(object):
@@ -146,6 +151,7 @@ def process_arguments(cmdline_args):
     parser.add_argument('-m', '--machine', help='add layer(s) providing the specified MACHINE')
     parser.add_argument('-d', '--distro', help='add layer(s) providing the specified DISTRO')
     parser.add_argument('-s', '--sdkmachine', help='add layer(s) providing the specified SDKMACHINE')
+    parser.add_argument('-q', '--quiet', help='quiet mode, show no status/progress information', action='store_true')
     parser.add_argument('-v', '--verbose', help='increase verbosity', action='store_true')
 
     scriptdir = os.path.dirname(__file__)
@@ -385,11 +391,14 @@ class DuplicateLayers(Exception):
 class LayerStatus(StatusDisplay):
     """Show status of work whose results are a set of layers."""
 
-    def __init__(self, message, verbose=False, output=None):
-        super(LayerStatus, self).__init__(message, output)
+    def __init__(self, message, verbose=False, output=None, quiet=False):
+        super(LayerStatus, self).__init__(message, output, quiet)
         self.verbose = verbose
 
     def set_layer_status(self, layers):
+        if self.quiet:
+            return
+
         layer_names = set(l.name for l in layers)
         if self.verbose:
             self.set_status('')
@@ -426,8 +435,8 @@ def get_layerpaths_bitbake(globs=None, paths=None):
 
 
 
-def get_layers_for(all_layers, value, varname, cfgpath, verbose=False):
-    with LayerStatus("Determining layers to include for {0} '{1}'".format(varname, value), verbose=verbose) as s:
+def get_layers_for(all_layers, value, varname, cfgpath, verbose=False, quiet=False):
+    with LayerStatus("Determining layers to include for {0} '{1}'".format(varname, value), verbose=verbose, quiet=quiet) as s:
         layers = all_layers.which('conf/{0}/{1}.conf'.format(cfgpath, value))
         if not layers:
             sys.exit("No layer found for {0} `{1}`".format(varname, value))
@@ -448,7 +457,7 @@ def determine_layers(cmdline_opts):
     args = process_arguments(cmdline_opts)
     args.layers.append('core')
 
-    with status('Locating layers and bitbake'):
+    with StatusDisplay('Locating layers and bitbake', quiet=args.quiet):
         layer_paths, bitbake_path = get_layerpaths_bitbake(args.globs, args.paths)
         if bitbake_path is not None:
             os.environ['PATH'] += ':' + bitbake_path
@@ -466,12 +475,13 @@ def determine_layers(cmdline_opts):
     bb.parse.init_parser(data)
 
     all_layers = Layers()
-    with status('Parsing layer configuration files'):
+    with StatusDisplay('Parsing layer configuration files', quiet=args.quiet):
         for layer_path in layer_paths:
             try:
                 all_layers.add_from_path(layer_path, data)
             except LayerError as exc:
-                sys.stderr.write('Warning: error parsing layer at {}\n'.format(layer_path))
+                if not args.quiet:
+                    sys.stderr.write('Warning: error parsing layer at {}\n'.format(layer_path))
 
     for layer in list(all_layers):
         if layer.name in args.excluded_layers:
@@ -482,7 +492,7 @@ def determine_layers(cmdline_opts):
                 layer.priority = priority_override
 
     configured_layers = Layers()
-    with LayerStatus('Checking for base layers', verbose=args.verbose) as s:
+    with LayerStatus('Checking for base layers', verbose=args.verbose, quiet=args.quiet) as s:
         found = set()
         for name in args.layers:
             if name in all_layers.by_name:
@@ -507,13 +517,14 @@ def determine_layers(cmdline_opts):
         configured_layers |= get_layers_for(all_layers, args.sdkmachine, 'SDKMACHINE', 'machine-sdk', args.verbose)
 
     if args.optional_layers:
-        with LayerStatus('Checking for optional layers', verbose=args.verbose) as s:
+        with LayerStatus('Checking for optional layers', verbose=args.verbose, quiet=args.quiet) as s:
             found_optional = set()
             for name in args.optional_layers:
                 if name in all_layers.by_name:
                     layers, missing_layers = all_layers.get_by_name_recursive(name)
                     if missing_layers:
-                        sys.stderr.write("Warning: optional layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
+                        if not args.quiet:
+                            sys.stderr.write("Warning: optional layer `{0}` was found, but its dependencies are missing: `{1}`".format(name, ', '.join(missing_layers)))
                     else:
                         found_optional.update(layers)
 
@@ -522,7 +533,7 @@ def determine_layers(cmdline_opts):
             configured_layers |= found_optional
 
     if args.extra_layers:
-        with LayerStatus('Checking for extra layers', verbose=args.verbose) as s:
+        with LayerStatus('Checking for extra layers', verbose=args.verbose, quiet=args.quiet) as s:
             found_extra = set()
             for name in args.extra_layers:
                 if name in all_layers.by_name:
