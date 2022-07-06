@@ -377,10 +377,11 @@ tmpdir="$(mktemp -d -t "${0##*/}.XXXXX")" || exit 1
 trap 'rm -rf "$tmpdir"' EXIT INT TERM
 
 setup_builddir "$@" || {
+    ret=$?
     if [ "$existing_builddir" = 0 ]; then
         rm -rf "$BUILDDIR"
     fi
-    exit $?
+    exit "$ret"
 }
 if [ -e $BUILDDIR/conf/local.conf ]; then
     sed -i -e "s/^DISTRO.*/DISTRO = \'$DISTRO\'/" $BUILDDIR/conf/local.conf
