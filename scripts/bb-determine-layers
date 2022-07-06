@@ -182,6 +182,12 @@ class LayerError(Exception):
     pass
 
 
+class NamedLayerError(Exception):
+    def __init__(self, layer_name, *args):
+        super().__init__(*args)
+        self.name = layer_name
+
+
 class Layer(object):
     def __init__(self, path, confpath, name, version, priority, pattern, depends, recommends):
         self.path = os.path.realpath(path)
@@ -224,20 +230,23 @@ class Layer(object):
             l = Layer(layer_path, lconf, name, 0, 0, None, {})
             layers.append(l)
 
+        errors = []
         for name in bbfile_collections:
-            pattern = ldata.getVar('BBFILE_PATTERN_%s' % name, True)
-            priority = ldata.getVar('BBFILE_PRIORITY_%s' % name, True) or 0
-            depends = ldata.getVar('LAYERDEPENDS_%s' % name, True) or ''
-            version = ldata.getVar('LAYERVERSION_%s' % name, True)
-            depends = bb.utils.explode_dep_versions2(depends)
-            recommends = ldata.getVar('LAYERRECOMMENDS_%s' % name, True) or ''
-            recommends = bb.utils.explode_dep_versions2(recommends)
+            try:
+                pattern = ldata.getVar('BBFILE_PATTERN_%s' % name, True)
+                priority = ldata.getVar('BBFILE_PRIORITY_%s' % name, True) or 0
+                depends = ldata.getVar('LAYERDEPENDS_%s' % name, True) or ''
+                version = ldata.getVar('LAYERVERSION_%s' % name, True)
+                depends = bb.utils.explode_dep_versions2(depends)
+                recommends = ldata.getVar('LAYERRECOMMENDS_%s' % name, True) or ''
+                recommends = bb.utils.explode_dep_versions2(recommends)
+                l = Layer(layer_path, lconf, name, version, int(priority), pattern, depends, recommends)
+            except BaseException as exc:
+                errors.append(NamedLayerError(name, exc))
+            else:
+                layers.append(l)
 
-            l = Layer(layer_path, lconf, name, version, int(priority), pattern, depends, recommends)
-            layers.append(l)
-
-        if layers:
-            return layers
+        return layers, errors
 
 
 class Layers(collections.abc.MutableSet):
@@ -287,7 +296,10 @@ class Layers(collections.abc.MutableSet):
         if layerpath in self.by_path:
             return
 
-        self |= Layer.from_layerpath(layerpath, data)
+        layers, errors = Layer.from_layerpath(layerpath, data)
+        if layers:
+            self |= layers
+        return errors
 
     def discard(self, layer):
         self.layers.discard(layer)
@@ -478,7 +490,13 @@ def determine_layers(cmdline_opts):
     with StatusDisplay('Parsing layer configuration files', quiet=args.quiet):
         for layer_path in layer_paths:
             try:
-                all_layers.add_from_path(layer_path, data)
+                errors = all_layers.add_from_path(layer_path, data)
+                if errors and not args.quiet:
+                    for error in errors:
+                        if error.name in args.layers:
+                            sys.exit('Error parsing layer {} at {}: {}'.format(error.name, layer_path, error))
+                        else:
+                            sys.stderr.write('Warning: error parsing layer {} at {}\n'.format(error.name, layer_path))
             except LayerError as exc:
                 if not args.quiet:
                     sys.stderr.write('Warning: error parsing layer at {}\n'.format(layer_path))
