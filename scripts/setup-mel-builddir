@@ -124,7 +124,6 @@ configure_builddir () {
     sed -i -e"s/^#*MACHINE *?*=.*/MACHINE ??= \"$MACHINE\"/" $BUILDDIR/conf/local.conf
     sed -n -i -e "s|##COREBASE##|$OEROOT|g" -e '/^BBLAYERS /{ :start; /\\$/{n; b start}; d; }; p' -e "/BBFILE_PRIORITY/d" $BUILDDIR/conf/bblayers.conf
 
-    echo 'BBLAYERS ?= "\' >> $BUILDDIR/conf/bblayers.conf
     layersfile="$tmpdir/layers"
 
     # Convert layer paths to layer names for bb-determine-layers
@@ -151,6 +150,7 @@ configure_builddir () {
         echo >&2 "Error in execution of bb-determine-layers, aborting"
         return 1
     fi
+    echo 'BBLAYERS ?= "\' >> $BUILDDIR/conf/bblayers.conf
     sed -e "s#^$BUILDDIR/#\${TOPDIR}/#g;" -e 's,^,    ,; s,$, \\,' <$layersfile >>$BUILDDIR/conf/bblayers.conf
     echo '"' >> $BUILDDIR/conf/bblayers.conf
     configured_layers="$(PATH="$OEROOT/scripts:$BITBAKEDIR/bin:$PATH" $(dirname "$0")/bb-print-layer-data $(cat $layersfile) 2>/dev/null | cut -d: -f1 | xargs)"
