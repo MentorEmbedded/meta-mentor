@@ -230,7 +230,7 @@ setup_builddir () {
     process_arguments "$@" || return $?
     shift $(expr $OPTIND - 1)
 
-    OEROOT="$($layerdir/scripts/bb-determine-layers -g "$layerpaths" -l core 2>/dev/null)/.." || {
+    OEROOT="$($layerdir/scripts/bb-determine-layers -g "$layerpaths" -l core -q)/.." || {
         echo >&2 "Error: unable to locate core layer (oe-core) in $MELDIR, aborting"
         return 3
     }
