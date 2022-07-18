@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # Warn the user and disable rootfs resizing for non-GPLv3 configurations
 #
 # We use two events, as it seems ConfigParsed is firing multiple times in

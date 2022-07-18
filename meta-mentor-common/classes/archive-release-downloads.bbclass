@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # Deploy the downloads necessary for doing offline builds with the layers
 # distributed by archive-release, taking into account redistribution rights
 # for those sources by using license filtering.

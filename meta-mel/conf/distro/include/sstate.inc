@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # For compatibility
 SSTATE_MIRROR_SITES ?= ""
 SSTATE_MIRRORS += "${@''.join(r'file://.* %s/PATH;downloadfilename=PATH \n' % u for u in '${SSTATE_MIRROR_SITES}'.split())}"

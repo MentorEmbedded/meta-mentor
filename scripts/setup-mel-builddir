@@ -1,6 +1,10 @@
 #!/bin/sh
 #
-# Copyright 2007-2021 Siemens Digital Industries Software
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-2.0
+# ---------------------------------------------------------------------------------------------------------------------
+#
+# Copyright 2022 Siemens
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any
@@ -274,7 +278,15 @@ setup_builddir () {
             fi
         fi
     fi
-    OPTIONALLAYERS="$OPTIONALLAYERS mentor-bsp-$MACHINE"
+
+    # Pick up qemu layers from meta-mentor-bsp as we do
+    # not create separate machines for them
+    case ${MACHINE} in
+        qemu*)
+            OPTIONALLAYERS="$OPTIONALLAYERS mentor-bsp-$MACHINE"
+            ;;
+    esac
+
 
     if [ $force_overwrite -eq 1 ]; then
         rm -f $BUILDDIR/conf/local.conf $BUILDDIR/conf/bblayers.conf

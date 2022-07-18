@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 FILESEXTRAPATHS:append = ":${@':'.join('%s/../scripts/release:%s/../scripts' % (l, l) for l in '${BBPATH}'.split(':'))}"
 MEL_SCRIPTS_FILES = "mel-checkout version-sort setup-mel setup-workspace setup-ubuntu setup-rh setup-debian"
 SRC_URI += "${@' '.join(uninative_urls(d)) if 'mel_downloads' in '${RELEASE_ARTIFACTS}'.split() else ''}"
@@ -19,6 +23,9 @@ GET_REMOTES_HOOK ?= ""
 INDIVIDUAL_MANIFEST_LAYERS ?= ""
 FORKED_REPOS ?= ""
 PUBLIC_REPOS ?= "${FORKED_REPOS}"
+
+# Define a location for placing external artifacts to be used by the build
+MEL_EXTERNAL_ARTIFACTS ?= "${TOPDIR}/mel-external-artifacts"
 
 RELEASE_EXCLUDED_LAYERNAMES ?= ""
 
@@ -179,11 +186,11 @@ python do_archive_mel_layers () {
 
     manifestdata = collections.defaultdict(list)
     for subdir, path, keep_paths in sorted(to_archive):
-        pack_base, head = git_archive(subdir, objdir, message, keep_paths)
         if get_remotes:
             remotes = get_remotes(subdir, d) or {}
         else:
             remotes = {}
+        pack_base, head = git_archive(subdir, objdir, message, keep_paths, remotes)
 
         if not remotes:
             bb.note('Skipping remotes for %s' % path)
@@ -222,7 +229,7 @@ do_archive_mel_layers[vardeps] += "${GET_REMOTES_HOOK}"
 do_archive_mel_layers[vardepsexclude] += "DATE TIME"
 addtask archive_mel_layers after do_patch
 
-def git_archive(subdir, outdir, message=None, keep_paths=None):
+def git_archive(subdir, outdir, message=None, keep_paths=None, remotes=None):
     """Create an archive for the specified subdir, holding a single git object
 
     1. Clone or create the repo to a temporary location
@@ -272,39 +279,45 @@ def git_archive(subdir, outdir, message=None, keep_paths=None):
                 f.write(os.path.join(parent_git, 'objects') + '\n')
             parent_head = bb.process.run(['git', 'rev-parse', 'HEAD'], cwd=subdir)[0].rstrip()
             bb.process.run(gitcmd + ['read-tree', parent_head])
-            commitcmd.extend(['-p', parent_head])
+            if remotes and not keep_paths:
+                commitcmd = None
+                head = parent_head
+            else:
+                commitcmd.extend(['-p', parent_head])
 
-            try:
-                cdate, adate = bb.process.run(['git', 'log', '--pretty=%ct\t%at', '-1', '--', os.path.relpath(subdir, parent)], cwd=parent)[0].rstrip().split('\t')
-            except bb.process.CmdError:
-                bb.warn('Error determining commit dates for %s' % subdir)
-                cdate, adate = None, None
+                try:
+                    cdate, adate = bb.process.run(['git', 'log', '--pretty=%ct\t%at', '-1', '--', os.path.relpath(subdir, parent)], cwd=parent)[0].rstrip().split('\t')
+                except bb.process.CmdError:
+                    bb.warn('Error determining commit dates for %s' % subdir)
+                    cdate, adate = None, None
 
-        bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
-        if keep_paths and parent:
-            files = bb.process.run(gitcmd + ['ls-tree', '-r', '--name-only', parent_head])[0].splitlines()
-            kill_files = [f for f in files if f not in keep_paths and not any(f.startswith(p + '/') for p in keep_paths)]
-            keep_files = set(files) - set(kill_files)
-            if not keep_files:
-                bb.fatal('No files kept for %s' % parent)
-            bb.process.run(gitcmd + ['update-index', '--force-remove', '--'] + kill_files, cwd=subdir)
-        tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
-        commitcmd.append(tree)
+        if commitcmd:
+            bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
+            if keep_paths and parent:
+                files = bb.process.run(gitcmd + ['ls-tree', '-r', '--name-only', parent_head])[0].splitlines()
+                kill_files = [f for f in files if f not in keep_paths and not any(f.startswith(p + '/') for p in keep_paths)]
+                keep_files = set(files) - set(kill_files)
+                if not keep_files:
+                    bb.fatal('No files kept for %s' % parent)
+                bb.process.run(gitcmd + ['update-index', '--force-remove', '--'] + kill_files, cwd=subdir)
+            tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
+            commitcmd.append(tree)
 
-        if not parent or not cdate:
-            st = os.stat(os.path.join(subdir, 'conf', 'layer.conf'))
-            cdate = adate = st.st_mtime
+            if not parent or not cdate:
+                st = os.stat(os.path.join(subdir, 'conf', 'layer.conf'))
+                cdate = adate = st.st_mtime
 
-        env = {
-            'GIT_AUTHOR_NAME': 'Build User',
-            'GIT_AUTHOR_EMAIL': 'build_user@build_host',
-            'GIT_AUTHOR_DATE': str(adate),
-            'GIT_COMMITTER_NAME': 'Build User',
-            'GIT_COMMITTER_EMAIL': 'build_user@build_host',
-            'GIT_COMMITTER_DATE': str(cdate),
-        }
+            env = {
+                'GIT_AUTHOR_NAME': 'Build User',
+                'GIT_AUTHOR_EMAIL': 'build_user@build_host',
+                'GIT_AUTHOR_DATE': str(adate),
+                'GIT_COMMITTER_NAME': 'Build User',
+                'GIT_COMMITTER_EMAIL': 'build_user@build_host',
+                'GIT_COMMITTER_DATE': str(cdate),
+            }
 
-        head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
+            head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
+
         with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
             f.write(head + '\n')
 

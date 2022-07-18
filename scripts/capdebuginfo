@@ -1,12 +1,16 @@
 #!/bin/bash
 
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-2.0
+# ---------------------------------------------------------------------------------------------------------------------
+
 ###############################################################################
 # Name: Capture/Debug Information Tool
 # Description:
 #  Script to capture debug info from a MEL user's host
 #
 #
-# Copyright 2007-2021 Siemens Digital Industries Software
+# Copyright 2022 Siemens
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any

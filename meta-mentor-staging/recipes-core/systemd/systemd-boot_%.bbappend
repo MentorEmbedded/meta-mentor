@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 FILESEXTRAPATHS:prepend:feature-mentor-staging := "${THISDIR}/${PN}:"
 
 SRC_URI:append:feature-mentor-staging = " file://0001-Use-an-array-for-efi-ld-to-allow-for-ld-arguments.patch"
