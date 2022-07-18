@@ -95,7 +95,7 @@ IMAGE_EXTENSION_live = "hddimg iso"
 # This allows us to build in the automated environment for regression,
 # general testing or simply for availability of extra image types for
 # internal use without necessarily packaging them in the installers.
-ARCHIVE_RELEASE_IMAGE_FSTYPES_EXCLUDE ?= ""
+ARCHIVE_RELEASE_IMAGE_FSTYPES_EXCLUDE ?= "tar.gz tar.bz2"
 
 def image_extensions(d):
     extensions = set()

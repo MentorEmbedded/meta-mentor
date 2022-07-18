@@ -247,8 +247,12 @@ done | (
             fi
 
             cd "$checkout_path"
-            echo "$installdir/objects" >.git/objects/info/alternates
-            echo "$commit" >.git/shallow
+            if [ -d "$installdir/objects" ]; then
+                echo "$installdir/objects" >.git/objects/info/alternates
+            fi
+            if [ -e "$installdir/git-bundles/$commit.bundle" ]; then
+                git bundle unbundle "$installdir/git-bundles/$commit.bundle" >/dev/null
+            fi
 
             echo "$remotes" | tr '\t' '\n' | while IFS== read -r name url; do
                 if [ -n "$name" ]; then
@@ -260,6 +264,9 @@ done | (
                 fi
             done
 
+            if [ -z "$remotes" ]; then
+                echo "$commit" >.git/shallow
+            fi
             # Create branches for all manifests, for reference
             manifestdir="$(dirname "$manifest")"
             for otherfn in "$manifestdir/"*.manifest; do
@@ -267,12 +274,18 @@ done | (
                     if [ "$other_checkout_path" = "$checkout_path" ]; then
                         branch="$(basename "${otherfn%.manifest}")"
                         if ! git rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
+                            if [ -e "$installdir/git-bundles/$other_commit.bundle" ]; then
+                                git bundle unbundle "$installdir/git-bundles/$other_commit.bundle" >/dev/null
+                            fi
                             git update-ref "refs/heads/$branch" "$other_commit"
                         fi
-                        echo "$other_commit" >>.git/shallow
+                        if [ -z "$remotes" ]; then
+                            echo "$other_commit" >>.git/shallow
+                        fi
                     fi
                 done <"$otherfn"
             done
+
             branch="$(basename "${manifest%.manifest}")"
             if ! git rev-parse -q --verify "refs/heads/$branch" >/dev/null; then
                 git update-ref "refs/heads/$branch" "$commit"

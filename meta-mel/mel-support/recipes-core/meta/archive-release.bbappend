@@ -20,7 +20,7 @@ INDIVIDUAL_MANIFEST_LAYERS ?= ""
 FORKED_REPOS ?= ""
 PUBLIC_REPOS ?= "${FORKED_REPOS}"
 
-RELEASE_EXCLUDED_LAYERNAMES ?= ""
+RELEASE_EXCLUDED_LAYERNAMES ?= "workspacelayer"
 
 ARCHIVE_RELEASE_DL_DIR ?= "${DL_DIR}"
 ARCHIVE_RELEASE_DL_BY_LAYER_PATH = '${TMPDIR}/downloads-by-layer.txt'
@@ -112,6 +112,7 @@ python do_archive_mel_layers () {
     """Archive the layers used to build, as git pack files, with a manifest."""
     import collections
     import configparser
+    import oe.reproducible
 
     if 'layerdirs' not in d.getVar('INHERIT').split():
         save_layerdirs(d)
@@ -150,6 +151,7 @@ python do_archive_mel_layers () {
         subdir = os.path.realpath(subdir)
         layername = layernames.get(subdir)
         if layername in excluded_layers:
+            bb.note('Skipping excluded layer %s' % layername)
             continue
 
         parent = os.path.dirname(subdir)
@@ -171,15 +173,43 @@ python do_archive_mel_layers () {
     mandir = os.path.join(outdir, 'manifests')
     bb.utils.mkdirhier(mandir)
     bb.utils.mkdirhier(os.path.join(mandir, 'extra'))
-    objdir = os.path.join(outdir, 'objects', 'pack')
+    objdir = os.path.join(outdir, 'git-bundles')
     bb.utils.mkdirhier(objdir)
     manifestfn = d.expand('%s/${MANIFEST_NAME}.manifest' % mandir)
     manifests = [manifestfn]
-    message = '%s release' % d.getVar('DISTRO')
+    message = '%s %s' % (d.getVar('DISTRO_NAME') or d.getVar('DISTRO'), d.getVar('DISTRO_VERSION'))
+
+    l = d.createCopy()
+    l.setVar('SRC_URI', 'git://')
+    l.setVar('WORKDIR', '/invalid')
 
     manifestdata = collections.defaultdict(list)
     for subdir, path, keep_paths in sorted(to_archive):
-        pack_base, head = git_archive(subdir, objdir, message, keep_paths)
+        parent = None
+        if os.path.exists(os.path.join(subdir, '.git')):
+            parent = subdir
+        else:
+            try:
+                git_topdir = bb.process.run(['git', 'rev-parse', '--show-toplevel'], cwd=subdir)[0].rstrip()
+            except bb.process.CmdError:
+                pass
+            else:
+                if git_topdir != subdir:
+                    subdir_relpath = os.path.relpath(subdir, git_topdir)
+                    try:
+                        ls = bb.process.run(['git', 'ls-tree', '-d', 'HEAD', subdir_relpath], cwd=subdir)
+                    except bb.process.CmdError as exc:
+                        pass
+                    else:
+                        if ls:
+                            parent = git_topdir
+
+        if not parent:
+            bb.fatal('Unable to archive non-git directory: %s' % subdir)
+
+        l.setVar('S', subdir)
+        source_date_epoch = oe.reproducible.get_source_date_epoch(l, parent or subdir)
+
         if get_remotes:
             remotes = get_remotes(subdir, d) or {}
         else:
@@ -188,6 +218,8 @@ python do_archive_mel_layers () {
         if not remotes:
             bb.note('Skipping remotes for %s' % path)
 
+        head = git_archive(subdir, objdir, parent, message, keep_paths, source_date_epoch, is_public=bool(remotes))
+
         if subdir in indiv_manifest_dirs:
             name = path.replace('/', '_')
             bb.utils.mkdirhier(os.path.join(mandir, 'extra', name))
@@ -195,7 +227,10 @@ python do_archive_mel_layers () {
         else:
             fn = manifestfn
         manifestdata[fn].append('\t'.join([path, head] + ['%s=%s' % (k,v) for k,v in remotes.items()]) + '\n')
-        bb.process.run(['tar', '-cf', '%s.tar' % pack_base, 'objects/pack/%s.pack' % pack_base, 'objects/pack/%s.idx' % pack_base], cwd=outdir)
+        bb.process.run(['tar', '-cf', '%s.tar' % head, 'git-bundles/%s.bundle' % head], cwd=outdir)
+        os.unlink(os.path.join(objdir, '%s.bundle' % head))
+
+    os.rmdir(objdir)
 
     infofn = d.expand('%s/${MANIFEST_NAME}.info' % mandir)
     with open(infofn, 'w') as infofile:
@@ -212,7 +247,6 @@ python do_archive_mel_layers () {
         bb.process.run(['tar', '-cf', os.path.basename(fn) + '.tar'] + files, cwd=outdir)
 
     scripts = d.getVar('MEL_SCRIPTS_FILES').split()
-    bb.process.run(['rm', '-r', 'objects'], cwd=outdir)
     bb.process.run(['tar', '--transform=s,^,scripts/,', '--transform=s,^scripts/setup-mel,setup-mel,', '-cvf', d.expand('%s/${SCRIPTS_ARTIFACT_NAME}.tar' % outdir)] + scripts, cwd=d.getVar('WORKDIR'))
 }
 do_archive_mel_layers[dirs] = "${S}/do_archive_mel_layers ${S}"
@@ -222,7 +256,7 @@ do_archive_mel_layers[vardeps] += "${GET_REMOTES_HOOK}"
 do_archive_mel_layers[vardepsexclude] += "DATE TIME"
 addtask archive_mel_layers after do_patch
 
-def git_archive(subdir, outdir, message=None, keep_paths=None):
+def git_archive(subdir, outdir, parent, message=None, keep_paths=None, source_date_epoch=None, is_public=False):
     """Create an archive for the specified subdir, holding a single git object
 
     1. Clone or create the repo to a temporary location
@@ -233,80 +267,61 @@ def git_archive(subdir, outdir, message=None, keep_paths=None):
     """
     import glob
     import tempfile
-    if message is None:
-        message = 'Release of %s' % os.path.basename(subdir)
 
-    parent = None
-    if os.path.exists(os.path.join(subdir, '.git')):
-        parent = subdir
-    else:
-        try:
-            git_topdir = bb.process.run(['git', 'rev-parse', '--show-toplevel'], cwd=subdir)[0].rstrip()
-        except bb.process.CmdError:
-            pass
-        else:
-            if git_topdir != subdir:
-                subdir_relpath = os.path.relpath(subdir, git_topdir)
-                try:
-                    ls = bb.process.run(['git', 'ls-tree', '-d', 'HEAD', subdir_relpath], cwd=subdir)
-                except bb.process.CmdError as exc:
-                    pass
-                else:
-                    if ls:
-                        parent = git_topdir
+    parent_git = os.path.join(parent, bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip())
+    # Handle git worktrees
+    _commondir = os.path.join(parent_git, 'commondir')
+    if os.path.exists(_commondir):
+        with open(_commondir, 'r') as f:
+            parent_git = os.path.join(parent_git, f.read().rstrip())
 
-    if parent:
-        parent_git = os.path.join(parent, bb.process.run(['git', 'rev-parse', '--git-dir'], cwd=subdir)[0].rstrip())
-        # Handle git worktrees
-        _commondir = os.path.join(parent_git, 'commondir')
-        if os.path.exists(_commondir):
-            with open(_commondir, 'r') as f:
-                parent_git = os.path.join(parent_git, f.read().rstrip())
+    parent_head = bb.process.run(['git', 'rev-parse', 'HEAD'], cwd=subdir)[0].rstrip()
 
     with tempfile.TemporaryDirectory() as tmpdir:
         gitcmd = ['git', '--git-dir', tmpdir, '--work-tree', subdir]
-        commitcmd = ['commit-tree', '-m', message]
         bb.process.run(gitcmd + ['init'])
-        if parent:
-            with open(os.path.join(tmpdir, 'objects', 'info', 'alternates'), 'w') as f:
-                f.write(os.path.join(parent_git, 'objects') + '\n')
-            parent_head = bb.process.run(['git', 'rev-parse', 'HEAD'], cwd=subdir)[0].rstrip()
+
+        with open(os.path.join(tmpdir, 'objects', 'info', 'alternates'), 'w') as f:
+            f.write(os.path.join(parent_git, 'objects') + '\n')
+
+        if is_public and not keep_paths:
+            head = parent_head
+        else:
             bb.process.run(gitcmd + ['read-tree', parent_head])
+
+            if message is None:
+                message = 'Release of %s' % os.path.basename(subdir)
+            commitcmd = ['commit-tree', '-m', message]
             commitcmd.extend(['-p', parent_head])
 
-            try:
-                cdate, adate = bb.process.run(['git', 'log', '--pretty=%ct\t%at', '-1', '--', os.path.relpath(subdir, parent)], cwd=parent)[0].rstrip().split('\t')
-            except bb.process.CmdError:
-                bb.warn('Error determining commit dates for %s' % subdir)
-                cdate, adate = None, None
+            bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
+            if keep_paths:
+                files = bb.process.run(gitcmd + ['ls-tree', '-r', '--name-only', parent_head])[0].splitlines()
+                kill_files = [f for f in files if f not in keep_paths and not any(f.startswith(p + '/') for p in keep_paths)]
+                keep_files = set(files) - set(kill_files)
+                if not keep_files:
+                    bb.fatal('No files kept for %s' % parent)
 
-        bb.process.run(gitcmd + ['add', '-A', '.'], cwd=subdir)
-        if keep_paths and parent:
-            files = bb.process.run(gitcmd + ['ls-tree', '-r', '--name-only', parent_head])[0].splitlines()
-            kill_files = [f for f in files if f not in keep_paths and not any(f.startswith(p + '/') for p in keep_paths)]
-            keep_files = set(files) - set(kill_files)
-            if not keep_files:
-                bb.fatal('No files kept for %s' % parent)
-            bb.process.run(gitcmd + ['update-index', '--force-remove', '--'] + kill_files, cwd=subdir)
-        tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
-        commitcmd.append(tree)
+                bb.process.run(gitcmd + ['update-index', '--force-remove', '--'] + kill_files, cwd=subdir)
 
-        if not parent or not cdate:
-            st = os.stat(os.path.join(subdir, 'conf', 'layer.conf'))
-            cdate = adate = st.st_mtime
+            tree = bb.process.run(gitcmd + ['write-tree'])[0].rstrip()
+            commitcmd.append(tree)
 
-        env = {
-            'GIT_AUTHOR_NAME': 'Build User',
-            'GIT_AUTHOR_EMAIL': 'build_user@build_host',
-            'GIT_AUTHOR_DATE': str(adate),
-            'GIT_COMMITTER_NAME': 'Build User',
-            'GIT_COMMITTER_EMAIL': 'build_user@build_host',
-            'GIT_COMMITTER_DATE': str(cdate),
-        }
+            env = {
+                'GIT_AUTHOR_NAME': 'Build User',
+                'GIT_AUTHOR_EMAIL': 'build_user@build_host',
+                'GIT_COMMITTER_NAME': 'Build User',
+                'GIT_COMMITTER_EMAIL': 'build_user@build_host',
+            }
+            if source_date_epoch:
+                env['GIT_AUTHOR_DATE'] = str(source_date_epoch)
+                env['GIT_COMMITTER_DATE'] = str(source_date_epoch)
 
-        head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
-        with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
-            f.write(head + '\n')
+            head = bb.process.run(gitcmd + commitcmd, env=env)[0].rstrip()
+
+        if not is_public:
+            with open(os.path.join(tmpdir, 'shallow'), 'w') as f:
+                f.write(head + '\n')
 
         # We need a ref to ensure repack includes the new commit, as it
         # does not include dangling objects in the pack.
@@ -315,11 +330,8 @@ def git_archive(subdir, outdir, message=None, keep_paths=None):
         bb.process.run(['git', 'repack', '-a', '-d'], cwd=tmpdir)
         bb.process.run(['git', 'prune-packed'], cwd=tmpdir)
 
-        packdir = os.path.join(tmpdir, 'objects', 'pack')
-        packfiles = glob.glob(os.path.join(packdir, 'pack-*'))
-        base, ext = os.path.splitext(os.path.basename(packfiles[0]))
-        bb.process.run(['cp', '-f'] + packfiles + [outdir])
-        return base, head
+        bb.process.run(['git', 'bundle', 'create', os.path.join(outdir, '%s.bundle' % head), 'refs/packing'], cwd=tmpdir)
+        return head
 
 def checksummed_downloads(dl_by_layer_fn, dl_by_layer_dl_dir, dl_dir):
     with open(dl_by_layer_fn, 'r') as f:
