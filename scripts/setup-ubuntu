@@ -1,6 +1,9 @@
 #!/bin/sh
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-2.0
+# ---------------------------------------------------------------------------------------------------------------------
 #
-# Copyright 2007-2022 Siemens Digital Industries Software
+# Copyright 2022 Siemens
 #
 # This file is licensed under the terms of the GNU General Public License
 # version 2.  This program  is licensed "as is" without any warranty of any

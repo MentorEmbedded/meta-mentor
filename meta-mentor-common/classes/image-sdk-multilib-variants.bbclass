@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # For multilib variants not listed in SDK_MULTILIB_VARIANTS, remove
 # SDK_DEFAULT_TARGET_PKGS from TOOLCHAIN_TARGET_TASK
 #

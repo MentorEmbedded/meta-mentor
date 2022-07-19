@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # Use vi by default to avoid pulling in nano
 RDEPENDS_REMOVE = "nano"
 RDEPENDS:${PN}:remove:feature-mentor-staging = " ${RDEPENDS_REMOVE}"

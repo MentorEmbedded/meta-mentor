@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # This class eases conditional additions to OVERRIDES, which makes it easier
 # to create yocto-compatible layers. This is similar to distrooverrides.bbclass,
 # but is more generic.

@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 FILESEXTRAPATHS:prepend:feature-mentor-staging := "${THISDIR}/${PN}:"
 SRC_URI:append:feature-mentor-staging = " file://0001-udev-extraconf-mount.sh-add-LABELs-to-mountpoints.patch \
              ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'file://systemd-udevd.service', '', d)} \
