@@ -5,7 +5,7 @@
 # Needed by patchinfo
 PATCHINFO_PYTHONPATH = "${COMPONENTS_DIR}/${BUILD_ARCH}/python3-unidiff-native/${libdir}/python${PYTHON_MAJMIN}/site-packages"
 DEPENDS_UNIDIFF = ""
-DEPENDS_UNIDIFF_mel:class-target = "python3-unidiff-native:do_populate_sysroot"
+DEPENDS_UNIDIFF:mel:class-target = "python3-unidiff-native:do_populate_sysroot"
 do_archive_release_downloads[depends] += "${DEPENDS_UNIDIFF}"
 
 # Write patch names and modified files to python3-patches.txt
