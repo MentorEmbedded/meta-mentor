@@ -8,7 +8,6 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/busybox:"
 # scripts with lttng
 SRC_URI:append:mel = "\
     file://setsid.cfg \
-    file://resize.cfg \
     file://fancy-head.cfg \
 	file://pidof.cfg \
 	file://top.cfg \
