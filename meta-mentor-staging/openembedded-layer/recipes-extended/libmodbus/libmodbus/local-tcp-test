@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# ---------------------------------------------------------------------------------------------------------------------
+
+scriptdir="$(dirname "$0")"
+
+client_log=$scriptdir/unit-test-client.log
+server_log=$scriptdir/unit-test-server.log
+
+rm -f $client_log $server_log
+
+$scriptdir/unit-test-server > $server_log 2>&1 &
+
+sleep 1
+
+$scriptdir/unit-test-client > $client_log 2>&1
+rc=$?
+
+killall unit-test-server >/dev/null 2>&1
+
+if ! grep -q "ALL TESTS PASS WITH SUCCESS." $client_log; then
+    rc=1
+fi
+exit $rc

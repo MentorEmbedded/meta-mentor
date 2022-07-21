@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 inherit packagegroup incompatible-packages-check
 
 DESCRIPTION = "Package group for benchmarking the target"

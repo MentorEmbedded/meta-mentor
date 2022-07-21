@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 FILESEXTRAPATHS:append = ":${@':'.join('%s/../scripts/release:%s/../scripts' % (l, l) for l in '${BBPATH}'.split(':'))}"
 MEL_SCRIPTS_FILES = "mel-checkout version-sort setup-mel setup-workspace setup-ubuntu setup-rh setup-debian"
 SRC_URI += "${@' '.join(uninative_urls(d)) if 'mel_downloads' in '${RELEASE_ARTIFACTS}'.split() else ''}"
@@ -19,6 +23,9 @@ GET_REMOTES_HOOK ?= ""
 INDIVIDUAL_MANIFEST_LAYERS ?= ""
 FORKED_REPOS ?= ""
 PUBLIC_REPOS ?= "${FORKED_REPOS}"
+
+# Define a location for placing external artifacts to be used by the build
+MEL_EXTERNAL_ARTIFACTS ?= "${TOPDIR}/mel-external-artifacts"
 
 RELEASE_EXCLUDED_LAYERNAMES ?= "workspacelayer"
 
@@ -214,6 +221,7 @@ python do_archive_mel_layers () {
             remotes = get_remotes(subdir, d) or {}
         else:
             remotes = {}
+        pack_base, head = git_archive(subdir, objdir, message, keep_paths, remotes)
 
         if not remotes:
             bb.note('Skipping remotes for %s' % path)
