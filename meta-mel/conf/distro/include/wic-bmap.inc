@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # If a wic image type is enabled, also enable wic.bmap
 python add_wic_bmap () {
     image_fstypes = d.getVar('IMAGE_FSTYPES', True).split()

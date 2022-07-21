@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # When we're using an external toolchain, we don't want to ship a newly built
 # toolchain inside the Yocto SDK. Normally meta-environment comes from the
 # same packagegroup which installs the toolchain, so add that back in

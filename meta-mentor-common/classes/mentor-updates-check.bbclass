@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # If any of these layers are available, but not included in BBLAYERS, warn
 UPDATES_CHECK_LAYERS ?= "\
     ${MELDIR}/updates/update-*/ \
