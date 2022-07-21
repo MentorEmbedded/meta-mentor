@@ -47,7 +47,6 @@ python do_archive_release_downloads:append:mel:class-target () {
     
     with open(sources_dir / 'python3-patches.txt', 'w') as f:
         for patchinfo in patchinfos:
-            bb.warn(repr(patchinfo))
             patch, files = patchinfo['Filename'], patchinfo['Files']
             f.write(patch + ':\n')
             for fn in files:
