@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 SUMMARY = "Wayland/Weston image based on core-image-weston image recipe"
 
 IMAGE_FEATURES += "splash package-management hwcodecs"

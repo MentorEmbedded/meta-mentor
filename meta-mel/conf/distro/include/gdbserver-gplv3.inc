@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # If ALLOW_GPLV3_GDBSERVER is set, allow {L,}GPLv3 for the gdb recipes
 ALLOW_GPLV3_GDBSERVER ?= ""
 INCOMPATIBLE_LICENSE_EXCEPTIONS += "\

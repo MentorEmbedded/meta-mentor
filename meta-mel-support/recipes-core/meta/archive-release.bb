@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 DESCRIPTION = "Archive the artifacts for a ${DISTRO_NAME} release"
 LICENSE = "MIT"
 INHIBIT_DEFAULT_DEPS = "1"
@@ -37,15 +41,6 @@ def configured_update_layers(d):
             update_layers.add(layer)
     return ' '.join(sorted(update_layers))
 
-def configured_mx6_layers(d):
-    """Return the mx6 layers to be archived as individual tarballs"""
-    mx6_layers = set()
-    for layer in d.getVar('BBLAYERS').split():
-        basename = os.path.basename(layer)
-        if 'mx6' in basename:
-            mx6_layers.add(layer)
-    return ' '.join(sorted(mx6_layers))
-
 # Sub-layers to archive individually, rather than grabbing the entire
 # repository they're in
 def layers_by_name(d, *layers):
@@ -54,7 +49,7 @@ def layers_by_name(d, *layers):
         if v:
             yield v
 
-SUBLAYERS_INDIVIDUAL_ONLY ?= "${@configured_mx6_layers(d)} ${@' '.join(layers_by_name(d, 'mentor-bsp', 'mentor-bsp-${MACHINE}'))}"
+SUBLAYERS_INDIVIDUAL_ONLY ?= ""
 SUBLAYERS_INDIVIDUAL_ONLY_TOPLEVEL ?= "${@configured_update_layers(d)}"
 
 DEPLOY_DIR_RELEASE ?= "${DEPLOY_DIR}/release-artifacts"

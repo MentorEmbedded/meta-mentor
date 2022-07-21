@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: GPL-2.0
+# ---------------------------------------------------------------------------------------------------------------------
+
 # Recipe creation tool - kernel plugin
 #
 # TODO: figure out how to get all the files added to a single SRC_URI +=
@@ -17,7 +21,7 @@
 #     $ recipetool kernel_add_dts meta-mylayer *.dts
 #
 #
-# Copyright (C) 2015-2021 Siemens Digital Industries Software
+# Copyright 2022 Siemens
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as

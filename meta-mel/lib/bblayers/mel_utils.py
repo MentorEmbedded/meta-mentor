@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 # TODO: add an argument to enable/disable dependency traversal vs just the
 # specified recipes
 import argparse
@@ -79,7 +83,7 @@ class MELUtilsPlugin(LayerPlugin):
                 logger.warning('Unhandled event %s: %s' % (event.__class__.__name__, event))
         return depgraph, None
 
-    def _localpaths_by_layer(self, data, layer_for_file, mirrortarballs=False):
+    def _localpaths_by_layer(self, data, recipe_filename, layer_for_file, mirrortarballs=False):
         def ud_localpaths(u, layer_name, dldir, d):
             if hasattr(u.method, 'process_submodules'):
                 def archive_submodule(ud, url, module, modpath, workdir, d):
@@ -125,6 +129,12 @@ class MELUtilsPlugin(LayerPlugin):
             ud = urldata[item]
             layer_name = layer_for_file(filename)
             ud_localpaths(ud, layer_name, dldir, data)
+
+        recipe_layer_name = layer_for_file(recipe_filename)
+        for extra_item in set(src_uri) - set(items_files.keys()):
+            logger.warning('Unable to determine correct layer for `%s`: this item is missing from variable history', extra_item)
+            ud = urldata[extra_item]
+            ud_localpaths(ud, recipe_layer_name, dldir, data)
 
         return items_by_layer
 
@@ -178,16 +188,27 @@ class MELUtilsPlugin(LayerPlugin):
 
         items_by_layer = defaultdict(set)
         for recipe in fetch_recipes:
-            if recipe not in depgraph['pn']:
-                continue
+            try:
+                fn = depgraph['pn'][recipe]['filename']
+            except KeyError:
+                mc = self.tinfoil.config_data.getVar('BBMULTICONFIG')
+                if not mc:
+                    raise Exception("Could not find key '%s' in depgraph and no multiconfigs defined" % recipe)
+                for cfg in mc.split():
+                    try:
+                        nkey = f"mc:{cfg}:{recipe}"
+                        fn = depgraph['pn'][nkey]['filename']
+                    except KeyError:
+                        continue
+            if not fn:
+                raise Exception("Could not find recipe for '%s' in depgraph" % recipe)
 
-            fn = depgraph['pn'][recipe]['filename']
             real_fn, cls, mc = bb.cache.virtualfn2realfn(fn)
             recipe_layer = layer_for_file(real_fn)
             appends = self.tinfoil.get_file_appends(fn)
             data = self.tinfoil.parse_recipe_file(fn, appendlist=appends)
 
-            for layer, items in self._localpaths_by_layer(data, lambda f: layer_for_file(f) or recipe_layer, args.mirrortarballs).items():
+            for layer, items in self._localpaths_by_layer(data, real_fn, lambda f: layer_for_file(f) or recipe_layer, args.mirrortarballs).items():
                 items_by_layer[layer] |= items
 
         # If a given download is used by multiple layers, prefer the lowest
@@ -234,9 +255,24 @@ class MELUtilsPlugin(LayerPlugin):
 
         fetch_recipes = self._collect_fetch_recipes(args.targets, args.task, depgraph)
 
-        with open(filename, 'w') as f:
+        omode = 'a' if args.append else 'w'
+        with open(filename, omode) as f:
             for recipe in fetch_recipes:
-                fn = depgraph['pn'][recipe]['filename']
+                try:
+                    fn = depgraph['pn'][recipe]['filename']
+                except KeyError:
+                    mc = self.tinfoil.config_data.getVar('BBMULTICONFIG')
+                    if not mc:
+                        raise Exception("Could not find key '%s' in depgraph and no multiconfigs defined" % recipe)
+                    for cfg in mc.split():
+                        try:
+                            nkey = f"mc:{cfg}:{recipe}"
+                            fn = depgraph['pn'][nkey]['filename']
+                        except KeyError:
+                            continue
+                if not fn:
+                    raise Exception("Could not find recipe for '%s' in depgraph" % recipe)
+
                 real_fn, cls, mc = bb.cache.virtualfn2realfn(fn)
                 appends = self.tinfoil.get_file_appends(fn)
                 data = self.tinfoil.parse_recipe_file(fn, appendlist=appends)
@@ -244,7 +280,24 @@ class MELUtilsPlugin(LayerPlugin):
                 pn = data.getVar('PN')
                 pv = data.getVar('PV')
                 lc = data.getVar('LICENSE')
-                f.write('%s,%s,%s\n' % (pn, pv, lc))
+
+                if not args.sourceinfo:
+                    f.write('%s,%s,%s\n' % (pn, pv, lc))
+                else:
+                    # unset su, otherwise we get previous value if there is no current
+                    su = ''
+                    for url in data.getVar('SRC_URI').split():
+                        scheme, host, path, user, passwd, param = bb.fetch.decodeurl(url)
+                        if scheme != 'file':
+                            su = bb.fetch.encodeurl((scheme, host, path, '', '', ''))
+                    hp = data.getVar('HOMEPAGE')
+
+                    f.write('%s,%s,%s,%s,%s\n' % (pn, pv, lc, su, hp))
+
+        # remove any duplicates added due to append flag
+        uniqlines = set(open(filename).readlines())
+        with open(filename, 'w') as f:
+            f.writelines(uniqlines)
 
     def register_commands(self, sp):
         common = argparse.ArgumentParser(add_help=False)
@@ -258,3 +311,5 @@ class MELUtilsPlugin(LayerPlugin):
         dump.add_argument('--filename', '-f', help='filename to dump to', default='${TMPDIR}/downloads-by-layer.txt')
         license = self.add_command(sp, 'dump-licenses', self.do_dump_licenses, parents=[common], parserecipes=True)
         license.add_argument('--filename', '-f', help='filename to dump to', default='${TMPDIR}/pn-buildlist-licenses.txt')
+        license.add_argument('--append', '-a', help='append to output filename', action='store_true')
+        license.add_argument('--sourceinfo', '-s', help='additionally dump SRC_URI and HOMEPAGE variables too', action='store_true')

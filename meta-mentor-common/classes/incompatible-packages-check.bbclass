@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 def any_incompatible(d, packages, licensestring=None):
     """Return True if any of the specified packages are skipped due to incompatible license.
     

@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 RDEPENDS:pulseaudio-module-systemd-login:append:feature-mentor-staging = " systemd"
 RDEPENDS:pulseaudio-server:append:feature-mentor-staging = "\
     ${@bb.utils.contains('PACKAGECONFIG', 'systemd', 'pulseaudio-module-systemd-login', '', d)} \

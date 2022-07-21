@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: MIT
+# ---------------------------------------------------------------------------------------------------------------------
+
 DESCRIPTION = "MEL Image initramfs"
 
 PACKAGE_INSTALL = "initramfs-framework-base ${VIRTUAL-RUNTIME_base-utils} initramfs-module-udev udev base-passwd ${ROOTFS_BOOTSTRAP_INSTALL}"
@@ -26,3 +30,8 @@ BAD_RECOMMENDATIONS += "busybox-syslog"
 IMAGE_PREPROCESS_COMMAND:remove = "selinux_set_labels ;"
 
 COMPATIBLE_HOST:mel = "(arm|aarch64|i.86|x86_64).*-linux"
+
+# Take care of warnings due to dependency on noexec ${INITRAMFS_IMAGE}:do_image_complete's
+# do_packagedata() in our initramfs image for now. The fix needs to come from oe-core image
+# bbclass when available, after which this can be removed
+deltask do_packagedata
