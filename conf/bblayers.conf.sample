@@ -1,7 +1,0 @@
-LCONF_VERSION = "7"
-
-TOPDIR := "${@os.path.dirname(os.path.dirname(FILE))}"
-BBPATH = "${TOPDIR}:${HOME}/.oe"
-BBFILES ?= ""
-
-BBLAYERS ?= ""
