@@ -1,0 +1,8 @@
+KERNEL=="device-mapper", NAME="mapper/control"
+SUBSYSTEM!="block", GOTO="dm_end"
+KERNEL!="dm-[0-9]*", GOTO="dm_end"
+ACTION!="add|change", GOTO="dm_end"
+
+ENV{DM_UDEV_PRIMARY_SOURCE_FLAG}="1"
+
+LABEL="dm_end"
