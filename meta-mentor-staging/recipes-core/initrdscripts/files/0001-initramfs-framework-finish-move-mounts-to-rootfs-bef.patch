@@ -1,8 +1,10 @@
-From 59f5fd34edae4e1c4633b160ee6c6e51ec6a98e4 Mon Sep 17 00:00:00 2001
-From: Awais Belal <awais_belal@mentor.com>
-Date: Wed, 28 Nov 2018 13:02:08 +0500
-Subject: [PATCH] initramfs-framework/finish: move mounts to rootfs before
- switching
+From 9dce3b9e90b52959ab564916de25429bd9963c9d Mon Sep 17 00:00:00 2001
+From: Syeda Shagufta Naaz <SyedaShagufta_Naaz@mentor.com>
+Date: Fri, 28 Oct 2022 13:43:12 +0530
+Subject: [PATCH] From 59f5fd34edae4e1c4633b160ee6c6e51ec6a98e4 Mon Sep 17
+ 00:00:00 2001 From: Awais Belal <awais_belal@mentor.com> Date: Wed, 28 Nov
+ 2018 13:02:08 +0500 Subject: [PATCH] initramfs-framework/finish: move mounts
+ to rootfs before  switching
 
 If basic device mounts are not moved onto the rootfs before
 switching, the device is not properly accessible for operations
@@ -12,7 +14,7 @@ we see
 root@v1000:~# mkfs.ext4 /dev/sdb1
 mke2fs 1.43.8 (1-Jan-2018)
 /dev/sdb1 contains a ext4 file system
-	last mounted on Wed Nov 28 07:33:54 2018
+        last mounted on Wed Nov 28 07:33:54 2018
 Proceed anyway? (y,N) y
 /dev/sdb1 is apparently in use by the system; will not make a filesystem here!
 
@@ -22,17 +24,38 @@ This fragment is picked up from initramfs-live-boot. See
 for more details.
 
 Signed-off-by: Awais Belal <awais_belal@mentor.com>
+
+The code seems to be updated post layer update, there was a warning
+message popping up while applying this patch, so rebasing it
+-----
+WARNING: initramfs-framework-1.0-r4 do_patch: Fuzz detected:
+
+Applying patch 0001-initramfs-framework-finish-move-mounts-to-rootfs-bef.patch
+patching file finish
+Hunk #1 succeeded at 23 with fuzz 2 (offset 9 lines).
+
+The context lines in the patches can be updated with devtool:
+
+    devtool modify initramfs-framework
+    devtool finish --force-patch-refresh initramfs-framework <layer_path>
+
+Don't forget to review changes done by devtool!
+
+WARNING: initramfs-framework-1.0-r4 do_patch: QA Issue: Patch log indicates that patches do not apply cleanly. [patch-fuzz]
+-----
+
+Signed-off-by: Syeda Shagufta Naaz <SyedaShagufta_Naaz@mentor.com>
 ---
  finish | 9 +++++++++
  1 file changed, 9 insertions(+)
 
 diff --git a/finish b/finish
-index 717383e..9722d02 100755
+index e6fa47d..3057119 100755
 --- a/finish
 +++ b/finish
-@@ -14,6 +14,15 @@ finish_run() {
- 
- 		info "Switching root to '$ROOTFS_DIR'..."
+@@ -32,6 +32,15 @@ finish_run() {
+ 			mount -n --move "$dir" "${ROOTFS_DIR}/media/${dir##*/}"
+ 		done
  
 +		debug "Moving basic mounts onto rootfs"
 +		for dir in `awk '/\/dev.* \/run\/media/{print $2}' /proc/mounts`; do
@@ -47,5 +70,5 @@ index 717383e..9722d02 100755
  		mount --move /dev $ROOTFS_DIR/dev
  		mount --move /proc $ROOTFS_DIR/proc
 -- 
-2.11.1
+2.25.1
 
