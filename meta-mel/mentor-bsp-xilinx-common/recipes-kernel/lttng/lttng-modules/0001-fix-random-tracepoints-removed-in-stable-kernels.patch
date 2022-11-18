@@ -1,0 +1,38 @@
+From 3ecfc672ce11dbefdc0b9168391f56debd736a14 Mon Sep 17 00:00:00 2001
+From: Syeda Shagufta Naaz <SyedaShagufta_Naaz@mentor.com>
+Date: Tue, 2 Aug 2022 11:42:54 +0530
+Subject: [PATCH] fix: 'random' tracepoints removed in stable kernels
+
+Upstream-Status: Backport from
+https://git.lttng.org/?p=lttng-modules.git;a=blobdiff_plain;f=src/probes/Kbuild;h=2908cf75effdcf58dbb82df55eff6291ceff31b1;hp=31e0ee85757f9ea83f28e81d70ab004dd1909ae2;hb=ed1149ef88fb62c365ac66cf62c58ac6abd8d7e8;hpb=1901e0eb58795e850e8fdcb5e1c235e4397b470
+
+Signed-off-by: Syeda Shagufta Naaz <SyedaShagufta_Naaz@mentor.com>
+---
+ probes/Kbuild | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
+
+diff --git a/probes/Kbuild b/probes/Kbuild
+index 1876685..2ff311d 100644
+--- a/probes/Kbuild
++++ b/probes/Kbuild
+@@ -187,13 +187,10 @@ ifneq ($(CONFIG_FRAME_WARN),0)
+   CFLAGS_lttng-probe-printk.o += -Wframe-larger-than=2200
+ endif
+ 
+-obj-$(CONFIG_LTTNG) +=  $(shell \
+-    if [ $(VERSION) -ge 4 \
+-      -o \( $(VERSION) -eq 3 -a $(PATCHLEVEL) -ge 6 \) \
+-      -o \( $(VERSION) -eq 3 -a $(PATCHLEVEL) -eq 5 -a $(SUBLEVEL) -ge 2 \) \
+-      -o \( $(VERSION) -eq 3 -a $(PATCHLEVEL) -eq 4 -a $(SUBLEVEL) -ge 9 \) \
+-      -o \( $(VERSION) -eq 3 -a $(PATCHLEVEL) -eq 0 -a $(SUBLEVEL) -ge 41 \) ] ; then \
+-      echo "lttng-probe-random.o" ; fi;)
++random_dep = $(srctree)/include/trace/events/random.h
++ifneq ($(wildcard $(random_dep)),)
++  obj-$(CONFIG_LTTNG) += lttng-probe-random.o
++endif
+ 
+ obj-$(CONFIG_LTTNG) +=  $(shell \
+   if [ $(VERSION) -ge 4 \
+-- 
+2.25.1
+
