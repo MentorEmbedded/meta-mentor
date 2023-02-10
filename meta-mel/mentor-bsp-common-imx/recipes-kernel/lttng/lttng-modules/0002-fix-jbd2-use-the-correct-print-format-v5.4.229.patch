@@ -1,0 +1,92 @@
+From 5bab3b246e4d3fa648b32bb0a806cdd6bb3615f0 Mon Sep 17 00:00:00 2001
+From: Syeda Shagufta Naaz <SyedaShagufta_Naaz@mentor.com>
+Date: Thu, 2 Feb 2023 14:10:36 +0530
+Subject: [PATCH 2/2] fix: jbd2: use the correct print format (v5.4.229)
+
+See upstream commit :
+
+  commit ecb9d0d2e123874bcdd2efdecda0f4e0c3dc566d
+  Author: Bixuan Cui <cuibixuan@linux.alibaba.com>
+  Date:   Tue Oct 11 19:33:44 2022 +0800
+
+    jbd2: use the correct print format
+
+    [ Upstream commit d87a7b4c77a997d5388566dd511ca8e6b8e8a0a8 ]
+
+    The print format error was found when using ftrace event:
+        <...>-1406 [000] .... 23599442.895823: jbd2_end_commit: dev 252,8 transaction -1866216965 sync 0 head -1866217368
+        <...>-1406 [000] .... 23599442.896299: jbd2_start_commit: dev 252,8 transaction -1866216964 sync 0
+
+    Use the correct print format for transaction, head and tid.
+
+Change-Id: Ieee3d39ed1f2515e096e87d18b5ea8f921c54bd0
+Signed-off-by: Michael Jeanson <mjeanson@efficios.com>
+Signed-off-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+
+Error:
+ /home/snaaz/mel/fir/main/build_ull/tmp/work/imx6ullevk_mel-mel-linux-gnueabi/lttng-modules/2.12.2-r0/lttng-modules-2.12.2/probes/../probes/lttng-tracepoint-event-impl.h:131:6: error: conflicting types for 'trace_jbd2_run_stats'
+|   131 | void trace_##_name(_proto);
+|       |      ^~~~~~
+| /home/snaaz/mel/fir/main/build_ull/tmp/work/imx6ullevk_mel-mel-linux-gnueabi/lttng-modules/2.12.2-r0/lttng-modules-2.12.2/probes/../probes/lttng-tracepoint-event-impl.h:43:2: note: in expansion of macro 'LTTNG_TRACEPOINT_EVENT_INSTANCE_MAP'
+|    43 |  LTTNG_TRACEPOINT_EVENT_INSTANCE_MAP(map, name, map, PARAMS(proto), PARAMS(args))
+|       |  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+| /home/snaaz/mel/fir/main/build_ull/tmp/work/imx6ullevk_mel-mel-linux-gnueabi/lttng-modules/2.12.2-r0/lttng-modules-2.12.2/probes/../probes/lttng-tracepoint-event-impl.h:85:2: note: in expansion of macro 'LTTNG_TRACEPOINT_EVENT_MAP'
+|    85 |  LTTNG_TRACEPOINT_EVENT_MAP(name, name,    \
+|       |  ^~~~~~~~~~~~~~~~~~~~~~~~~~
+| /home/snaaz/mel/fir/main/build_ull/tmp/work/imx6ullevk_mel-mel-linux-gnueabi/lttng-modules/2.12.2-r0/lttng-modules-2.12.2/probes/../instrumentation/events/lttng-module/jbd2.h:104:1: note: in expansion of macro 'LTTNG_TRACEPOINT_EVENT'
+|   104 | LTTNG_TRACEPOINT_EVENT(jbd2_run_stats,
+|       | ^~~~~~~~~~~~~~~~~~~~~~
+| In file included from /home/snaaz/mel/fir/main/build_ull/tmp/work-shared/imx6ullevk-mel/kernel-source/include/trace/events/jbd2.h:9,
+|                  from /home/snaaz/mel/fir/main/build_ull/tmp/work/imx6ullevk_mel-mel-linux-gnueabi/lttng-modules/2.12.2-r0/lttng-modules-2.12.2/probes/lttng-probe-jbd2.c:18:
+| /home/snaaz/mel/fir/main/build_ull/tmp/work-shared/imx6ullevk-mel/kernel-source/include/linux/tracepoint.h:243:21: note: previous definition of 'trace_jbd2_run_stats' was here
+|   243 |  static inline void trace_##name(proto)    \
+|       |                     ^~~~~~
+| /home/snaaz/mel/fir/main/build_ull/tmp/work-shared/imx6ullevk-mel/kernel-source/include/linux/tracepoint.h:406:2: note: in expansion of macro '__DECLARE_TRACE'
+|   406 |  __DECLARE_TRACE(name, PARAMS(proto), PARAMS(args),  \
+|       |  ^~~~~~~~~~~~~~~
+| /home/snaaz/mel/fir/main/build_ull/tmp/work-shared/imx6ullevk-mel/kernel-source/include/linux/tracepoint.h:542:2: note: in expansion of macro 'DECLARE_TRACE'
+|   542 |  DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))
+|       |  ^~~~~~~~~~~~~
+| /home/snaaz/mel/fir/main/build_ull/tmp/work-shared/imx6ullevk-mel/kernel-source/include/trace/events/jbd2.h:234:1: note: in expansion of macro 'TRACE_EVENT'
+|   234 | TRACE_EVENT(jbd2_run_stats,
+|       | ^~~~~~~~~~~
+
+Upstream-Status: Backport from
+https://github.com/lttng/lttng-modules/commit/47d24a257b20a3f673f9621ca8d2742b31ff4055
+
+Signed-off-by: Syeda Shagufta Naaz <SyedaShagufta_Naaz@mentor.com>
+---
+ instrumentation/events/lttng-module/jbd2.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/instrumentation/events/lttng-module/jbd2.h b/instrumentation/events/lttng-module/jbd2.h
+index 806db09..f6318b1 100644
+--- a/instrumentation/events/lttng-module/jbd2.h
++++ b/instrumentation/events/lttng-module/jbd2.h
+@@ -28,6 +28,7 @@ LTTNG_TRACEPOINT_EVENT(jbd2_checkpoint,
+ )
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,2,0) \
++	|| LTTNG_KERNEL_RANGE(5,4,229, 5,5,0) \
+ 	|| LTTNG_KERNEL_RANGE(5,15,87, 5,16,0) \
+ 	|| LTTNG_KERNEL_RANGE(6,0,18, 6,1,0) \
+ 	|| LTTNG_KERNEL_RANGE(6,1,4, 6,2,0))
+@@ -96,6 +97,7 @@ LTTNG_TRACEPOINT_EVENT_INSTANCE(jbd2_commit, jbd2_drop_transaction,
+ #endif
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,2,0) \
++	|| LTTNG_KERNEL_RANGE(5,4,229, 5,5,0) \
+ 	|| LTTNG_KERNEL_RANGE(5,15,87, 5,16,0) \
+ 	|| LTTNG_KERNEL_RANGE(6,0,18, 6,1,0) \
+ 	|| LTTNG_KERNEL_RANGE(6,1,4, 6,2,0))
+@@ -138,6 +140,7 @@ LTTNG_TRACEPOINT_EVENT(jbd2_submit_inode_data,
+ )
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,2,0) \
++	|| LTTNG_KERNEL_RANGE(5,4,229, 5,5,0) \
+ 	|| LTTNG_KERNEL_RANGE(5,15,87, 5,16,0) \
+ 	|| LTTNG_KERNEL_RANGE(6,0,18, 6,1,0) \
+ 	|| LTTNG_KERNEL_RANGE(6,1,4, 6,2,0))
+-- 
+2.17.1
+
