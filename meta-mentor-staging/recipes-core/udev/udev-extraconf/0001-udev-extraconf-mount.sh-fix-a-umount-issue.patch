@@ -1,0 +1,35 @@
+From 38d866582650b048c646013133b647f285f275c3 Mon Sep 17 00:00:00 2001
+From: ansar-rasool <ansar_rasool@mentor.com>
+Date: Thu, 16 Feb 2023 14:31:43 +0500
+Subject: [PATCH] udev-extraconf:mount.sh: fix a umount issue
+
+Only touching /tmp/.automount-$name is not good enough, it must contain
+the mount name, otherwise umount could not get the path from it.
+
+Signed-off-by: Ming Liu <liu.ming50@gmail.com>
+Signed-off-by: Alexandre Belloni <alexandre.belloni@bootlin.com>
+Signed-off-by: Richard Purdie <richard.purdie@linuxfoundation.org>
+(cherry picked from commit ccea69032329f3ba43c727d9eb71b1d063b89824)
+Signed-off-by: Steve Sakoman <steve@sakoman.com>
+
+Signed-off-by: ansar-rasool <ansar_rasool@mentor.com>
+---
+ mount.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/mount.sh b/mount.sh
+index d437baa..c374f0c 100644
+--- a/mount.sh
++++ b/mount.sh
+@@ -87,7 +87,7 @@ automount_systemd() {
+         rm_dir "/run/media/$name"
+     else
+         logger "mount.sh/automount" "Auto-mount of [/run/media/$name] successful"
+-        touch "/tmp/.automount-$name"
++        echo "$name" > "/tmp/.automount-$name"
+     fi
+ }
+ 
+-- 
+2.25.1
+

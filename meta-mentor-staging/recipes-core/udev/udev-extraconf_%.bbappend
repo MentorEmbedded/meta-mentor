@@ -8,7 +8,8 @@ SRC_URI +=  "file://0001-udev-extraconf-mount.sh-add-LABELs-to-mountpoints.patch
              file://0001-udev-extraconf-mount.sh-define-mount-prefix-using-a-.patch \
              file://0002-udev-extraconf-mount.sh-save-mount-name-in-our-tmp-f.patch \
              file://0003-udev-extraconf-mount.sh-only-mount-devices-on-hotplu.patch \
-             file://0001-udev-extraconf-mount.sh-ignore-lvm-in-automount.patch"
+             file://0001-udev-extraconf-mount.sh-ignore-lvm-in-automount.patch \
+             file://0001-udev-extraconf-mount.sh-fix-a-umount-issue.patch"
 
 RDEPENDS_${PN} += "util-linux-blkid"
 
