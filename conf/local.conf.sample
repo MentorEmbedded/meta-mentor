@@ -206,6 +206,14 @@ TOOLCHAIN_HOST_TASK_remove = "${TOOLCHAIN_HOST_REMOVE}"
 # NOTE: if listing mklibs & prelink both, then make sure mklibs is before prelink
 USER_CLASSES ?= "buildstats"
 
+# By default qemu will build with a builtin VNC server where graphical output can be
+# seen. The two lines below enable the SDL backend too. By default libsdl2-native will
+# be built, if you want to use your host's libSDL instead of the minimal libsdl built
+# by libsdl2-native then uncomment the ASSUME_PROVIDED line below.
+PACKAGECONFIG_append_pn-qemu-system-native = " sdl"
+PACKAGECONFIG_append_pn-nativesdk-qemu = " sdl"
+#ASSUME_PROVIDED += "libsdl2-native"
+
 # To use mklibs, it must also be explicitly enabled for a given image. Note
 # that images built with mklibs will only run the binaries installed at image
 # creation time, as it removes symbols from the libraries
